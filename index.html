@@ -984,6 +984,63 @@ footer{
 .ts-note-text{font-size:12.5px;color:var(--muted2);line-height:1.7}
 .ts-note-text strong{color:var(--white)}
 
+/* ── CYBER SECURITY ── */
+#cybersec{padding:100px 48px;max-width:1280px;margin:0 auto}
+.cyber-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:60px}
+.cyber-hero{
+  grid-column:1/-1;
+  background:linear-gradient(135deg,rgba(255,85,85,0.04) 0%,rgba(189,147,249,0.04) 100%);
+  border:1px solid rgba(255,85,85,0.15);
+  border-radius:16px;padding:40px;
+  display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;
+}
+.cyber-statement{font-size:clamp(20px,2.5vw,30px);font-weight:900;color:var(--white);line-height:1.2;margin-bottom:16px}
+.cyber-statement .hl{color:var(--red)}
+.cyber-desc{font-size:14px;color:var(--muted2);line-height:1.75}
+.threat-list{display:flex;flex-direction:column;gap:10px}
+.threat-item{
+  background:rgba(255,85,85,0.05);
+  border:1px solid rgba(255,85,85,0.12);
+  border-radius:8px;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.threat-item-icon{font-size:18px;flex-shrink:0}
+.threat-item-text{}
+.threat-item-title{font-size:12px;font-weight:700;color:var(--white)}
+.threat-item-sub{font-size:11px;color:var(--muted2);margin-top:2px}
+.threat-item-status{
+  margin-left:auto;flex-shrink:0;
+  font-size:8px;font-family:'JetBrains Mono',monospace;
+  padding:3px 8px;border-radius:3px;
+  background:rgba(80,250,123,0.1);color:#50fa7b;
+  border:1px solid rgba(80,250,123,0.2);letter-spacing:1px;
+}
+.cyber-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:28px;transition:all .25s;
+}
+.cyber-card:hover{border-color:rgba(189,147,249,0.3);transform:translateY(-3px)}
+.cyber-card-icon{font-size:26px;margin-bottom:14px}
+.cyber-card h4{font-size:15px;font-weight:800;color:var(--white);margin-bottom:10px}
+.cyber-card p{font-size:12.5px;color:var(--muted2);line-height:1.7;margin-bottom:14px}
+.cyber-points{display:flex;flex-direction:column;gap:6px}
+.cyber-point{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:11.5px;color:var(--muted2);line-height:1.4;
+}
+.cyber-point::before{content:'→';color:var(--purple);flex-shrink:0;font-weight:700}
+.cyber-failsafe{
+  grid-column:1/-1;
+  background:linear-gradient(135deg,rgba(80,250,123,0.04),rgba(100,255,218,0.04));
+  border:1px solid rgba(80,250,123,0.15);
+  border-radius:14px;padding:28px 32px;
+  display:flex;align-items:center;gap:24px;
+}
+.cyber-failsafe-icon{font-size:36px;flex-shrink:0}
+.cyber-failsafe h4{font-size:15px;font-weight:800;color:var(--white);margin-bottom:6px}
+.cyber-failsafe p{font-size:13px;color:var(--muted2);line-height:1.7}
+.cyber-failsafe strong{color:#50fa7b}
+
 /* ── TICKER ── */
 .ticker-wrap{
   position:fixed;top:64px;left:0;right:0;z-index:998;
@@ -1230,6 +1287,7 @@ footer{
     <a href="#ai-operator">AI Operator</a>
     <a href="#modules">Modules</a>
     <a href="#techspecs">Tech Specs</a>
+    <a href="#cybersec">Security</a>
     <a href="#coverage">Coverage</a>
     <a href="#partnership">Partnership</a>
   </div>
@@ -2515,6 +2573,132 @@ footer{
 
   </div>
 </div>
+</div>
+
+<div class="glow-div"></div>
+
+<!-- ══ CYBER SECURITY ══ -->
+<div id="cybersec">
+  <div class="sec-label">Platform Security</div>
+  <h2>Hardened against <span class="hl">every attack vector</span></h2>
+  <p class="sec-sub" style="margin-bottom:0">A system that controls 900 cameras, every door, and police notifications is itself a target. We designed for that from day one.</p>
+
+  <div class="cyber-grid">
+
+    <!-- Hero: threat vectors blocked -->
+    <div class="cyber-hero fade-up">
+      <div>
+        <div class="cyber-statement">The platform that controls<br>everything <span class="hl">cannot be the weakest link.</span></div>
+        <p class="cyber-desc">Every external attack vector is blocked at the network layer — before it reaches the platform. No internet exposure means no remote exploit surface. No cloud means no third-party breach risk. Physical separation means no lateral movement from corporate IT.</p>
+      </div>
+      <div class="threat-list">
+        <div class="threat-item">
+          <span class="threat-item-icon">🌐</span>
+          <div class="threat-item-text">
+            <div class="threat-item-title">Remote / Internet Attack</div>
+            <div class="threat-item-sub">Zero internet connectivity — no exposed ports, no remote surface</div>
+          </div>
+          <span class="threat-item-status">BLOCKED</span>
+        </div>
+        <div class="threat-item">
+          <span class="threat-item-icon">🏢</span>
+          <div class="threat-item-text">
+            <div class="threat-item-title">Corporate IT Lateral Movement</div>
+            <div class="threat-item-sub">Physically air-gapped — no shared switch, cable, or VLAN with IT network</div>
+          </div>
+          <span class="threat-item-status">BLOCKED</span>
+        </div>
+        <div class="threat-item">
+          <span class="threat-item-icon">☁️</span>
+          <div class="threat-item-text">
+            <div class="threat-item-title">Cloud / Vendor Breach</div>
+            <div class="threat-item-sub">100% on-premise — zero data sent to any external server, ever</div>
+          </div>
+          <span class="threat-item-status">BLOCKED</span>
+        </div>
+        <div class="threat-item">
+          <span class="threat-item-icon">💉</span>
+          <div class="threat-item-text">
+            <div class="threat-item-title">Malware / Ransomware</div>
+            <div class="threat-item-sub">Offline update mechanism — software updates via verified local media only</div>
+          </div>
+          <span class="threat-item-status">MITIGATED</span>
+        </div>
+        <div class="threat-item">
+          <span class="threat-item-icon">🎭</span>
+          <div class="threat-item-text">
+            <div class="threat-item-title">Insider Threat</div>
+            <div class="threat-item-sub">Role-based access + MFA + immutable audit log — every action attributed</div>
+          </div>
+          <span class="threat-item-status">MITIGATED</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 1: Network -->
+    <div class="cyber-card fade-up">
+      <div class="cyber-card-icon">🔒</div>
+      <h4>Air-Gapped Security Network</h4>
+      <p>The BBA Platform lives on a dedicated security LAN physically isolated from all other networks — no shared infrastructure with corporate IT, guest Wi-Fi, or public internet.</p>
+      <div class="cyber-points">
+        <div class="cyber-point">Dedicated switches, cabling and patch panels — no shared hardware</div>
+        <div class="cyber-point">No outbound internet route — firewall blocks all external traffic by default</div>
+        <div class="cyber-point">10 GbE internal backbone — high throughput, low latency, fully private</div>
+        <div class="cyber-point">VLAN segmentation per subsystem (VMS, ACS, Drone, BMS)</div>
+      </div>
+    </div>
+
+    <!-- Card 2: Access Control -->
+    <div class="cyber-card fade-up">
+      <div class="cyber-card-icon">🪪</div>
+      <h4>Zero-Trust Access Model</h4>
+      <p>No user has more access than their role requires. Every session is authenticated, every action is attributed, and nothing can be deleted or modified without a trace.</p>
+      <div class="cyber-points">
+        <div class="cyber-point">Multi-factor authentication (MFA) — mandatory for all users</div>
+        <div class="cyber-point">Role-based permissions — operator, supervisor, manager, read-only, audit</div>
+        <div class="cyber-point">Automatic session timeout + re-authentication on sensitive actions</div>
+        <div class="cyber-point">Immutable audit log — tamper-evident, SIRA-compliant, court-ready</div>
+        <div class="cyber-point">Biometric login option for SCR workstations</div>
+      </div>
+    </div>
+
+    <!-- Card 3: Data & Encryption -->
+    <div class="cyber-card fade-up">
+      <div class="cyber-card-icon">🔐</div>
+      <h4>Encryption Everywhere</h4>
+      <p>All video, metadata, incident records and communications are encrypted — both at rest and in transit. No data ever leaves the building in readable form.</p>
+      <div class="cyber-points">
+        <div class="cyber-point">AES-256 encryption for all stored video and incident data</div>
+        <div class="cyber-point">TLS 1.3 for all internal API communication between services</div>
+        <div class="cyber-point">Encrypted database backups — keys stored separately from data</div>
+        <div class="cyber-point">Evidence export packages are digitally signed and hash-verified</div>
+      </div>
+    </div>
+
+    <!-- Card 4: Monitoring & Response -->
+    <div class="cyber-card fade-up">
+      <div class="cyber-card-icon">📡</div>
+      <h4>Intrusion Detection & Response</h4>
+      <p>The platform monitors itself. Unusual login patterns, unexpected process activity, and unauthorized device connections trigger internal alerts before any damage is done.</p>
+      <div class="cyber-points">
+        <div class="cyber-point">Network IDS — detects port scanning, ARP spoofing, rogue devices</div>
+        <div class="cyber-point">Failed login lockout + security team alert after 3 attempts</div>
+        <div class="cyber-point">Process integrity monitoring — unauthorized software execution blocked</div>
+        <div class="cyber-point">Offline update policy — no live package manager, no auto-update</div>
+        <div class="cyber-point">Periodic penetration testing protocol included in maintenance contract</div>
+      </div>
+    </div>
+
+    <!-- Failsafe -->
+    <div class="cyber-failsafe fade-up">
+      <span class="cyber-failsafe-icon">🛡️</span>
+      <div>
+        <h4>Hardware Failsafe — Software Cannot Disarm Physical Security</h4>
+        <p>Even if the platform software is fully compromised, physical security remains intact. <strong>HVM barriers, emergency doors, and access control panels all have local manual override</strong> — they do not require the software to function. A cyberattack cannot open a barrier or unlock a restricted door. The attacker would gain visibility, not physical control.</p>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <div class="glow-div"></div>
