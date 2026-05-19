@@ -919,6 +919,71 @@ footer{
   width:8px;height:8px;border-radius:2px;flex-shrink:0;
 }
 
+/* ── TECH SPECS ── */
+#techspecs{padding:100px 0;background:var(--surface)}
+.ts-inner{max-width:1280px;margin:0 auto;padding:0 48px}
+.ts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:60px}
+.ts-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:32px;
+}
+.ts-card-title{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--blue);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:20px;display:flex;align-items:center;gap:10px;
+}
+.ts-card-title::before{content:'';width:16px;height:1px;background:var(--blue)}
+.ts-rows{display:flex;flex-direction:column;gap:0}
+.ts-row{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:16px;padding:11px 0;
+  border-bottom:1px solid rgba(22,40,64,0.6);
+}
+.ts-row:last-child{border-bottom:none}
+.ts-key{font-size:12px;color:var(--muted2);flex-shrink:0;max-width:200px}
+.ts-val{
+  font-size:12px;font-family:'JetBrains Mono',monospace;
+  color:var(--white);text-align:right;font-weight:600;
+}
+.ts-val .hl{color:var(--blue)}
+.ts-val .tl{color:var(--teal)}
+.ts-val .note{color:var(--muted);font-weight:400;font-size:10px;display:block;margin-top:2px}
+.ts-server-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:12px;margin-top:60px;
+}
+.ts-server{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:20px;text-align:center;
+  transition:all .25s;
+}
+.ts-server:hover{border-color:rgba(0,212,255,0.3);transform:translateY(-3px)}
+.ts-server-icon{font-size:24px;margin-bottom:10px}
+.ts-server-count{
+  font-size:28px;font-weight:900;font-family:'JetBrains Mono',monospace;
+  color:var(--blue);line-height:1;
+}
+.ts-server-role{font-size:11px;font-weight:700;color:var(--white);margin-top:6px}
+.ts-server-spec{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}
+.ts-protocols{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.ts-proto{
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  padding:5px 10px;border-radius:5px;
+  background:rgba(0,212,255,0.06);color:var(--blue);
+  border:1px solid rgba(0,212,255,0.15);
+}
+.ts-proto.t{background:rgba(100,255,218,0.06);color:var(--teal);border-color:rgba(100,255,218,0.15)}
+.ts-proto.p{background:rgba(189,147,249,0.06);color:var(--purple);border-color:rgba(189,147,249,0.15)}
+.ts-note-box{
+  grid-column:1/-1;
+  background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);
+  border-radius:10px;padding:20px 24px;
+  display:flex;align-items:flex-start;gap:16px;
+}
+.ts-note-icon{font-size:20px;flex-shrink:0}
+.ts-note-text{font-size:12.5px;color:var(--muted2);line-height:1.7}
+.ts-note-text strong{color:var(--white)}
+
 /* ── TICKER ── */
 .ticker-wrap{
   position:fixed;top:64px;left:0;right:0;z-index:998;
@@ -1164,8 +1229,8 @@ footer{
     <a href="#usecases">Use Cases</a>
     <a href="#ai-operator">AI Operator</a>
     <a href="#modules">Modules</a>
+    <a href="#techspecs">Tech Specs</a>
     <a href="#coverage">Coverage</a>
-    <a href="#compare">vs Competitors</a>
     <a href="#partnership">Partnership</a>
   </div>
   <a href="#cta" class="nav-cta">Request Demo →</a>
@@ -2243,6 +2308,213 @@ footer{
       </div>
     </div>
   </div>
+</div>
+
+<div class="glow-div"></div>
+
+<!-- ══ TECH SPECS ══ -->
+<div id="techspecs">
+<div class="ts-inner">
+  <div class="sec-label">Technical Specifications</div>
+  <h2>What runs <span class="hl">under the hood</span></h2>
+  <p class="sec-sub" style="margin-bottom:0">On-premise, air-gapped security network. No cloud dependency. 8–10 dedicated servers — scalable per site requirements.</p>
+
+  <!-- Server breakdown -->
+  <div class="ts-server-grid fade-up">
+    <div class="ts-server">
+      <div class="ts-server-icon">🧠</div>
+      <div class="ts-server-count">3–4</div>
+      <div class="ts-server-role">AI Processing Nodes</div>
+      <div class="ts-server-spec">GPU-accelerated inference<br>NVIDIA RTX / A-series<br>~50–60 concurrent streams each</div>
+    </div>
+    <div class="ts-server">
+      <div class="ts-server-icon">💾</div>
+      <div class="ts-server-count">3</div>
+      <div class="ts-server-role">Storage Servers</div>
+      <div class="ts-server-spec">90-day video retention<br>RAID-6 redundancy<br>~400–600 TB raw capacity</div>
+    </div>
+    <div class="ts-server">
+      <div class="ts-server-icon">⚙️</div>
+      <div class="ts-server-count">2</div>
+      <div class="ts-server-role">Application Servers</div>
+      <div class="ts-server-spec">Platform + database<br>PostgreSQL · TimescaleDB<br>Active/passive failover</div>
+    </div>
+    <div class="ts-server">
+      <div class="ts-server-icon">🔁</div>
+      <div class="ts-server-count">1–2</div>
+      <div class="ts-server-role">Management & Failover</div>
+      <div class="ts-server-spec">Hot standby · monitoring<br>UPS-backed<br>Auto-switchover &lt;30s</div>
+    </div>
+  </div>
+
+  <div class="ts-grid fade-up">
+
+    <!-- AI Processing -->
+    <div class="ts-card">
+      <div class="ts-card-title">AI Processing</div>
+      <div class="ts-rows">
+        <div class="ts-row">
+          <span class="ts-key">Total cameras</span>
+          <span class="ts-val"><span class="hl">900</span> cameras</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Continuous full AI (Tier 1)</span>
+          <span class="ts-val"><span class="hl">~150</span> streams<span class="note">Gates, ANPR, critical zones</span></span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Motion-triggered AI (Tier 2)</span>
+          <span class="ts-val"><span class="tl">~550</span> cameras<span class="note">Corridors, retail floors</span></span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Record-only (Tier 3)</span>
+          <span class="ts-val">~200 cameras<span class="note">Low-activity zones, on-demand AI</span></span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Peak concurrent streams</span>
+          <span class="ts-val"><span class="hl">~180</span> simultaneous</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">AI inference latency</span>
+          <span class="ts-val"><span class="tl">&lt;200ms</span> per frame</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Alert-to-action time</span>
+          <span class="ts-val"><span class="hl">&lt;2 seconds</span></span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">AI framework</span>
+          <span class="ts-val">NVIDIA DeepStream · OpenVINO</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Storage & Network -->
+    <div class="ts-card">
+      <div class="ts-card-title">Storage & Network</div>
+      <div class="ts-rows">
+        <div class="ts-row">
+          <span class="ts-key">Video retention</span>
+          <span class="ts-val"><span class="hl">90 days</span> (SIRA minimum)</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Storage estimate</span>
+          <span class="ts-val"><span class="tl">400–600 TB</span><span class="note">H.265 + adaptive recording</span></span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Redundancy</span>
+          <span class="ts-val">RAID-6 · Hot spare</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Network architecture</span>
+          <span class="ts-val"><span class="hl">Air-gapped</span> security VLAN</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">IT network separation</span>
+          <span class="ts-val">Physical · no shared switch</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Internal bandwidth</span>
+          <span class="ts-val">10 GbE backbone</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Database</span>
+          <span class="ts-val">PostgreSQL + TimescaleDB</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Platform uptime target</span>
+          <span class="ts-val"><span class="tl">99.97%</span> · &lt;2.6h/year downtime</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integration Protocols -->
+    <div class="ts-card">
+      <div class="ts-card-title">Integration Protocols</div>
+      <div class="ts-rows">
+        <div class="ts-row">
+          <span class="ts-key">Camera / VMS</span>
+          <span class="ts-val">ONVIF Profile S/T/G · RTSP</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Video codecs</span>
+          <span class="ts-val">H.265 · H.264 · MJPEG</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Access control</span>
+          <span class="ts-val">Wiegand · OSDP v2 · REST API</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">ACS vendors</span>
+          <span class="ts-val">Lenel · C•CURE · C2000</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">BMS</span>
+          <span class="ts-val">BACnet IP · Modbus TCP</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Drone / autonomous</span>
+          <span class="ts-val">MAVLink · proprietary API</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Internal API</span>
+          <span class="ts-val">gRPC · REST · WebSocket</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Authorities</span>
+          <span class="ts-val">Dubai Police API · Civil Defence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance -->
+    <div class="ts-card">
+      <div class="ts-card-title">Compliance & Security</div>
+      <div class="ts-rows">
+        <div class="ts-row">
+          <span class="ts-key">Regulatory</span>
+          <span class="ts-val"><span class="hl">SIRA</span> full compliance</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Incident logging</span>
+          <span class="ts-val">SIRA-format · tamper-proof</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Evidence chain</span>
+          <span class="ts-val">Full chain-of-custody</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Data encryption</span>
+          <span class="ts-val">AES-256 at rest · TLS 1.3</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">User access</span>
+          <span class="ts-val">Role-based · MFA · audit log</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Privacy</span>
+          <span class="ts-val">Face blur · anonymization mode</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Deployment model</span>
+          <span class="ts-val"><span class="tl">On-premise only</span> · no cloud</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">OS platform</span>
+          <span class="ts-val">Windows Server · Linux nodes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note box -->
+    <div class="ts-note-box">
+      <span class="ts-note-icon">💡</span>
+      <div class="ts-note-text">
+        <strong>Adaptive Inference Scheduling</strong> — The platform dynamically allocates GPU resources based on zone priority and live motion activity. Not all 900 cameras require simultaneous AI processing. Peak concurrent AI streams: <strong>~180</strong>. This reduces hardware requirements by ~80% compared to naive full-stream processing — and makes the system scalable to any future camera additions without linear hardware cost increases.
+      </div>
+    </div>
+
+  </div>
+</div>
 </div>
 
 <div class="glow-div"></div>
