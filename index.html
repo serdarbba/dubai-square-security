@@ -855,6 +855,70 @@ footer{
 .abt2-live::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);animation:livepulse 1.5s ease infinite}
 .ai-big-body{padding:24px;min-height:400px}
 
+/* ── AUTH LEVELS ── */
+#auth-levels{padding:100px 0;background:var(--surface)}
+.auth-inner{max-width:1280px;margin:0 auto;padding:0 48px}
+.auth-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:0;margin-top:60px;
+  border:1px solid var(--border);border-radius:16px;overflow:hidden;
+}
+.auth-card{
+  padding:32px 24px;border-right:1px solid var(--border);
+  position:relative;transition:all .3s;
+}
+.auth-card:last-child{border-right:none}
+.auth-card:hover{background:rgba(255,255,255,0.015)}
+.auth-level-bar{
+  height:3px;width:100%;margin-bottom:24px;border-radius:2px;
+}
+.auth-level-num{
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  letter-spacing:2px;margin-bottom:8px;
+}
+.auth-card h3{font-size:18px;font-weight:900;color:var(--white);margin-bottom:4px}
+.auth-card .auth-sub{font-size:11px;color:var(--muted);margin-bottom:20px;font-family:'JetBrains Mono',monospace}
+.auth-who{
+  display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;
+}
+.auth-who-tag{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  padding:3px 8px;border-radius:3px;letter-spacing:1px;
+  display:flex;align-items:center;gap:4px;
+}
+.auth-divider{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);letter-spacing:1px;text-transform:uppercase;
+  margin-bottom:10px;margin-top:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-items{display:flex;flex-direction:column;gap:7px}
+.auth-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:11.5px;color:var(--muted2);line-height:1.4;
+}
+.auth-item .ai{color:var(--blue);font-weight:700;font-size:9px;font-family:'JetBrains Mono',monospace;flex-shrink:0;margin-top:2px}
+.auth-item .op{color:var(--teal);font-weight:700;font-size:9px;font-family:'JetBrains Mono',monospace;flex-shrink:0;margin-top:2px}
+.auth-item.dimmed{opacity:.4}
+.auth-max-badge{
+  position:absolute;top:16px;right:16px;
+  font-size:8px;font-family:'JetBrains Mono',monospace;
+  background:rgba(255,85,85,0.1);color:var(--red);
+  border:1px solid rgba(255,85,85,0.3);
+  padding:3px 8px;border-radius:4px;letter-spacing:1px;
+}
+.auth-legend{
+  display:flex;gap:24px;margin-top:24px;flex-wrap:wrap;
+}
+.auth-legend-item{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;
+}
+.auth-legend-dot{
+  width:8px;height:8px;border-radius:2px;flex-shrink:0;
+}
+
 /* ── TICKER ── */
 .ticker-wrap{
   position:fixed;top:64px;left:0;right:0;z-index:998;
@@ -1285,6 +1349,139 @@ footer{
       </div>
     </div>
   </div>
+</div>
+</div>
+
+<div class="glow-div"></div>
+
+<!-- ══ AUTH LEVELS ══ -->
+<div id="auth-levels">
+<div class="auth-inner">
+  <div class="sec-label">AI Authorization Model</div>
+  <h2>You set the rules. <span class="hl">AI follows them.</span></h2>
+  <p class="sec-sub" style="margin-bottom:0">Four authorization levels — from read-only observer to full autonomous command. Operators always retain override. The AI never exceeds the level you assign.</p>
+
+  <div class="auth-grid fade-up">
+
+    <!-- LEVEL 1 -->
+    <div class="auth-card">
+      <div class="auth-level-bar" style="background:linear-gradient(90deg,#50fa7b,#50fa7b)"></div>
+      <div class="auth-level-num" style="color:#50fa7b">LEVEL 1</div>
+      <h3>Monitor</h3>
+      <div class="auth-sub">Read-only · No actions</div>
+      <div class="auth-who">
+        <span class="auth-who-tag" style="background:rgba(0,212,255,0.08);color:var(--blue);border:1px solid rgba(0,212,255,0.2)">🤖 AI</span>
+        <span class="auth-who-tag" style="background:rgba(100,255,218,0.08);color:var(--teal);border:1px solid rgba(100,255,218,0.2)">👤 OPERATOR</span>
+      </div>
+      <div class="auth-divider">AI can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="ai">AI</span>Watch all 900 cameras simultaneously</div>
+        <div class="auth-item"><span class="ai">AI</span>Detect anomalies &amp; threats</div>
+        <div class="auth-item"><span class="ai">AI</span>Correlate events across systems</div>
+        <div class="auth-item"><span class="ai">AI</span>Generate alerts &amp; reports</div>
+        <div class="auth-item"><span class="ai">AI</span>Answer operator queries</div>
+      </div>
+      <div class="auth-divider">Operator can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="op">OP</span>All AI actions above</div>
+        <div class="auth-item"><span class="op">OP</span>Manually trigger any action</div>
+        <div class="auth-item"><span class="op">OP</span>Override AI suggestions</div>
+      </div>
+    </div>
+
+    <!-- LEVEL 2 -->
+    <div class="auth-card">
+      <div class="auth-level-bar" style="background:linear-gradient(90deg,#50fa7b,var(--yellow))"></div>
+      <div class="auth-level-num" style="color:var(--yellow)">LEVEL 2</div>
+      <h3>Assist</h3>
+      <div class="auth-sub">Recommended default</div>
+      <div class="auth-who">
+        <span class="auth-who-tag" style="background:rgba(0,212,255,0.08);color:var(--blue);border:1px solid rgba(0,212,255,0.2)">🤖 AI</span>
+        <span class="auth-who-tag" style="background:rgba(100,255,218,0.08);color:var(--teal);border:1px solid rgba(100,255,218,0.2)">👤 OPERATOR</span>
+      </div>
+      <div class="auth-divider">AI can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="ai">AI</span>Everything in Level 1</div>
+        <div class="auth-item"><span class="ai">AI</span>Alert nearest guards automatically</div>
+        <div class="auth-item"><span class="ai">AI</span>Activate camera wall on SCR screen</div>
+        <div class="auth-item"><span class="ai">AI</span>Pre-draft SIRA incident report</div>
+        <div class="auth-item"><span class="ai">AI</span>Recommend actions with one-click confirm</div>
+      </div>
+      <div class="auth-divider">Operator can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="op">OP</span>All AI actions above</div>
+        <div class="auth-item"><span class="op">OP</span>Lock/unlock doors &amp; barriers</div>
+        <div class="auth-item"><span class="op">OP</span>Dispatch drones manually</div>
+        <div class="auth-item"><span class="op">OP</span>Notify authorities</div>
+      </div>
+    </div>
+
+    <!-- LEVEL 3 -->
+    <div class="auth-card">
+      <div class="auth-level-bar" style="background:linear-gradient(90deg,var(--yellow),var(--orange))"></div>
+      <div class="auth-level-num" style="color:var(--orange)">LEVEL 3</div>
+      <h3>Semi-Auto</h3>
+      <div class="auth-sub">High-trust environments</div>
+      <div class="auth-who">
+        <span class="auth-who-tag" style="background:rgba(0,212,255,0.08);color:var(--blue);border:1px solid rgba(0,212,255,0.2)">🤖 AI</span>
+        <span class="auth-who-tag" style="background:rgba(100,255,218,0.08);color:var(--teal);border:1px solid rgba(100,255,218,0.2)">👤 OPERATOR</span>
+      </div>
+      <div class="auth-divider">AI can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="ai">AI</span>Everything in Level 2</div>
+        <div class="auth-item"><span class="ai">AI</span>Lock zone doors on confirmed threat</div>
+        <div class="auth-item"><span class="ai">AI</span>Raise HVM barriers (blacklist match)</div>
+        <div class="auth-item"><span class="ai">AI</span>Dispatch nearest drone autonomously</div>
+        <div class="auth-item"><span class="ai">AI</span>Trigger PA zone announcements</div>
+        <div class="auth-item"><span class="ai">AI</span>Finalize &amp; submit SIRA report</div>
+      </div>
+      <div class="auth-divider">Operator can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="op">OP</span>All AI actions above</div>
+        <div class="auth-item"><span class="op">OP</span>Notify Dubai Police</div>
+        <div class="auth-item"><span class="op">OP</span>Initiate full evacuation</div>
+      </div>
+    </div>
+
+    <!-- LEVEL 4 -->
+    <div class="auth-card" style="background:rgba(255,85,85,0.03)">
+      <div class="auth-max-badge">MAX AUTH</div>
+      <div class="auth-level-bar" style="background:linear-gradient(90deg,var(--orange),var(--red));box-shadow:0 0 12px rgba(255,85,85,0.4)"></div>
+      <div class="auth-level-num" style="color:var(--red)">LEVEL 4</div>
+      <h3 style="color:var(--white)">Full Command</h3>
+      <div class="auth-sub" style="color:rgba(255,85,85,0.7)">Maximum authority</div>
+      <div class="auth-who">
+        <span class="auth-who-tag" style="background:rgba(0,212,255,0.08);color:var(--blue);border:1px solid rgba(0,212,255,0.2)">🤖 AI</span>
+        <span class="auth-who-tag" style="background:rgba(100,255,218,0.08);color:var(--teal);border:1px solid rgba(100,255,218,0.2)">👤 OPERATOR</span>
+      </div>
+      <div class="auth-divider" style="color:var(--red)">AI can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="ai">AI</span>Everything in Level 3</div>
+        <div class="auth-item"><span class="ai">AI</span>Execute full evacuation protocol</div>
+        <div class="auth-item"><span class="ai">AI</span>Notify Dubai Police + evidence package</div>
+        <div class="auth-item"><span class="ai">AI</span>Notify Civil Defence autonomously</div>
+        <div class="auth-item"><span class="ai">AI</span>Override all access controls</div>
+        <div class="auth-item"><span class="ai">AI</span>Deploy full drone fleet</div>
+        <div class="auth-item"><span class="ai">AI</span>Full BMS lockdown (HVAC, lighting)</div>
+        <div class="auth-item"><span class="ai">AI</span>Mass PA broadcast mall-wide</div>
+      </div>
+      <div class="auth-divider">Operator can</div>
+      <div class="auth-items">
+        <div class="auth-item"><span class="op">OP</span>All AI actions above</div>
+        <div class="auth-item"><span class="op">OP</span>Override or halt any AI action</div>
+        <div class="auth-item"><span class="op">OP</span>Full manual control at any time</div>
+      </div>
+    </div>
+
+  </div><!-- /auth-grid -->
+
+  <div class="auth-legend">
+    <div class="auth-legend-item"><div class="auth-legend-dot" style="background:var(--blue)"></div>AI — executes autonomously within level</div>
+    <div class="auth-legend-item"><div class="auth-legend-dot" style="background:var(--teal)"></div>Operator — always retains full manual control</div>
+    <div class="auth-legend-item"><div class="auth-legend-dot" style="background:var(--muted)"></div>Level is set per-shift by Security Manager</div>
+    <div class="auth-legend-item"><div class="auth-legend-dot" style="background:var(--red)"></div>All actions logged · Full audit trail · SIRA compliant</div>
+  </div>
+
 </div>
 </div>
 
