@@ -781,6 +781,80 @@ footer{
 .bc-num .hl{color:var(--blue)}
 .bc-lbl{font-size:12px;color:var(--muted2);margin-top:8px}
 
+/* ── AI STATEMENT ── */
+#ai-statement{
+  padding:0;
+  background:linear-gradient(180deg,var(--bg) 0%,rgba(0,212,255,0.05) 50%,var(--bg) 100%);
+  position:relative;overflow:hidden;
+}
+.ai-stmt-inner{
+  max-width:1280px;margin:0 auto;padding:100px 48px;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:80px;align-items:center;
+}
+.ai-stmt-left{}
+.ai-stmt-eyebrow{
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  color:var(--blue);letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:24px;display:flex;align-items:center;gap:10px;
+}
+.ai-stmt-eyebrow::before{content:'';width:24px;height:1px;background:var(--blue)}
+.ai-stmt-title{
+  font-size:clamp(32px,4.5vw,62px);font-weight:900;
+  color:var(--white);line-height:1.05;letter-spacing:-1px;
+  margin-bottom:32px;
+}
+.ai-stmt-title .hl{color:var(--blue)}
+.ai-stmt-title .hl2{color:var(--teal)}
+.ai-stmt-desc{
+  font-size:17px;color:var(--muted2);line-height:1.8;
+  margin-bottom:40px;max-width:520px;
+}
+.ai-stmt-desc strong{color:var(--white);font-weight:600}
+.ai-actions{display:flex;flex-direction:column;gap:12px}
+.ai-action-row{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 18px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;transition:all .25s;
+}
+.ai-action-row:hover{border-color:rgba(0,212,255,0.35);transform:translateX(6px)}
+.ai-action-icon{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.ai-action-text{}
+.ai-action-title{font-size:13px;font-weight:700;color:var(--white);line-height:1.2}
+.ai-action-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.ai-action-badge{
+  margin-left:auto;flex-shrink:0;
+  font-size:8px;font-family:'JetBrains Mono',monospace;
+  padding:3px 8px;border-radius:3px;letter-spacing:1px;
+}
+.ai-action-badge.auto{background:rgba(0,212,255,0.1);color:var(--blue);border:1px solid rgba(0,212,255,0.2)}
+.ai-action-badge.confirm{background:rgba(241,250,140,0.1);color:var(--yellow);border:1px solid rgba(241,250,140,0.2)}
+
+.ai-stmt-right{}
+.ai-big-display{
+  background:#020810;
+  border:1px solid rgba(0,212,255,0.25);
+  border-radius:16px;overflow:hidden;
+  box-shadow:0 0 80px rgba(0,212,255,0.08),0 30px 60px rgba(0,0,0,0.5);
+}
+.abt-header2{
+  background:rgba(0,212,255,0.04);
+  border-bottom:1px solid var(--border);
+  padding:14px 20px;display:flex;align-items:center;gap:8px;
+}
+.abt2-title{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-left:8px;flex:1}
+.abt2-live{
+  margin-left:auto;font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--teal);display:flex;align-items:center;gap:5px;letter-spacing:1px;
+}
+.abt2-live::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);animation:livepulse 1.5s ease infinite}
+.ai-big-body{padding:24px;min-height:400px}
+
 /* ── TICKER ── */
 .ticker-wrap{
   position:fixed;top:64px;left:0;right:0;z-index:998;
@@ -1136,6 +1210,86 @@ footer{
 
 <div class="glow-div"></div>
 
+<!-- ══ AI STATEMENT ══ -->
+<div id="ai-statement">
+<div class="ai-stmt-inner">
+  <div class="ai-stmt-left fade-up">
+    <div class="ai-stmt-eyebrow">The Core Differentiator</div>
+    <div class="ai-stmt-title">One AI.<br><span class="hl">Every System.</span><br><span class="hl2">Total Control.</span></div>
+    <p class="ai-stmt-desc">
+      Most security platforms show you data. BBA Platform <strong>acts on it</strong>. A single AI layer with read and write access to every subsystem — cameras, doors, barriers, drones, PA, BMS — making decisions in milliseconds, executing across all of them simultaneously.
+    </p>
+    <div class="ai-actions">
+      <div class="ai-action-row">
+        <div class="ai-action-icon" style="background:rgba(255,85,85,0.08)">🚨</div>
+        <div class="ai-action-text">
+          <div class="ai-action-title">Detects threat → locks zone → alerts guards</div>
+          <div class="ai-action-sub">ACS + CCTV + guard dispatch in a single correlated action</div>
+        </div>
+        <span class="ai-action-badge auto">AUTONOMOUS</span>
+      </div>
+      <div class="ai-action-row">
+        <div class="ai-action-icon" style="background:rgba(100,255,218,0.08)">🚁</div>
+        <div class="ai-action-text">
+          <div class="ai-action-title">Incident confirmed → drone dispatched automatically</div>
+          <div class="ai-action-sub">Nearest available unit, mission-typed, airborne in 45 seconds</div>
+        </div>
+        <span class="ai-action-badge auto">AUTONOMOUS</span>
+      </div>
+      <div class="ai-action-row">
+        <div class="ai-action-icon" style="background:rgba(189,147,249,0.08)">📋</div>
+        <div class="ai-action-text">
+          <div class="ai-action-title">Incident closed → SIRA report written automatically</div>
+          <div class="ai-action-sub">Timeline, clips, chain-of-custody — formatted, signed, archived</div>
+        </div>
+        <span class="ai-action-badge auto">AUTONOMOUS</span>
+      </div>
+      <div class="ai-action-row">
+        <div class="ai-action-icon" style="background:rgba(0,212,255,0.08)">🚔</div>
+        <div class="ai-action-text">
+          <div class="ai-action-title">Critical alert → Dubai Police notified with evidence package</div>
+          <div class="ai-action-sub">Incident report + video clips + location — sent instantly via secure channel</div>
+        </div>
+        <span class="ai-action-badge confirm">OPERATOR CONFIRM</span>
+      </div>
+      <div class="ai-action-row">
+        <div class="ai-action-icon" style="background:rgba(241,250,140,0.08)">📢</div>
+        <div class="ai-action-text">
+          <div class="ai-action-title">Fire confirmed → PA broadcast + dynamic signage updated</div>
+          <div class="ai-action-sub">Crowd-aware evacuation messaging, real-time per zone</div>
+        </div>
+        <span class="ai-action-badge confirm">OPERATOR CONFIRM</span>
+      </div>
+      <div class="ai-action-row">
+        <div class="ai-action-icon" style="background:rgba(255,184,108,0.08)">📊</div>
+        <div class="ai-action-text">
+          <div class="ai-action-title">Every morning → security briefing delivered automatically</div>
+          <div class="ai-action-sub">Risk score, yesterday's incidents, today's forecast — zero manual work</div>
+        </div>
+        <span class="ai-action-badge auto">AUTONOMOUS</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-stmt-right fade-up">
+    <div class="ai-big-display">
+      <div class="abt-header2">
+        <div style="width:10px;height:10px;border-radius:50%;background:#ff5555"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#f1fa8c"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#50fa7b"></div>
+        <span class="abt2-title">BBA AI Operator — Live Query Interface</span>
+        <span class="abt2-live">LIVE</span>
+      </div>
+      <div class="ai-big-body" id="aiStmtTerminal">
+        <div id="aiStmtContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="glow-div"></div>
+
 <!-- ══ USE CASES ══ -->
 <div id="usecases">
 <div class="usecases-wrap">
@@ -1161,9 +1315,9 @@ footer{
             <div class="uc-step"><div class="uc-step-num">5</div><div>Civil Defence auto-notified with incident package + live camera feed</div></div>
           </div>
           <div class="uc-metrics">
-            <div class="uc-metric"><div class="uc-metric-val teal">3.8<span style="font-size:16px">min</span></div><div class="uc-metric-lbl">Full Evacuation</div></div>
+            <div class="uc-metric"><div class="uc-metric-val teal">&lt;2<span style="font-size:16px">min</span></div><div class="uc-metric-lbl">Protocol Fully Active</div></div>
             <div class="uc-metric"><div class="uc-metric-val blue">47</div><div class="uc-metric-lbl">Exit Corridors Optimized</div></div>
-            <div class="uc-metric"><div class="uc-metric-val">0</div><div class="uc-metric-lbl">Radio Calls Needed</div></div>
+            <div class="uc-metric"><div class="uc-metric-val">2×</div><div class="uc-metric-lbl">Faster Than Manual Response</div></div>
           </div>
         </div>
         <div class="featured-right">
@@ -2257,7 +2411,7 @@ footer{
     <div class="cta-title">The Most Advanced Security Platform<br>Dubai Has Ever Seen.</div>
     <p class="cta-sub">BBA Security Intelligence Platform — built for Dubai Square, scalable to every EMAAR property globally. Let's build it together.</p>
     <div class="cta-btns">
-      <a href="mailto:contact@bba.com.tr" class="btn-prime">Request Full Demo →</a>
+      <a href="mailto:serdarbatkan@bbateknoloji.com" class="btn-prime">Request Full Demo →</a>
       <a href="#usecases" class="btn-ghost">See Use Cases</a>
     </div>
     <div class="cta-info">
@@ -2265,6 +2419,14 @@ footer{
       <span class="cta-info-item">On-Premise — No Cloud Dependency</span>
       <span class="cta-info-item">39/39 EMAAR Requirements Covered</span>
       <span class="cta-info-item">6–10 Month Delivery</span>
+    </div>
+    <div style="margin-top:32px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
+      <a href="mailto:serdarbatkan@bbateknoloji.com" style="display:flex;align-items:center;gap:8px;color:var(--blue);text-decoration:none;font-size:13px;font-family:'JetBrains Mono',monospace;transition:opacity .2s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+        <span>✉</span> serdarbatkan@bbateknoloji.com
+      </a>
+      <a href="tel:+905344318734" style="display:flex;align-items:center;gap:8px;color:var(--teal);text-decoration:none;font-size:13px;font-family:'JetBrains Mono',monospace;transition:opacity .2s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+        <span>📞</span> +90 534 431 87 34
+      </a>
     </div>
   </div>
 </div>
@@ -2277,9 +2439,9 @@ footer{
       <span class="footer-sep">|</span>
       <span class="footer-project">Dubai Square · EMAAR · IFC Phase</span>
     </div>
-    <div class="footer-right">
-      <span style="color:var(--muted)">BBA × Aerosmart — </span>
-      <span>Confidential Proposal</span>
+    <div class="footer-right" style="display:flex;flex-direction:column;gap:4px;text-align:right">
+      <span><span style="color:var(--muted)">BBA × Aerosmart — </span>Confidential Proposal</span>
+      <span style="color:var(--blue)">serdarbatkan@bbateknoloji.com · +90 534 431 87 34</span>
     </div>
   </div>
 </footer>
@@ -2643,6 +2805,97 @@ setInterval(() => {
   aiIdx = (aiIdx + 1) % aiQueries.length;
   runAITerminal(aiQueries[aiIdx]);
 }, 8000);
+
+// ── AI STATEMENT TERMINAL ──
+const stmtQueries = [
+  {
+    q: 'Crowd density Zone C — take action',
+    lines: [
+      {cls:'to', text:'→ Analyzing 900 cameras in Zone C sector...'},
+      {cls:'tw', text:'→ CRITICAL: 4.6 p/m² detected · West Atrium'},
+      {cls:'tg', text:'→ [AUTO] Gate G7 opened · flow diverted'},
+      {cls:'tg', text:'→ [AUTO] 2 nearest guards alerted with heatmap'},
+      {cls:'tg', text:'→ [AUTO] Zone C camera wall activated on SCR'},
+    ]
+  },
+  {
+    q: 'Suspicious vehicle Gate 3 — assess and respond',
+    lines: [
+      {cls:'to', text:'→ ANPR cross-check: plate not in whitelist'},
+      {cls:'tw', text:'→ Speed 38km/h · trajectory: direct approach'},
+      {cls:'tw', text:'→ Blacklist match: STOLEN vehicle confirmed'},
+      {cls:'tg', text:'→ [AUTO] HVM barrier raised in 1.2 seconds'},
+      {cls:'tg', text:'→ [CONFIRM] Dubai Police package ready to send'},
+    ]
+  },
+  {
+    q: 'Generate this morning\'s security briefing',
+    lines: [
+      {cls:'to', text:'→ Aggregating overnight data — 11 hours...'},
+      {cls:'tr', text:'→ Incidents: 3 minor · 0 critical · 0 open'},
+      {cls:'tr', text:'→ Risk forecast today: 62/100 (Friday + event)'},
+      {cls:'tg', text:'→ [AUTO] PDF report generated'},
+      {cls:'tg', text:'→ [AUTO] Delivered to Security Manager inbox ✓'},
+    ]
+  },
+  {
+    q: 'Fire alarm B3-F2 confirmed — execute evacuation protocol',
+    lines: [
+      {cls:'tw', text:'→ Smoke + thermal cameras confirmed · Zone B3'},
+      {cls:'tg', text:'→ [AUTO] Emergency exits E2,E5,E8 unlocked'},
+      {cls:'tg', text:'→ [AUTO] Dynamic signage updated — avoid E4,E7'},
+      {cls:'tg', text:'→ [AUTO] Drone DSQ-03 dispatched → B3'},
+      {cls:'tg', text:'→ [CONFIRM] Civil Defence notified · standby'},
+    ]
+  },
+];
+let stmtIdx = 0;
+const stmtContent = document.getElementById('aiStmtContent');
+
+function runStmtTerminal(query) {
+  if (!stmtContent) return;
+  stmtContent.innerHTML = '';
+  const promptLine = document.createElement('div');
+  promptLine.className = 'terminal-line';
+  promptLine.innerHTML = `<span class="tp">ai-operator</span><span class="to"> ❯ </span><span class="tc"></span><span class="cursor"></span>`;
+  stmtContent.appendChild(promptLine);
+  const cmdSpan = promptLine.querySelector('.tc');
+  const cur = promptLine.querySelector('.cursor');
+  let i = 0;
+  const t = setInterval(() => {
+    if (i < query.q.length) { cmdSpan.textContent += query.q[i++]; }
+    else {
+      clearInterval(t); cur.style.display = 'none';
+      const sep = document.createElement('div');
+      sep.className = 'terminal-line';
+      sep.innerHTML = '<span class="to">─────────────────────────────</span>';
+      stmtContent.appendChild(sep);
+      query.lines.forEach((line, idx) => {
+        setTimeout(() => {
+          const d = document.createElement('div');
+          d.className = 'terminal-line';
+          d.innerHTML = `<span class="${line.cls}">${line.text}</span>`;
+          stmtContent.appendChild(d);
+        }, 300 + idx * 420);
+      });
+    }
+  }, 22);
+}
+
+const stmtObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      runStmtTerminal(stmtQueries[stmtIdx]);
+      stmtObs.unobserve(e.target);
+    }
+  });
+}, {threshold: 0.4});
+const stmtSection = document.getElementById('ai-statement');
+if (stmtSection) stmtObs.observe(stmtSection);
+setInterval(() => {
+  stmtIdx = (stmtIdx + 1) % stmtQueries.length;
+  runStmtTerminal(stmtQueries[stmtIdx]);
+}, 9000);
 
 // ── 3D PARALLAX CARDS ──
 document.querySelectorAll('.mod-card,.uc-card,.track-card').forEach(card => {
