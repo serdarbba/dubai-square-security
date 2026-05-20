@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBA AI Operator — Dubai Square Live Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#030b16;--surface:#07111f;--card:#0b1929;--border:#162840;--border2:#1e3555;
+  --blue:#00d4ff;--teal:#64ffda;--purple:#bd93f9;--red:#ff5555;--yellow:#f1fa8c;
+  --orange:#ffb86c;--green:#50fa7b;--pink:#ff79c6;
+  --text:#ccd6f6;--muted:#5a7090;--muted2:#8aa0bc;--white:#e8f4ff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{height:100%}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);color:var(--text);
+  height:100%;display:flex;flex-direction:column;
+  overflow:hidden;
+}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px}
+
+/* ── TOP BAR ── */
+.topbar{
+  height:52px;flex-shrink:0;
+  background:rgba(3,11,22,0.98);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:16px;
+}
+.tb-logo{
+  font-size:13px;font-weight:800;color:var(--white);
+  display:flex;align-items:center;gap:8px;
+}
+.tb-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--blue);
+  box-shadow:0 0 10px var(--blue);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 6px var(--blue)}50%{box-shadow:0 0 18px var(--blue),0 0 30px rgba(0,212,255,.3)}}
+.tb-name span{color:var(--blue)}
+.tb-sep{color:var(--border2);font-size:18px}
+.tb-project{font-size:11px;color:var(--muted2);font-family:'JetBrains Mono',monospace}
+.tb-spacer{flex:1}
+.tb-stats{display:flex;gap:20px}
+.tb-stat{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted2);
+}
+.tb-stat-dot{width:5px;height:5px;border-radius:50%}
+.tb-stat-val{color:var(--white);font-weight:600}
+.tb-live{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--red);
+  background:rgba(255,85,85,0.08);border:1px solid rgba(255,85,85,0.2);
+  padding:4px 10px;border-radius:4px;letter-spacing:1px;
+}
+.tb-live-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--red);
+  animation:pulse 1s ease-in-out infinite;
+}
+
+/* ── MAIN LAYOUT ── */
+.main{flex:1;display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden}
+
+/* ── LEFT PANEL ── */
+.left-panel{
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--surface);
+}
+.panel-header{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--blue);letter-spacing:2px;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.panel-header::before{content:'';width:12px;height:1px;background:var(--blue)}
+
+/* System status */
+.sys-list{padding:12px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.sys-item{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;
+  display:flex;align-items:center;gap:10px;
+  transition:border-color .2s;cursor:pointer;
+}
+.sys-item:hover{border-color:rgba(0,212,255,.3)}
+.sys-icon{font-size:16px;flex-shrink:0}
+.sys-info{flex:1;min-width:0}
+.sys-name{font-size:11px;font-weight:700;color:var(--white)}
+.sys-detail{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-top:2px}
+.sys-badge{
+  font-size:8px;font-family:'JetBrains Mono',monospace;
+  padding:2px 6px;border-radius:3px;flex-shrink:0;
+}
+.badge-ok{background:rgba(80,250,123,.1);color:var(--green);border:1px solid rgba(80,250,123,.2)}
+.badge-warn{background:rgba(241,250,140,.1);color:var(--yellow);border:1px solid rgba(241,250,140,.2)}
+.badge-alert{background:rgba(255,85,85,.1);color:var(--red);border:1px solid rgba(255,85,85,.2)}
+
+/* Quick queries */
+.query-section{border-top:1px solid var(--border);padding:12px;flex-shrink:0}
+.query-label{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);letter-spacing:1.5px;margin-bottom:10px;
+}
+.query-btns{display:flex;flex-direction:column;gap:6px}
+.qbtn{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:6px;padding:9px 12px;
+  font-size:11px;color:var(--muted2);
+  cursor:pointer;text-align:left;transition:all .2s;
+  display:flex;align-items:center;gap:8px;
+}
+.qbtn:hover{border-color:rgba(0,212,255,.4);color:var(--white);background:rgba(0,212,255,.04)}
+.qbtn:active{transform:scale(0.98)}
+.qbtn-icon{font-size:14px;flex-shrink:0}
+.qbtn.active{border-color:var(--blue);color:var(--blue);background:rgba(0,212,255,.06)}
+
+/* Auth level selector */
+.auth-section{border-top:1px solid var(--border);padding:12px;flex-shrink:0}
+.auth-label{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);letter-spacing:1.5px;margin-bottom:8px;
+}
+.auth-levels{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.alev{
+  padding:6px 4px;border-radius:4px;text-align:center;
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  cursor:pointer;border:1px solid var(--border);
+  color:var(--muted);transition:all .2s;
+}
+.alev:hover{border-color:rgba(0,212,255,.3);color:var(--muted2)}
+.alev.active-l1{background:rgba(80,250,123,.1);border-color:rgba(80,250,123,.4);color:var(--green)}
+.alev.active-l2{background:rgba(241,250,140,.1);border-color:rgba(241,250,140,.4);color:var(--yellow)}
+.alev.active-l3{background:rgba(255,184,108,.1);border-color:rgba(255,184,108,.4);color:var(--orange)}
+.alev.active-l4{background:rgba(255,85,85,.1);border-color:rgba(255,85,85,.4);color:var(--red)}
+.alev-num{font-size:13px;font-weight:700;display:block;line-height:1}
+.alev-name{font-size:7px;letter-spacing:.5px;display:block;margin-top:2px}
+
+/* ── CENTER: TERMINAL ── */
+.center-panel{display:flex;flex-direction:column;overflow:hidden}
+.terminal-wrap{
+  flex:1;overflow-y:auto;padding:20px 24px;
+  display:flex;flex-direction:column;gap:0;
+}
+.msg{margin-bottom:20px;animation:msgin .3s ease}
+@keyframes msgin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* User message */
+.msg-user{display:flex;align-items:flex-start;gap:12px}
+.msg-user-avatar{
+  width:28px;height:28px;border-radius:6px;
+  background:rgba(100,255,218,.1);border:1px solid rgba(100,255,218,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex-shrink:0;
+}
+.msg-user-content{}
+.msg-user-label{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--teal);margin-bottom:5px;letter-spacing:1px;
+}
+.msg-user-text{
+  font-size:13px;color:var(--white);
+  background:rgba(100,255,218,.04);border:1px solid rgba(100,255,218,.1);
+  border-radius:8px;padding:10px 14px;
+  display:inline-block;max-width:600px;line-height:1.5;
+}
+
+/* AI message */
+.msg-ai{display:flex;align-items:flex-start;gap:12px}
+.msg-ai-avatar{
+  width:28px;height:28px;border-radius:6px;
+  background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex-shrink:0;
+  box-shadow:0 0 12px rgba(0,212,255,.1);
+}
+.msg-ai-content{flex:1;min-width:0}
+.msg-ai-label{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--blue);margin-bottom:5px;letter-spacing:1px;
+  display:flex;align-items:center;gap:8px;
+}
+.msg-ai-time{color:var(--muted);font-size:8px}
+.msg-ai-text{
+  font-size:12.5px;color:var(--text);line-height:1.8;
+  font-family:'JetBrains Mono',monospace;
+}
+.msg-ai-text .hi{color:var(--blue);font-weight:600}
+.msg-ai-text .ok{color:var(--green)}
+.msg-ai-text .warn{color:var(--yellow)}
+.msg-ai-text .crit{color:var(--red)}
+.msg-ai-text .teal{color:var(--teal)}
+.msg-ai-text .pur{color:var(--purple)}
+.msg-ai-text .action{
+  display:flex;align-items:center;gap:6px;margin-top:6px;
+  background:rgba(80,250,123,.04);border:1px solid rgba(80,250,123,.12);
+  border-radius:5px;padding:5px 10px;font-size:11px;color:var(--green);
+}
+.msg-ai-text .action::before{content:'→';font-weight:700}
+.msg-ai-text .section-title{
+  color:var(--blue);font-weight:600;margin-top:10px;margin-bottom:4px;
+  font-size:10px;letter-spacing:1px;text-transform:uppercase;
+}
+.msg-ai-text hr{border:none;border-top:1px solid var(--border);margin:10px 0}
+
+/* Thinking indicator */
+.thinking{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);padding:8px 0;
+}
+.think-dots{display:flex;gap:4px}
+.think-dot{
+  width:5px;height:5px;border-radius:50%;background:var(--blue);
+  animation:thdot 1.2s ease-in-out infinite;
+}
+.think-dot:nth-child(2){animation-delay:.2s}
+.think-dot:nth-child(3){animation-delay:.4s}
+@keyframes thdot{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+
+/* Input area */
+.input-area{
+  border-top:1px solid var(--border);padding:16px 24px;
+  background:rgba(3,11,22,.98);flex-shrink:0;
+}
+.input-row{
+  display:flex;gap:10px;align-items:flex-end;
+}
+.input-box{
+  flex:1;background:var(--card);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 16px;
+  display:flex;align-items:center;gap:10px;
+  transition:border-color .2s;
+}
+.input-box:focus-within{border-color:rgba(0,212,255,.5)}
+.input-prefix{
+  font-size:12px;font-family:'JetBrains Mono',monospace;
+  color:var(--blue);flex-shrink:0;
+}
+.input-field{
+  flex:1;background:none;border:none;outline:none;
+  font-size:13px;font-family:'JetBrains Mono',monospace;
+  color:var(--white);resize:none;height:20px;max-height:80px;
+  overflow-y:auto;line-height:1.5;
+}
+.input-field::placeholder{color:var(--muted)}
+.send-btn{
+  width:42px;height:42px;border-radius:10px;
+  background:var(--blue);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+  transition:all .2s;
+}
+.send-btn:hover{background:#33dcff;transform:translateY(-1px)}
+.send-btn:active{transform:translateY(0)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.input-hint{
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);margin-top:8px;
+  display:flex;align-items:center;gap:16px;
+}
+.input-hint span{display:flex;align-items:center;gap:4px}
+
+/* ── RIGHT PANEL ── */
+.right-panel{
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--surface);
+}
+.incident-list{
+  padding:12px;display:flex;flex-direction:column;gap:6px;
+  overflow-y:auto;flex:1;
+}
+.inc{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;transition:border-color .2s;
+}
+.inc:hover{border-color:rgba(0,212,255,.25)}
+.inc.new{animation:incnew 2s ease}
+@keyframes incnew{0%{background:rgba(255,85,85,.08);border-color:rgba(255,85,85,.4)}100%{background:var(--card);border-color:var(--border)}}
+.inc-head{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.inc-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.inc-title{font-size:10px;font-weight:700;color:var(--white)}
+.inc-meta{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.inc-status{font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:3px}
+
+/* Threat gauge */
+.threat-gauge{padding:16px;border-top:1px solid var(--border);flex-shrink:0}
+.gauge-label{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);letter-spacing:1.5px;margin-bottom:10px;
+}
+.gauge-bar{
+  height:6px;background:rgba(255,255,255,.06);
+  border-radius:3px;overflow:hidden;margin-bottom:6px;
+}
+.gauge-fill{
+  height:100%;border-radius:3px;width:62%;
+  background:linear-gradient(90deg,var(--green),var(--yellow),var(--orange));
+  box-shadow:0 0 8px rgba(255,184,108,.4);
+}
+.gauge-labels{
+  display:flex;justify-content:space-between;
+  font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--muted);
+}
+.threat-level{
+  text-align:center;margin-top:10px;
+  font-size:13px;font-weight:900;font-family:'JetBrains Mono',monospace;
+  color:var(--yellow);letter-spacing:2px;
+}
+
+/* ── API KEY MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;backdrop-filter:blur(8px);
+}
+.modal{
+  background:var(--card);border:1px solid rgba(0,212,255,.25);
+  border-radius:16px;padding:40px;max-width:480px;width:90%;
+  box-shadow:0 0 80px rgba(0,212,255,.1);
+}
+.modal-logo{
+  font-size:14px;font-weight:800;color:var(--white);
+  display:flex;align-items:center;gap:8px;margin-bottom:24px;
+}
+.modal-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue)}
+.modal h2{font-size:22px;font-weight:900;color:var(--white);margin-bottom:8px}
+.modal p{font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:24px}
+.modal-input{
+  width:100%;background:#020810;border:1px solid var(--border2);
+  border-radius:8px;padding:12px 16px;
+  font-size:13px;font-family:'JetBrains Mono',monospace;
+  color:var(--white);outline:none;margin-bottom:16px;
+  transition:border-color .2s;
+}
+.modal-input:focus{border-color:rgba(0,212,255,.5)}
+.modal-input::placeholder{color:var(--muted)}
+.modal-btn{
+  width:100%;padding:14px;background:var(--blue);
+  color:#030b16;font-weight:800;font-size:14px;
+  border:none;border-radius:8px;cursor:pointer;
+  transition:all .2s;
+}
+.modal-btn:hover{background:#33dcff}
+.modal-note{
+  font-size:10px;color:var(--muted);margin-top:12px;text-align:center;
+  font-family:'JetBrains Mono',monospace;line-height:1.6;
+}
+
+/* Welcome message */
+.welcome{
+  padding:32px 0;display:flex;flex-direction:column;align-items:center;
+  gap:16px;text-align:center;
+}
+.welcome-icon{font-size:48px}
+.welcome h3{font-size:20px;font-weight:800;color:var(--white)}
+.welcome p{font-size:13px;color:var(--muted2);max-width:480px;line-height:1.7}
+.welcome-hint{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--blue);background:rgba(0,212,255,.06);
+  border:1px solid rgba(0,212,255,.15);
+  border-radius:6px;padding:8px 16px;
+}
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-logo"><div class="modal-logo-dot"></div><span><span style="color:var(--blue)">BBA</span> Security Intelligence</span></div>
+    <h2>AI Operator Demo</h2>
+    <p>Dubai Square · EMAAR · Live AI Demo<br>Enter your Anthropic API key to activate the AI Operator. Your key is stored locally and never sent to any server.</p>
+    <input type="password" class="modal-input" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off"/>
+    <button class="modal-btn" onclick="initDemo()">Activate AI Operator →</button>
+    <div class="modal-note">Key stored in browser localStorage only · Never transmitted · Delete anytime</div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-logo">
+    <div class="tb-dot"></div>
+    <span class="tb-name"><span>BBA</span> Security Intelligence</span>
+  </div>
+  <span class="tb-sep">|</span>
+  <span class="tb-project">DUBAI SQUARE · EMAAR · AI OPERATOR CONSOLE</span>
+  <div class="tb-spacer"></div>
+  <div class="tb-stats">
+    <div class="tb-stat">
+      <div class="tb-stat-dot" style="background:var(--green)"></div>
+      <span>Cameras</span><span class="tb-stat-val" id="statCams">898/900</span>
+    </div>
+    <div class="tb-stat">
+      <div class="tb-stat-dot" style="background:var(--green)"></div>
+      <span>ACS</span><span class="tb-stat-val">312/312</span>
+    </div>
+    <div class="tb-stat">
+      <div class="tb-stat-dot" style="background:var(--yellow);animation:pulse 1.5s ease infinite"></div>
+      <span>Incidents</span><span class="tb-stat-val" style="color:var(--yellow)" id="statInc">2</span>
+    </div>
+    <div class="tb-stat">
+      <div class="tb-stat-dot" style="background:var(--green)"></div>
+      <span>Drones</span><span class="tb-stat-val" style="color:var(--teal)">3 ACTIVE</span>
+    </div>
+  </div>
+  <div class="tb-live"><div class="tb-live-dot"></div>LIVE</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="panel-header">System Status</div>
+    <div class="sys-list">
+      <div class="sys-item">
+        <span class="sys-icon">📹</span>
+        <div class="sys-info">
+          <div class="sys-name">CCTV / VMS</div>
+          <div class="sys-detail" id="cctv-detail">898 online · 2 offline</div>
+        </div>
+        <span class="sys-badge badge-ok">OK</span>
+      </div>
+      <div class="sys-item">
+        <span class="sys-icon">🧠</span>
+        <div class="sys-info">
+          <div class="sys-name">AI Analytics</div>
+          <div class="sys-detail">176 streams active</div>
+        </div>
+        <span class="sys-badge badge-ok">OK</span>
+      </div>
+      <div class="sys-item">
+        <span class="sys-icon">🚗</span>
+        <div class="sys-info">
+          <div class="sys-name">ANPR</div>
+          <div class="sys-detail">8 gates · 247 plates today</div>
+        </div>
+        <span class="sys-badge badge-ok">OK</span>
+      </div>
+      <div class="sys-item">
+        <span class="sys-icon">🚪</span>
+        <div class="sys-info">
+          <div class="sys-name">Access Control</div>
+          <div class="sys-detail">312 points · 1 alert</div>
+        </div>
+        <span class="sys-badge badge-warn">ALERT</span>
+      </div>
+      <div class="sys-item">
+        <span class="sys-icon">🚁</span>
+        <div class="sys-info">
+          <div class="sys-name">Drone Fleet</div>
+          <div class="sys-detail">DSQ-01 charging · DSQ-02 patrol · DSQ-03 standby</div>
+        </div>
+        <span class="sys-badge badge-ok">OK</span>
+      </div>
+      <div class="sys-item">
+        <span class="sys-icon">🏢</span>
+        <div class="sys-info">
+          <div class="sys-name">BMS</div>
+          <div class="sys-detail">HVAC normal · Lighting OK</div>
+        </div>
+        <span class="sys-badge badge-ok">OK</span>
+      </div>
+      <div class="sys-item">
+        <span class="sys-icon">🚧</span>
+        <div class="sys-info">
+          <div class="sys-name">HVM Barriers</div>
+          <div class="sys-detail">6/6 operational</div>
+        </div>
+        <span class="sys-badge badge-ok">OK</span>
+      </div>
+      <div class="sys-item">
+        <span class="sys-icon">👥</span>
+        <div class="sys-info">
+          <div class="sys-name">Crowd Density</div>
+          <div class="sys-detail" id="crowd-detail">Zone C: 4.2 p/m² ⚠</div>
+        </div>
+        <span class="sys-badge badge-alert">HIGH</span>
+      </div>
+    </div>
+
+    <div class="query-section">
+      <div class="query-label">Quick Queries</div>
+      <div class="query-btns">
+        <button class="qbtn" onclick="quickQuery(this,'What is the current threat level and crowd density status across all zones?')"><span class="qbtn-icon">📊</span>Threat & Crowd Status</button>
+        <button class="qbtn" onclick="quickQuery(this,'Zone C crowd density is critical. What actions should I take right now?')"><span class="qbtn-icon">🚨</span>Zone C — Take Action</button>
+        <button class="qbtn" onclick="quickQuery(this,'A fire alarm has been triggered in sector B3, Floor 2. Execute evacuation protocol and advise.')"><span class="qbtn-icon">🔥</span>Fire — Evacuation Protocol</button>
+        <button class="qbtn" onclick="quickQuery(this,'Unknown vehicle approaching Gate 1 at high speed. ANPR shows no match. What do I do?')"><span class="qbtn-icon">🚗</span>Suspicious Vehicle — Gate 1</button>
+        <button class="qbtn" onclick="quickQuery(this,'Generate today\\'s security summary report.')"><span class="qbtn-icon">📋</span>Daily Security Report</button>
+        <button class="qbtn" onclick="quickQuery(this,'Dispatch a drone to the North Perimeter for a visual sweep. What is the current drone availability?')"><span class="qbtn-icon">🚁</span>Dispatch Drone</button>
+      </div>
+    </div>
+
+    <div class="auth-section">
+      <div class="auth-label">AI Auth Level</div>
+      <div class="auth-levels">
+        <div class="alev" id="l1" onclick="setLevel(1)"><span class="alev-num">1</span><span class="alev-name">MONITOR</span></div>
+        <div class="alev active-l2" id="l2" onclick="setLevel(2)"><span class="alev-num">2</span><span class="alev-name">ASSIST</span></div>
+        <div class="alev" id="l3" onclick="setLevel(3)"><span class="alev-num">3</span><span class="alev-name">SEMI-AUTO</span></div>
+        <div class="alev" id="l4" onclick="setLevel(4)"><span class="alev-num">4</span><span class="alev-name">FULL CMD</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: TERMINAL -->
+  <div class="center-panel">
+    <div class="panel-header">AI Operator — Live Query Interface</div>
+    <div class="terminal-wrap" id="terminal">
+      <div class="welcome">
+        <div class="welcome-icon">🛡️</div>
+        <h3>BBA AI Operator Online</h3>
+        <p>Dubai Square Security Intelligence Platform · EMAAR · Dubai Creek Harbour<br>900 cameras · 312 ACS points · 3 drones · AI Authorization Level 2</p>
+        <div class="welcome-hint">Use quick queries on the left or type your own command below</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <div class="input-row">
+        <div class="input-box">
+          <span class="input-prefix">ai-operator ❯</span>
+          <textarea class="input-field" id="inputField" placeholder="Ask anything about Dubai Square security..." rows="1"></textarea>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendQuery()" title="Send (Enter)">↑</button>
+      </div>
+      <div class="input-hint">
+        <span>↵ Send</span>
+        <span>⇧↵ New line</span>
+        <span id="levelHint" style="color:var(--yellow)">Level 2 — Assist mode</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="panel-header">Active Incidents</div>
+    <div class="incident-list" id="incidentList">
+      <div class="inc new">
+        <div class="inc-head"><div class="inc-dot" style="background:var(--red)"></div><span class="inc-title">⚠ Crowd Surge — Zone C</span></div>
+        <div class="inc-meta" id="inc1-time">14:32 · CAM-089 · West Atrium</div>
+        <div class="inc-status" style="color:var(--yellow)">Density 4.2 p/m² · Active</div>
+      </div>
+      <div class="inc">
+        <div class="inc-head"><div class="inc-dot" style="background:var(--yellow)"></div><span class="inc-title">◆ ACS Alert — Bay 4</span></div>
+        <div class="inc-meta">14:14 · Badge #2847 denied</div>
+        <div class="inc-status" style="color:var(--muted2)">Investigating</div>
+      </div>
+      <div class="inc">
+        <div class="inc-head"><div class="inc-dot" style="background:var(--teal)"></div><span class="inc-title">VIP Protocol — Gate 3</span></div>
+        <div class="inc-meta">13:58 · Route cleared</div>
+        <div class="inc-status" style="color:var(--green)">✓ Completed</div>
+      </div>
+      <div class="inc">
+        <div class="inc-head"><div class="inc-dot" style="background:var(--muted)"></div><span class="inc-title">Loitering — Store #247</span></div>
+        <div class="inc-meta">14:02 · West Wing</div>
+        <div class="inc-status" style="color:var(--green)">✓ Guard dispatched</div>
+      </div>
+    </div>
+
+    <div class="threat-gauge">
+      <div class="gauge-label">Threat Level</div>
+      <div class="gauge-bar"><div class="gauge-fill" id="gaugeFill"></div></div>
+      <div class="gauge-labels"><span>LOW</span><span>MED</span><span>HIGH</span><span>CRIT</span></div>
+      <div class="threat-level" id="threatLevel">ELEVATED</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are the AI Operator Core of the BBA Security Intelligence Platform, deployed at Dubai Square Mall — EMAAR, Dubai Creek Harbour, UAE. This is the world's 2nd largest mall: 303,000 m² gross floor area.
+
+LIVE SYSTEM STATUS:
+- Cameras: 900 total (898 online, 2 offline: CAM-412, CAM-718)
+- AI Streams: 176 concurrent (Tier 1: 148 continuous, Tier 2: motion-triggered)
+- ACS: 312 access control points — all operational. 1 alert: Bay 4 unauthorized access attempt
+- ANPR: 8 vehicle gates — operational. 247 vehicles processed today
+- Drone Fleet: DSQ-01 (charging, Bay A), DSQ-02 (on patrol, North Perimeter, altitude 180m), DSQ-03 (standby, ready)
+- BMS: HVAC normal, lighting normal, 6 HVM barriers all operational
+- PA System: 47 zones — operational
+
+CURRENT INCIDENTS:
+1. ACTIVE — Crowd surge Zone C (West Atrium): density 4.2 p/m² (threshold: 4.0). CAM-089 confirmed. Guards alerted.
+2. INVESTIGATING — ACS denied access Bay 4: badge #2847 at 14:14. Camera footage requested.
+3. COMPLETED — VIP Protocol Gate 3 at 13:58. Route cleared, escort confirmed.
+
+TODAY'S STATS:
+- Visitors: 94,847 (Friday — elevated day)
+- Incidents resolved: 12 | Active: 2
+- Threat Level: ELEVATED (62/100)
+- Uptime: 99.97%
+
+AI AUTHORIZATION LEVEL: {AUTH_LEVEL}
+
+Level 1 — Monitor: Report and alert only, no autonomous actions
+Level 2 — Assist: Alert guards, recommend actions, pre-draft reports
+Level 3 — Semi-Auto: Lock doors, raise HVM barriers, dispatch drones, PA announcements
+Level 4 — Full Command: Full evacuation protocol, Dubai Police notification, override all systems
+
+RESPONSE STYLE:
+- You are a professional security operations AI. Concise, precise, actionable.
+- Use specific numbers, camera IDs, zone references, timestamps.
+- Structure responses clearly with sections when needed.
+- For actions: clearly state what you are doing (autonomous) vs. what requires operator confirmation.
+- At Level 2, recommend actions with [RECOMMEND] tag. At Level 3+, state [AUTO-EXECUTING] for permitted actions.
+- Keep responses under 250 words unless a detailed report is requested.
+- Never use markdown headers with ##. Use plain text sections.
+- Use → for action items.`;
+
+let apiKey = '';
+let authLevel = 2;
+let isLoading = false;
+
+const levelNames = {1:'Monitor mode — read only',2:'Assist mode — recommendations',3:'Semi-auto — direct actions',4:'Full command — autonomous'};
+const levelColors = {1:'var(--green)',2:'var(--yellow)',3:'var(--orange)',4:'var(--red)'};
+
+function initDemo() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-')) {
+    document.getElementById('apiKeyInput').style.borderColor = 'var(--red)';
+    return;
+  }
+  apiKey = key;
+  localStorage.setItem('bba_demo_key', key);
+  document.getElementById('apiModal').style.display = 'none';
+}
+
+function setLevel(n) {
+  authLevel = n;
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('l'+i);
+    el.className = 'alev' + (i===n ? ' active-l'+i : '');
+  });
+  document.getElementById('levelHint').textContent = 'Level '+n+' — '+levelNames[n];
+  document.getElementById('levelHint').style.color = levelColors[n];
+  addSystemMsg(`AI Authorization Level changed to ${n}: ${levelNames[n].split('—')[1].trim()}`);
+}
+
+function addSystemMsg(txt) {
+  const t = document.getElementById('terminal');
+  const d = document.createElement('div');
+  d.style.cssText = 'font-size:10px;font-family:"JetBrains Mono",monospace;color:var(--muted);padding:4px 0;text-align:center;';
+  d.textContent = '─── ' + txt + ' ───';
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+}
+
+function addUserMsg(text) {
+  const t = document.getElementById('terminal');
+  const now = new Date().toTimeString().slice(0,8);
+  const d = document.createElement('div');
+  d.className = 'msg';
+  d.innerHTML = `<div class="msg-user">
+    <div class="msg-user-avatar">👤</div>
+    <div class="msg-user-content">
+      <div class="msg-user-label">OPERATOR · ${now}</div>
+      <div class="msg-user-text">${escHtml(text)}</div>
+    </div>
+  </div>`;
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+}
+
+function addThinking() {
+  const t = document.getElementById('terminal');
+  const d = document.createElement('div');
+  d.className = 'msg';
+  d.id = 'thinking-msg';
+  d.innerHTML = `<div class="msg-ai">
+    <div class="msg-ai-avatar">🤖</div>
+    <div class="msg-ai-content">
+      <div class="msg-ai-label">BBA AI OPERATOR <span class="msg-ai-time">processing...</span></div>
+      <div class="thinking"><div class="think-dots"><div class="think-dot"></div><div class="think-dot"></div><div class="think-dot"></div></div>Analyzing systems...</div>
+    </div>
+  </div>`;
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+  return d;
+}
+
+function addAiMsg(text) {
+  const now = new Date().toTimeString().slice(0,8);
+  const t = document.getElementById('terminal');
+  const d = document.createElement('div');
+  d.className = 'msg';
+  d.innerHTML = `<div class="msg-ai">
+    <div class="msg-ai-avatar">🤖</div>
+    <div class="msg-ai-content">
+      <div class="msg-ai-label">BBA AI OPERATOR <span class="msg-ai-time">${now} · Level ${authLevel}</span></div>
+      <div class="msg-ai-text" id="ai-streaming"></div>
+    </div>
+  </div>`;
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+  return d.querySelector('#ai-streaming');
+}
+
+function formatAiText(text) {
+  return text
+    .replace(/\[AUTO-EXECUTING\]/g,'<span class="ok">[AUTO-EXECUTING]</span>')
+    .replace(/\[RECOMMEND\]/g,'<span style="color:var(--yellow)">[RECOMMEND]</span>')
+    .replace(/\[CONFIRM REQUIRED\]/g,'<span style="color:var(--orange)">[CONFIRM REQUIRED]</span>')
+    .replace(/→ /g,'<div class="action">')
+    .replace(/\n→ /g,'</div><div class="action">')
+    .replace(/\n/g,'<br>');
+}
+
+function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function sendQuery(query) {
+  if (isLoading) return;
+  const input = document.getElementById('inputField');
+  const text = query || input.value.trim();
+  if (!text) return;
+  if (!apiKey) { document.getElementById('apiModal').style.display='flex'; return; }
+
+  // Clear welcome
+  const welcome = document.querySelector('.welcome');
+  if (welcome) welcome.remove();
+
+  input.value = '';
+  input.style.height = '20px';
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));
+
+  addUserMsg(text);
+  const thinkEl = addThinking();
+
+  const prompt = SYSTEM_PROMPT.replace('{AUTH_LEVEL}', authLevel);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 600,
+        system: prompt,
+        messages: [{role:'user', content: text}]
+      })
+    });
+
+    thinkEl.remove();
+
+    if (!res.ok) {
+      const err = await res.json();
+      addSystemMsg('API Error: ' + (err.error?.message || res.status));
+      isLoading = false;
+      document.getElementById('sendBtn').disabled = false;
+      return;
+    }
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'No response.';
+
+    const aiEl = addAiMsg('');
+    let i = 0;
+    const words = reply.split('');
+    const stream = setInterval(() => {
+      if (i < words.length) {
+        aiEl.innerHTML = formatAiText(reply.substring(0, i+1));
+        i += 3;
+        document.getElementById('terminal').scrollTop = 999999;
+      } else {
+        clearInterval(stream);
+        aiEl.innerHTML = formatAiText(reply);
+        isLoading = false;
+        document.getElementById('sendBtn').disabled = false;
+      }
+    }, 8);
+
+  } catch(e) {
+    thinkEl.remove();
+    addSystemMsg('Connection error: ' + e.message);
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function quickQuery(btn, q) {
+  document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  setTimeout(()=>btn.classList.remove('active'), 2000);
+  sendQuery(q);
+}
+
+// Enter to send
+document.getElementById('inputField').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendQuery();
+  }
+});
+
+// Auto-resize textarea
+document.getElementById('inputField').addEventListener('input', function() {
+  this.style.height = '20px';
+  this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+});
+
+// Live clock
+function updateClock() {
+  const now = new Date().toTimeString().slice(0,8);
+  document.querySelectorAll('.cam-ts').forEach(el => el.textContent = now);
+}
+setInterval(updateClock, 1000);
+
+// Check saved key
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('bba_demo_key');
+  if (saved && saved.startsWith('sk-')) {
+    apiKey = saved;
+    document.getElementById('apiModal').style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
