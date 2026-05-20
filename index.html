@@ -1269,6 +1269,51 @@ footer{
   .big-claim{grid-template-columns:1fr 1fr}
   .hero-stats{grid-template-columns:1fr 1fr}
 }
+
+/* ── ARCHITECTURAL REFINEMENTS ── */
+:root {
+  --blue: #00b8d9;
+  --glow: rgba(0,184,217,0.10);
+}
+
+/* Tighten glow effects */
+@keyframes logopulse{0%,100%{box-shadow:0 0 6px var(--blue)}50%{box-shadow:0 0 14px var(--blue)}}
+.btn-prime:hover{background:#22ccee;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,184,217,0.25)}
+.live-screen{box-shadow:0 0 30px rgba(0,184,217,0.06),0 16px 48px rgba(0,0,0,0.5)}
+
+/* More refined typography */
+h2{font-weight:800;letter-spacing:-.3px}
+.hero-title,.hero-title2,.hero-title3{letter-spacing:-1px}
+
+/* Subtler section label */
+.sec-label{letter-spacing:2.5px;font-size:9.5px;opacity:.85}
+
+/* Cards: less border, more air */
+.mod-card,.uc-card,.use-item{border-color:var(--border)}
+.mod-card:hover,.uc-card:hover{border-color:rgba(0,184,217,0.3);box-shadow:0 4px 20px rgba(0,0,0,.3)}
+
+/* Timeline cleaner */
+.tl-step{border-color:var(--border)}
+
+/* Section divider instead of empty space */
+.section+.section{border-top:1px solid rgba(22,40,64,.5)}
+
+/* Nav: slightly thinner */
+nav{height:58px;backdrop-filter:blur(20px)}
+.hero-inner{padding-top:144px}
+
+/* Reduce hero glow orbs */
+.hero-glow-1{opacity:.6}
+.hero-glow-2{opacity:.5}
+
+/* Comparison table: cleaner */
+.cmp-table th{letter-spacing:.5px;font-size:11px}
+
+/* Big claim bar: less aggressive */
+.bc-val{font-weight:800}
+
+/* AI Statement: more refined */
+.ai-st-title{letter-spacing:-1px}
 </style>
 </head>
 <body>
