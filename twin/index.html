@@ -1159,32 +1159,70 @@ try {
 
   // ── VEHICLE TRACKING ──
   const vehicleGrp=new THREE.Group();
-  const VEH_Y=EXT_Y+.32;
-  const vehRoad=new THREE.CatmullRomCurve3([
-    new THREE.Vector3(RX+1,VEH_Y,RZ+1),
-    new THREE.Vector3(RX+1,VEH_Y,-RZ-1),
-    new THREE.Vector3(-RX-1,VEH_Y,-RZ-1),
-    new THREE.Vector3(-RX-1,VEH_Y,RZ+1),
-  ],true);
-  // VIP vehicle
-  const vipCar=new THREE.Mesh(new THREE.BoxGeometry(2.1,.5,4.2),new THREE.MeshBasicMaterial({color:0x8a6a04}));
-  const vipTop=new THREE.Mesh(new THREE.BoxGeometry(1.7,.42,2.2),new THREE.MeshBasicMaterial({color:0x6a5003}));
-  const vipHdr=new THREE.Mesh(new THREE.SphereGeometry(.09,6,6),new THREE.MeshBasicMaterial({color:0xc8a820}));
-  vehicleGrp.add(vipCar); vehicleGrp.add(vipTop); vehicleGrp.add(vipHdr);
-  // Patrol vehicles
-  const patVehs=[];
-  [.32,.68].forEach((t0,i)=>{
-    const v=new THREE.Mesh(new THREE.BoxGeometry(1.7,.5,3.6),new THREE.MeshBasicMaterial({color:0x04161e}));
-    const vt=new THREE.Mesh(new THREE.BoxGeometry(1.4,.38,1.9),new THREE.MeshBasicMaterial({color:0x051820}));
-    const led=new THREE.Mesh(new THREE.SphereGeometry(.07,5,5),new THREE.MeshBasicMaterial({color:0x3ddbbe}));
-    vehicleGrp.add(v); vehicleGrp.add(vt); vehicleGrp.add(led);
-    patVehs.push({v,vt,led,t:t0,spd:.00055+i*.00015});
-  });
-  // Service vehicle
-  const svcCar=new THREE.Mesh(new THREE.BoxGeometry(2,.78,5.2),new THREE.MeshBasicMaterial({color:0x040b12}));
-  const svcTop=new THREE.Mesh(new THREE.BoxGeometry(1.8,.7,4.2),new THREE.MeshBasicMaterial({color:0x030810}));
-  vehicleGrp.add(svcCar); vehicleGrp.add(svcTop);
-  let vipT=0, svcT=0.5;
+  const VEH_Y=EXT_Y+.28;
+  // Smooth 12-point road loop — rounded corners, no sharp 90° turns
+  const vehRoadPts=[
+    [RX,    RZ*.45],[RX,    0],[RX,   -RZ*.45],
+    [RX*.7, -RZ],   [0,    -RZ],[-RX*.7,-RZ],
+    [-RX,  -RZ*.45],[-RX,   0],[-RX,   RZ*.45],
+    [-RX*.7, RZ],   [0,     RZ],[RX*.7,  RZ],
+  ].map(([x,z])=>new THREE.Vector3(x,VEH_Y,z));
+  const vehCurve=new THREE.CatmullRomCurve3(vehRoadPts,true,'catmullrom',.5);
+
+  // Factory: build a realistic car Group (forward = +Z)
+  function mkCarGrp(bW,bH,bL,cW,cH,cL,cOff,bCol,cCol,hlCol,tlCol){
+    const g=new THREE.Group();
+    // Main body
+    const body=new THREE.Mesh(new THREE.BoxGeometry(bW,bH,bL),new THREE.MeshBasicMaterial({color:bCol}));
+    body.position.y=bH/2; g.add(body);
+    // Hood (lower front section)
+    const hood=new THREE.Mesh(new THREE.BoxGeometry(bW*.9,bH*.55,bL*.28),new THREE.MeshBasicMaterial({color:bCol}));
+    hood.position.set(0,bH*.3,bL*.36); g.add(hood);
+    // Cabin
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(cW,cH,cL),new THREE.MeshBasicMaterial({color:cCol}));
+    cab.position.set(0,bH+cH/2,cOff); g.add(cab);
+    // Headlights (front = +Z)
+    [-bW*.3,bW*.3].forEach(x=>{
+      const hl=new THREE.Mesh(new THREE.SphereGeometry(.075,6,5),new THREE.MeshBasicMaterial({color:hlCol,transparent:true,opacity:.95}));
+      hl.position.set(x,bH*.55,bL/2+.06); g.add(hl);
+    });
+    // Taillights (rear = -Z)
+    [-bW*.28,bW*.28].forEach(x=>{
+      const tl=new THREE.Mesh(new THREE.SphereGeometry(.065,6,5),new THREE.MeshBasicMaterial({color:tlCol,transparent:true,opacity:.9}));
+      tl.position.set(x,bH*.52,-bL/2-.05); g.add(tl);
+    });
+    // Wheels (4 dark discs at corners)
+    [[-bW*.52,bH*.18,bL*.3],[bW*.52,bH*.18,bL*.3],[-bW*.52,bH*.18,-bL*.3],[bW*.52,bH*.18,-bL*.3]].forEach(([wx,wy,wz])=>{
+      const w=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.12,8),new THREE.MeshBasicMaterial({color:0x010306}));
+      w.rotation.z=Math.PI/2; w.position.set(wx,wy,wz); g.add(w);
+    });
+    return g;
+  }
+
+  // VIP sedan (gold/dark)
+  const vipG=mkCarGrp(2.0,.42,4.0, 1.58,.5,1.95,-.18, 0x7a5c02,0x0e0c04, 0xf0e8c8,0xc84040);
+  vehicleGrp.add(vipG);
+  // Patrol car 1 (deep navy)
+  const pat1G=mkCarGrp(1.82,.4,3.7, 1.46,.45,1.82,-.14, 0x050e1a,0x06101c, 0xe8f0ff,0xc84040);
+  const sir1=new THREE.Mesh(new THREE.BoxGeometry(.28,.1,.14),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.9}));
+  sir1.position.set(0,.44+.05,0); pat1G.add(sir1);
+  vehicleGrp.add(pat1G);
+  // Patrol car 2
+  const pat2G=mkCarGrp(1.82,.4,3.7, 1.46,.45,1.82,-.14, 0x040c18,0x050e1a, 0xe8f0ff,0xc84040);
+  const sir2=new THREE.Mesh(new THREE.BoxGeometry(.28,.1,.14),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.9}));
+  sir2.position.set(0,.44+.05,0); pat2G.add(sir2);
+  vehicleGrp.add(pat2G);
+  // Service van (wider, taller cabin)
+  const svcG=mkCarGrp(2.1,.5,5.0, 2.0,.85,4.1,.18, 0x060b12,0x050910, 0xe0eaf8,0xc84040);
+  vehicleGrp.add(svcG);
+
+  // Cars array for animate loop
+  const cars=[
+    {g:vipG,  t:0,   spd:.00052, siren:null},
+    {g:pat1G, t:.26, spd:.00068, siren:sir1},
+    {g:pat2G, t:.62, spd:.00062, siren:sir2},
+    {g:svcG,  t:.5,  spd:.00038, siren:null},
+  ];
   vehicleGrp.visible=true; scene.add(vehicleGrp);
 
   // ── CAMERA FOV CONES ──
@@ -1364,23 +1402,15 @@ try {
     bmsGrp.children.forEach((s,i)=>{ if(s.material&&s.material.transparent) s.material.opacity=.4+Math.sin(tick*1.1+i*.7)*.3; });
     // Entity selection ring pulse
     if(selRing.visible){ selRing.material.opacity=.4+Math.sin(tick*3.5)*.2; selRingOuter.material.opacity=.12+Math.sin(tick*3.5+.8)*.08; selRing.rotation.z+=.018; selRingOuter.rotation.z-=.012; }
-    // Vehicle movement
+    // Vehicle movement — Group based, smooth curve
     if(vehicleGrp.visible){
-      vipT=(vipT+.0006)%1;
-      const vp2=vehRoad.getPoint(vipT), vt2=vehRoad.getTangent(vipT);
-      vipCar.position.copy(vp2); vipCar.lookAt(vp2.x+vt2.x,vp2.y,vp2.z+vt2.z);
-      vipTop.position.set(vp2.x,vp2.y+.25,vp2.z); vipTop.rotation.y=vipCar.rotation.y;
-      vipHdr.position.set(vp2.x,vp2.y+.6,vp2.z); vipHdr.material.opacity=.7+Math.sin(tick*4)*.3;
-      svcT=(svcT+.00035)%1;
-      const sp2=vehRoad.getPoint(svcT), st2=vehRoad.getTangent(svcT);
-      svcCar.position.copy(sp2); svcCar.lookAt(sp2.x+st2.x,sp2.y,sp2.z+st2.z);
-      svcTop.position.set(sp2.x,sp2.y+.39,sp2.z); svcTop.rotation.y=svcCar.rotation.y;
-      patVehs.forEach(pv=>{
-        pv.t=(pv.t+pv.spd)%1;
-        const pp2=vehRoad.getPoint(pv.t), pt2=vehRoad.getTangent(pv.t);
-        pv.v.position.copy(pp2); pv.v.lookAt(pp2.x+pt2.x,pp2.y,pp2.z+pt2.z);
-        pv.vt.position.set(pp2.x,pp2.y+.19,pp2.z); pv.vt.rotation.y=pv.v.rotation.y;
-        pv.led.position.set(pp2.x,pp2.y+.32,pp2.z); pv.led.material.opacity=.5+Math.sin(tick*3.5+pv.t*10)*.5;
+      cars.forEach((c,ci)=>{
+        c.t=(c.t+c.spd)%1;
+        const pos=vehCurve.getPoint(c.t);
+        const tan=vehCurve.getTangent(c.t);
+        c.g.position.copy(pos);
+        c.g.rotation.y=Math.atan2(tan.x,tan.z);
+        if(c.siren) c.siren.material.opacity=.45+Math.sin(tick*7+ci*2.1)*.45;
       });
     }
     // Door pulse animation (locked doors pulse red)
