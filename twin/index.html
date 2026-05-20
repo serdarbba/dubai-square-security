@@ -230,6 +230,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <a href="../" class="pn">Proposal</a>
     <a href="../ops/" class="pn">Ops Center</a>
     <a href="../twin/" class="pn pn-act">Digital Twin</a>
+    <a href="../access/" class="pn">Access Intel</a>
+    <a href="../graph/" class="pn">Entity Graph</a>
     <a href="../demo/" class="pn">AI Operator</a>
   </div>
 </div>
@@ -263,6 +265,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div class="lb" onclick="togL('bms',this)"><div class="lb-dot" style="background:var(--purple)"></div><span class="lb-nm">BMS / Sensors</span><div class="lb-sw"></div></div>
       <div class="lb" onclick="togL('fov',this)"><div class="lb-dot" style="background:var(--blue)"></div><span class="lb-nm">Camera FOV</span><div class="lb-sw"></div></div>
       <div class="lb" onclick="togL('interior',this)"><div class="lb-dot" style="background:var(--txt2)"></div><span class="lb-nm">Floor Plans</span><div class="lb-sw"></div></div>
+      <div class="lb on" onclick="togL('ext',this)"><div class="lb-dot" style="background:#1a4028"></div><span class="lb-nm">Exterior / Site</span><div class="lb-sw"></div></div>
+      <div class="lb on" onclick="togL('parking',this)"><div class="lb-dot" style="background:var(--txt2)"></div><span class="lb-nm">Parking Layout</span><div class="lb-sw"></div></div>
+      <div class="lb on" onclick="togL('doors',this)"><div class="lb-dot" style="background:var(--green)"></div><span class="lb-nm">Doors / Gates</span><div class="lb-sw"></div></div>
+      <div class="lb on" onclick="togL('vehicles',this)"><div class="lb-dot" style="background:var(--gold)"></div><span class="lb-nm">Vehicles</span><div class="lb-sw"></div></div>
     </div>
 
     <div class="ph" style="margin-top:2px">ACS Control <span style="color:var(--teal);margin-left:6px;font-size:8px">LIVE</span></div>
@@ -921,13 +927,14 @@ drawRadar();
     const r=renderer.domElement.getBoundingClientRect();
     m2.x=((e.clientX-r.left)/r.width)*2-1; m2.y=-((e.clientY-r.top)/r.height)*2+1;
     rc.setFromCamera(m2,cam);
-    const hits=rc.intersectObjects([...camMeshes,...entMeshes,i1,i2,drn02,drn03,vipM]);
+    const hits=rc.intersectObjects([...camMeshes,...entMeshes,...doorMeshes,i1,i2,drn02,drn03,vipM]);
     if(hits.length){
       const ud=hits[0].object.userData;
       let s='';
       if(ud.type==='camera') s=`📹 ${ud.id}${ud.offline?' · OFFLINE':' · Online'}`;
       else if(ud.type==='incident') s=ud.label;
       else if(ud.type==='entity') s=`${ud.icon} ${ud.id} — ${ud.name} · ${ud.loc}`;
+      else if(ud.type==='door') s=`🚪 ${ud.nm} · ${ud.state}`;
       if(s){tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-6)+'px';tip.textContent=s;}
       renderer.domElement.style.cursor='pointer';
     } else {tip.style.display='none'; renderer.domElement.style.cursor='grab';}
@@ -1006,6 +1013,171 @@ drawRadar();
   bmsGrp.visible=false;
   scene.add(bmsGrp);
 
+  // ── EXTERIOR LANDSCAPE & SITE ──
+  const extGrp=new THREE.Group();
+  const EXT_Y=-FH/2-.08; // street level (GF bottom)
+  const RD=15; // road offset from building edge
+  const RY=EXT_Y+.04; // road surface
+  // Ground plane
+  const gndPl=new THREE.Mesh(new THREE.PlaneGeometry(320,240),new THREE.MeshLambertMaterial({color:0x020810}));
+  gndPl.rotation.x=-Math.PI/2; gndPl.position.y=EXT_Y-.01; extGrp.add(gndPl);
+  // Plaza ring around building
+  const plazaPl=new THREE.Mesh(new THREE.PlaneGeometry(FW+2*RD+4,FD+2*RD+4),new THREE.MeshBasicMaterial({color:0x030c1a,transparent:true,opacity:.95}));
+  plazaPl.rotation.x=-Math.PI/2; plazaPl.position.y=RY-.01; extGrp.add(plazaPl);
+  // Road loop outline
+  const RX=FW/2+RD, RZ=FD/2+RD;
+  const rdPts=[[RX,RZ],[RX,-RZ],[-RX,-RZ],[-RX,RZ],[RX,RZ]].map(([x,z])=>new THREE.Vector3(x,RY+.02,z));
+  extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rdPts),new THREE.LineBasicMaterial({color:0x0a2030,transparent:true,opacity:.7})));
+  // Road inner edge
+  const RI2=FW/2+RD*.35, RJ2=FD/2+RD*.35;
+  const rdIn=[[RI2,RJ2],[RI2,-RJ2],[-RI2,-RJ2],[-RI2,RJ2],[RI2,RJ2]].map(([x,z])=>new THREE.Vector3(x,RY+.02,z));
+  extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rdIn),new THREE.LineBasicMaterial({color:0x0a2030,transparent:true,opacity:.35})));
+  // Road center dashes
+  function mkRoadDash(x1,z1,x2,z2,n){
+    for(let i=0;i<n;i++){const t0=i/n+.1,t1=(i+.5)/n-.1;extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1+(x2-x1)*t0,RY+.03,z1+(z2-z1)*t0),new THREE.Vector3(x1+(x2-x1)*t1,RY+.03,z1+(z2-z1)*t1)]),new THREE.LineBasicMaterial({color:0x0d2a38,transparent:true,opacity:.55})));}
+  }
+  const MX2=FW/2+RD*.7,MZ2=FD/2+RD*.7;
+  mkRoadDash(-MX2,MZ2,MX2,MZ2,7); mkRoadDash(MX2,MZ2,MX2,-MZ2,4); mkRoadDash(MX2,-MZ2,-MX2,-MZ2,7); mkRoadDash(-MX2,-MZ2,-MX2,MZ2,4);
+  // Entry spurs to building gates
+  [[FW/2,2],[FW/2,-8],[-FW/2,0],[0,-FD/2],[0,FD/2]].forEach(([ex,ez])=>{
+    const dx=ex===0?0:(ex>0?1:-1),dz=ez===0?0:(ez>0?1:-1);
+    extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ex,RY+.02,ez),new THREE.Vector3(ex+dx*RD*.8,RY+.02,ez+dz*RD*.8)]),new THREE.LineBasicMaterial({color:0x0c2030,transparent:true,opacity:.5})));
+  });
+  // Dubai Creek (south) — iconic Dubai Creek Harbour feature
+  const creekM=new THREE.Mesh(new THREE.PlaneGeometry(200,28),new THREE.MeshBasicMaterial({color:0x01244e,transparent:true,opacity:.55}));
+  creekM.rotation.x=-Math.PI/2; creekM.position.set(0,EXT_Y+.03,FD/2+RD+20); extGrp.add(creekM);
+  const creekGl=new THREE.Mesh(new THREE.PlaneGeometry(200,28),new THREE.MeshBasicMaterial({color:0x0048a0,transparent:true,opacity:.09}));
+  creekGl.rotation.x=-Math.PI/2; creekGl.position.set(0,EXT_Y+.04,FD/2+RD+20); extGrp.add(creekGl);
+  // Creek edge lines
+  extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-100,EXT_Y+.05,FD/2+RD+6),new THREE.Vector3(100,EXT_Y+.05,FD/2+RD+6)]),new THREE.LineBasicMaterial({color:0x083a6a,transparent:true,opacity:.55})));
+  extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-100,EXT_Y+.05,FD/2+RD+34),new THREE.Vector3(100,EXT_Y+.05,FD/2+RD+34)]),new THREE.LineBasicMaterial({color:0x083a6a,transparent:true,opacity:.35})));
+  // Garden patches
+  [{x:RX+10,z:0,w:14,d:24},{x:-RX-10,z:0,w:14,d:24},{x:0,z:-FD/2-RD-8,w:50,d:10},{x:30,z:FD/2+RD+4,w:22,d:9},{x:-30,z:FD/2+RD+4,w:22,d:9}].forEach(g=>{
+    const gm=new THREE.Mesh(new THREE.PlaneGeometry(g.w,g.d),new THREE.MeshBasicMaterial({color:0x040e08,transparent:true,opacity:.9}));
+    gm.rotation.x=-Math.PI/2; gm.position.set(g.x,RY+.01,g.z); extGrp.add(gm);
+    [[g.x-g.w/2,g.z-g.d/2],[g.x+g.w/2,g.z-g.d/2],[g.x+g.w/2,g.z+g.d/2],[g.x-g.w/2,g.z+g.d/2],[g.x-g.w/2,g.z-g.d/2]].reduce((a,b,i,arr)=>i<arr.length-1&&extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(arr[i][0],RY+.02,arr[i][1]),new THREE.Vector3(arr[i+1][0],RY+.02,arr[i+1][1])]),new THREE.LineBasicMaterial({color:0x0a2818,transparent:true,opacity:.45}))),null);
+  });
+  // Trees along perimeter
+  const mkTree=(x,z)=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(.1,.14,.85,5),new THREE.MeshBasicMaterial({color:0x04100a})); t.position.set(x,EXT_Y+.43,z); extGrp.add(t); const c=new THREE.Mesh(new THREE.ConeGeometry(.52,1.1,5),new THREE.MeshBasicMaterial({color:0x081808,transparent:true,opacity:.75})); c.position.set(x,EXT_Y+1.2,z); extGrp.add(c); };
+  for(let i=-2;i<=2;i++){ mkTree(RX+5,i*9); mkTree(-RX-5,i*9); mkTree(i*18,MZ2+4); mkTree(i*18,-MZ2-4); }
+  // Security perimeter fence
+  const FP=FW/2+RD*.6,FQ=FD/2+RD*.6;
+  extGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([[FP,FQ],[FP,-FQ],[-FP,-FQ],[-FP,FQ],[FP,FQ]].map(([x,z])=>new THREE.Vector3(x,EXT_Y+.25,z))),new THREE.LineBasicMaterial({color:0x0a2430,transparent:true,opacity:.4})));
+  // Canopy over main entrance (east)
+  const canopy=new THREE.Mesh(new THREE.BoxGeometry(8,FH*.8,7),new THREE.MeshBasicMaterial({color:0x0ab0cc,transparent:true,opacity:.04}));
+  canopy.position.set(FW/2+2,FH*.4+.1,2); extGrp.add(canopy);
+  const canopyE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(8,FH*.8,7)),new THREE.LineBasicMaterial({color:0x0ab0cc,transparent:true,opacity:.2}));
+  canopyE.position.set(FW/2+2,FH*.4+.1,2); extGrp.add(canopyE);
+  extGrp.visible=true; scene.add(extGrp);
+
+  // ── PARKING LAYOUT (B1 / B2) ──
+  const parkGrp=new THREE.Group();
+  [-1,-2].forEach(lv=>{
+    const py=lv*FG+FH/2+.06;
+    const rndP=srnd(lv*444+77);
+    const cols=6, rows=4, cw=(FW-6)/cols, cd=(FD-4)/rows;
+    for(let c=0;c<cols;c++){
+      for(let r=0;r<rows;r++){
+        const bx=-FW/2+3+cw*(c+.5), bz=-FD/2+2+cd*(r+.5);
+        // Bay line frame
+        parkGrp.add(mkLine([[bx-cw*.45,py,bz-cd*.45],[bx+cw*.45,py,bz-cd*.45],[bx+cw*.45,py,bz+cd*.45],[bx-cw*.45,py,bz+cd*.45],[bx-cw*.45,py,bz-cd*.45]],0x0a2030,.32));
+        // Parked car (78% occupancy)
+        if(rndP()<.78){
+          const carCol=rndP()<.4?0x050e1a:rndP()<.6?0x03080f:0x080a10;
+          const car=new THREE.Mesh(new THREE.BoxGeometry(cw*.35,.28,cd*.62),new THREE.MeshBasicMaterial({color:carCol}));
+          car.position.set(bx,py+.14,bz); parkGrp.add(car);
+          // Windshield reflection
+          const ws=new THREE.Mesh(new THREE.BoxGeometry(cw*.28,.04,cd*.18),new THREE.MeshBasicMaterial({color:0x0a3050,transparent:true,opacity:.4}));
+          ws.position.set(bx,py+.29,bz-cd*.1); parkGrp.add(ws);
+        }
+      }
+    }
+    // Driving lane lines (between column groups)
+    for(let c=1;c<cols;c++){
+      const lx=-FW/2+3+cw*c;
+      if(c%2===0) parkGrp.add(mkLine([[lx,py+.02,-FD/2+1],[lx,py+.02,FD/2-1]],0x0c1e2e,.4));
+    }
+    // Level label area + exit signage
+    const sign=new THREE.Mesh(new THREE.BoxGeometry(2,.5,.08),new THREE.MeshBasicMaterial({color:lv===-1?0x0a2038:0x061428}));
+    sign.position.set(-FW/2+1,py+.5,0); parkGrp.add(sign);
+    // Ramp opening marker
+    const ramp=new THREE.Mesh(new THREE.PlaneGeometry(5,4),new THREE.MeshBasicMaterial({color:0x0a1e2e,transparent:true,opacity:.6,side:THREE.DoubleSide}));
+    ramp.rotation.x=-Math.PI/2; ramp.position.set(FW/2-4,py,FD/2-3); parkGrp.add(ramp);
+    parkGrp.add(mkLine([[FW/2-6.5,py,FD/2-1],[FW/2-1.5,py,FD/2-1],[FW/2-1.5,py,FD/2-5],[FW/2-6.5,py,FD/2-5],[FW/2-6.5,py,FD/2-1]],0x3ddbbe,.35));
+    // Pillar markers at B parking
+    [[- 20,0,-10],[0,0,-10],[20,0,-10],[-20,0,10],[0,0,10],[20,0,10]].forEach(([x,,z])=>{
+      const pillar=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.4,5),new THREE.MeshBasicMaterial({color:0x06101e}));
+      pillar.position.set(x,py+.2,z); parkGrp.add(pillar);
+    });
+  });
+  parkGrp.visible=true; scene.add(parkGrp);
+
+  // ── DOOR / GATE SYSTEM ──
+  const doorGrp=new THREE.Group();
+  const doorMeshes=[];
+  const GATE_DATA=[
+    {id:'G1', nm:'Gate 1 · East Main',  x:FW/2,   z:2,    lv:0,  state:'OPEN'},
+    {id:'G2', nm:'Gate 2 · West Entry', x:-FW/2,  z:0,    lv:0,  state:'OPEN'},
+    {id:'G3', nm:'Gate 3 · VIP Access', x:FW/2,   z:-8,   lv:0,  state:'LOCKED'},
+    {id:'G4', nm:'Gate 4 · South',      x:4,      z:FD/2, lv:0,  state:'OPEN'},
+    {id:'G5', nm:'Gate 5 · Service',    x:-8,     z:FD/2, lv:0,  state:'HELD'},
+    {id:'G6', nm:'Gate 6 · Emergency',  x:0,      z:-FD/2,lv:0,  state:'LOCKED'},
+    {id:'G7', nm:'B1 Parking Entry',    x:FW/2-4, z:FD/2-2,lv:-1,state:'OPEN'},
+    {id:'G8', nm:'B2 Parking Entry',    x:FW/2-4, z:FD/2-2,lv:-2,state:'OPEN'},
+    {id:'D1', nm:'VIP Lounge · L1',     x:14,     z:-6,   lv:1,  state:'LOCKED'},
+    {id:'D2', nm:'Security Ops Room',   x:-22,    z:-10,  lv:0,  state:'LOCKED'},
+    {id:'D3', nm:'Server Room',         x:20,     z:10,   lv:0,  state:'LOCKED'},
+    {id:'D4', nm:'Staff Entry',         x:-10,    z:FD/2, lv:0,  state:'OPEN'},
+    {id:'D5', nm:'Retail Staff L2',     x:-18,    z:8,    lv:2,  state:'OPEN'},
+    {id:'D6', nm:'Control Room B1',     x:15,     z:-8,   lv:-1, state:'LOCKED'},
+  ];
+  const DC={OPEN:0x38d96a,LOCKED:0xd64040,HELD:0xc8920a};
+  GATE_DATA.forEach(g=>{
+    const gy=g.lv*FG+FH/2+.18, col=DC[g.state];
+    // Door frame (tall thin box)
+    const frame=new THREE.Mesh(new THREE.BoxGeometry(.12,.72,.12),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.75}));
+    frame.position.set(g.x,gy+.36,g.z); frame.userData={type:'door',...g}; doorGrp.add(frame); doorMeshes.push(frame);
+    // Floor ring
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.18,.26,16),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5,side:THREE.DoubleSide}));
+    ring.rotation.x=-Math.PI/2; ring.position.set(g.x,gy+.01,g.z); ring.userData={type:'door',...g}; doorGrp.add(ring); doorMeshes.push(ring);
+    // Fill circle (open only)
+    if(g.state==='OPEN'){
+      const fill=new THREE.Mesh(new THREE.CircleGeometry(.18,16),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.07,side:THREE.DoubleSide}));
+      fill.rotation.x=-Math.PI/2; fill.position.set(g.x,gy,g.z); doorGrp.add(fill);
+    }
+  });
+  doorGrp.visible=true; scene.add(doorGrp);
+
+  // ── VEHICLE TRACKING ──
+  const vehicleGrp=new THREE.Group();
+  const VEH_Y=EXT_Y+.32;
+  const vehRoad=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(RX+1,VEH_Y,RZ+1),
+    new THREE.Vector3(RX+1,VEH_Y,-RZ-1),
+    new THREE.Vector3(-RX-1,VEH_Y,-RZ-1),
+    new THREE.Vector3(-RX-1,VEH_Y,RZ+1),
+  ],true);
+  // VIP vehicle
+  const vipCar=new THREE.Mesh(new THREE.BoxGeometry(2.1,.5,4.2),new THREE.MeshBasicMaterial({color:0x8a6a04}));
+  const vipTop=new THREE.Mesh(new THREE.BoxGeometry(1.7,.42,2.2),new THREE.MeshBasicMaterial({color:0x6a5003}));
+  const vipHdr=new THREE.Mesh(new THREE.SphereGeometry(.09,6,6),new THREE.MeshBasicMaterial({color:0xc8a820}));
+  vehicleGrp.add(vipCar); vehicleGrp.add(vipTop); vehicleGrp.add(vipHdr);
+  // Patrol vehicles
+  const patVehs=[];
+  [.32,.68].forEach((t0,i)=>{
+    const v=new THREE.Mesh(new THREE.BoxGeometry(1.7,.5,3.6),new THREE.MeshBasicMaterial({color:0x04161e}));
+    const vt=new THREE.Mesh(new THREE.BoxGeometry(1.4,.38,1.9),new THREE.MeshBasicMaterial({color:0x051820}));
+    const led=new THREE.Mesh(new THREE.SphereGeometry(.07,5,5),new THREE.MeshBasicMaterial({color:0x3ddbbe}));
+    vehicleGrp.add(v); vehicleGrp.add(vt); vehicleGrp.add(led);
+    patVehs.push({v,vt,led,t:t0,spd:.00055+i*.00015});
+  });
+  // Service vehicle
+  const svcCar=new THREE.Mesh(new THREE.BoxGeometry(2,.78,5.2),new THREE.MeshBasicMaterial({color:0x040b12}));
+  const svcTop=new THREE.Mesh(new THREE.BoxGeometry(1.8,.7,4.2),new THREE.MeshBasicMaterial({color:0x030810}));
+  vehicleGrp.add(svcCar); vehicleGrp.add(svcTop);
+  let vipT=0, svcT=0.5;
+  vehicleGrp.visible=true; scene.add(vehicleGrp);
+
   // ── CAMERA FOV CONES ──
   const fovGrp=new THREE.Group();
   const FOV_CAMS=[
@@ -1074,6 +1246,7 @@ drawRadar();
     incidents:incGrp, drones:droneGrp, entities:entGrp,
     evac:evacGrp, patrol:patrolGrp, bms:bmsGrp,
     fov:fovGrp, interior:intGrp,
+    ext:extGrp, parking:parkGrp, doors:doorGrp, vehicles:vehicleGrp,
   };
   window.togL=(n,el2)=>{ el2.classList.toggle('on'); LAYER_MAP[n].visible=el2.classList.contains('on'); };
   window.selFl=(id,btn)=>{
@@ -1141,6 +1314,29 @@ drawRadar();
     bmsGrp.children.forEach((s,i)=>{ if(s.material&&s.material.transparent) s.material.opacity=.4+Math.sin(tick*1.1+i*.7)*.3; });
     // Entity selection ring pulse
     if(selRing.visible){ selRing.material.opacity=.4+Math.sin(tick*3.5)*.2; selRingOuter.material.opacity=.12+Math.sin(tick*3.5+.8)*.08; selRing.rotation.z+=.018; selRingOuter.rotation.z-=.012; }
+    // Vehicle movement
+    if(vehicleGrp.visible){
+      vipT=(vipT+.0006)%1;
+      const vp2=vehRoad.getPoint(vipT), vt2=vehRoad.getTangent(vipT);
+      vipCar.position.copy(vp2); vipCar.lookAt(vp2.x+vt2.x,vp2.y,vp2.z+vt2.z);
+      vipTop.position.set(vp2.x,vp2.y+.25,vp2.z); vipTop.rotation.y=vipCar.rotation.y;
+      vipHdr.position.set(vp2.x,vp2.y+.6,vp2.z); vipHdr.material.opacity=.7+Math.sin(tick*4)*.3;
+      svcT=(svcT+.00035)%1;
+      const sp2=vehRoad.getPoint(svcT), st2=vehRoad.getTangent(svcT);
+      svcCar.position.copy(sp2); svcCar.lookAt(sp2.x+st2.x,sp2.y,sp2.z+st2.z);
+      svcTop.position.set(sp2.x,sp2.y+.39,sp2.z); svcTop.rotation.y=svcCar.rotation.y;
+      patVehs.forEach(pv=>{
+        pv.t=(pv.t+pv.spd)%1;
+        const pp2=vehRoad.getPoint(pv.t), pt2=vehRoad.getTangent(pv.t);
+        pv.v.position.copy(pp2); pv.v.lookAt(pp2.x+pt2.x,pp2.y,pp2.z+pt2.z);
+        pv.vt.position.set(pp2.x,pp2.y+.19,pp2.z); pv.vt.rotation.y=pv.v.rotation.y;
+        pv.led.position.set(pp2.x,pp2.y+.32,pp2.z); pv.led.material.opacity=.5+Math.sin(tick*3.5+pv.t*10)*.5;
+      });
+    }
+    // Door pulse animation (locked doors pulse red)
+    doorGrp.children.forEach((m,i)=>{ if(m.userData.state==='LOCKED'&&m.material&&m.material.transparent) m.material.opacity=.45+Math.sin(tick*2.2+i*.4)*.3; else if(m.userData.state==='HELD'&&m.material&&m.material.transparent) m.material.opacity=.5+Math.sin(tick*1.5+i*.3)*.25; });
+    // Creek shimmer
+    if(extGrp.visible&&extGrp.children[2]) extGrp.children[2].material.opacity=.07+Math.sin(tick*.6)*.04;
     updateLabels();
     renderer.render(scene,cam);
   }
