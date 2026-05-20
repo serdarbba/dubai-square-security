@@ -377,8 +377,8 @@ body{
   <div class="modal">
     <div class="modal-logo"><div class="modal-logo-dot"></div><span><span style="color:var(--blue)">BBA</span> Security Intelligence</span></div>
     <h2>AI Operator Demo</h2>
-    <p>Dubai Square · EMAAR · Live AI Demo<br>Enter your Anthropic API key to activate the AI Operator. Your key is stored locally and never sent to any server.</p>
-    <input type="password" class="modal-input" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off"/>
+    <p>Dubai Square · EMAAR · Live AI Demo<br>Enter your Google Gemini API key to activate the AI Operator. Your key is stored locally and never sent to any server.</p>
+    <input type="password" class="modal-input" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off"/>
     <button class="modal-btn" onclick="initDemo()">Activate AI Operator →</button>
     <div class="modal-note">Key stored in browser localStorage only · Never transmitted · Delete anytime</div>
   </div>
@@ -622,7 +622,7 @@ const levelColors = {1:'var(--green)',2:'var(--yellow)',3:'var(--orange)',4:'var
 
 function initDemo() {
   const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key.startsWith('sk-')) {
+  if (key.length < 10) {
     document.getElementById('apiKeyInput').style.borderColor = 'var(--red)';
     return;
   }
@@ -736,21 +736,18 @@ async function sendQuery(query) {
   const prompt = SYSTEM_PROMPT.replace('{AUTH_LEVEL}', authLevel);
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 600,
-        system: prompt,
-        messages: [{role:'user', content: text}]
-      })
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          system_instruction: {parts: [{text: prompt}]},
+          contents: [{role: 'user', parts: [{text: text}]}],
+          generationConfig: {maxOutputTokens: 600}
+        })
+      }
+    );
 
     thinkEl.remove();
 
@@ -763,7 +760,7 @@ async function sendQuery(query) {
     }
 
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'No response.';
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.';
 
     const aiEl = addAiMsg('');
     let i = 0;
@@ -820,7 +817,7 @@ setInterval(updateClock, 1000);
 // Check saved key
 window.addEventListener('load', () => {
   const saved = localStorage.getItem('bba_demo_key');
-  if (saved && saved.startsWith('sk-')) {
+  if (saved && saved.length >= 10) {
     apiKey = saved;
     document.getElementById('apiModal').style.display = 'none';
   }
