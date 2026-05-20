@@ -269,6 +269,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div class="lb on" onclick="togL('parking',this)"><div class="lb-dot" style="background:var(--txt2)"></div><span class="lb-nm">Parking Layout</span><div class="lb-sw"></div></div>
       <div class="lb on" onclick="togL('doors',this)"><div class="lb-dot" style="background:var(--green)"></div><span class="lb-nm">Doors / Gates</span><div class="lb-sw"></div></div>
       <div class="lb on" onclick="togL('vehicles',this)"><div class="lb-dot" style="background:var(--gold)"></div><span class="lb-nm">Vehicles</span><div class="lb-sw"></div></div>
+      <div class="lb on" onclick="togL('connections',this)"><div class="lb-dot" style="background:var(--gold)"></div><span class="lb-nm">Hotel · Icon Tower</span><div class="lb-sw"></div></div>
     </div>
 
     <div class="ph" style="margin-top:2px">ACS Control <span style="color:var(--teal);margin-left:6px;font-size:8px">LIVE</span></div>
@@ -693,19 +694,22 @@ drawRadar();
 // THREE.JS SCENE
 // ═══════════════════════════════════════════════════════════════
 (function(){
+try {
   const el = document.getElementById('twinCanvas');
-  let W = el.clientWidth||800, H = el.clientHeight||600;
+  let W = el.offsetWidth || (window.innerWidth - 520) || 900;
+  let H = el.offsetHeight || (window.innerHeight - 112) || 700;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x02080f);
-  scene.fog = new THREE.FogExp2(0x02080f, 0.006);
+  scene.background = new THREE.Color(0x020c18);
+  scene.fog = new THREE.FogExp2(0x020c18, 0.0045);
 
   const cam = new THREE.PerspectiveCamera(50, W/H, .1, 600);
   cam.position.set(58, 48, 58); cam.lookAt(0,5,0);
 
-  const renderer = new THREE.WebGLRenderer({antialias:true});
+  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:false});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(W,H);
+  renderer.domElement.style.cssText='width:100%;height:100%;display:block;position:absolute;top:0;left:0';
   el.appendChild(renderer.domElement);
 
   const controls = new THREE.OrbitControls(cam, renderer.domElement);
@@ -713,31 +717,31 @@ drawRadar();
   controls.maxPolarAngle=Math.PI/2.08; controls.minDistance=10; controls.maxDistance=130;
   controls.target.set(0,4,0);
 
-  scene.add(new THREE.AmbientLight(0x3a6080, 4.5));
-  const d1=new THREE.DirectionalLight(0x6ab0cc,1.8); d1.position.set(50,70,40); scene.add(d1);
-  const d2=new THREE.DirectionalLight(0x3ddbbe,.7); d2.position.set(-40,30,-30); scene.add(d2);
-  const d3=new THREE.DirectionalLight(0x8ab4cc,.5); d3.position.set(0,80,0); scene.add(d3);
-  const incGlow=new THREE.PointLight(0xd64040,2.0,28); incGlow.position.set(-18,6,5); scene.add(incGlow);
+  scene.add(new THREE.AmbientLight(0x5080b0, 7.5));
+  const d1=new THREE.DirectionalLight(0x80c8e8,3.2); d1.position.set(50,70,40); scene.add(d1);
+  const d2=new THREE.DirectionalLight(0x3ddbbe,1.4); d2.position.set(-40,30,-30); scene.add(d2);
+  const d3=new THREE.DirectionalLight(0xa0c8e0,1.0); d3.position.set(0,80,0); scene.add(d3);
+  const incGlow=new THREE.PointLight(0xd64040,3.5,35); incGlow.position.set(-18,6,5); scene.add(incGlow);
   // Interior fill lights per occupied floor
-  [[0,2],[1,5.6],[2,9.2],[3,12.8]].forEach(([lv,y])=>{ scene.add(Object.assign(new THREE.PointLight(0x1a4060,1.2,32),{position:new THREE.Vector3(0,y,0)})); });
+  [[2],[5.6],[9.2],[12.8]].forEach(([y])=>{ const pl=new THREE.PointLight(0x1a4060,1.2,32); pl.position.set(0,y,0); scene.add(pl); });
 
   const FW=54,FD=28,FH=.22,FG=3.6;
   const FLOORS=[
-    {id:'B2',lv:-2,fc:0x0c1e30,ec:0x1a3a52},
-    {id:'B1',lv:-1,fc:0x102438,ec:0x1e4260},
-    {id:'GF',lv: 0,fc:0x163248,ec:0x0ab0cc},
-    {id:'L1',lv: 1,fc:0x142e44,ec:0x089ab4},
-    {id:'L2',lv: 2,fc:0x122840,ec:0x3ddbbe},
-    {id:'L3',lv: 3,fc:0x102238,ec:0x9880e0},
+    {id:'B2',lv:-2,fc:0x0e2030,ec:0x1e4060},
+    {id:'B1',lv:-1,fc:0x102840,ec:0x225070},
+    {id:'GF',lv: 0,fc:0x1e4060,ec:0x0ab0cc},
+    {id:'L1',lv: 1,fc:0x1a3858,ec:0x10a8c0},
+    {id:'L2',lv: 2,fc:0x183450,ec:0x3ddbbe},
+    {id:'L3',lv: 3,fc:0x162e48,ec:0x9880e0},
   ];
 
   const flGrps={};
   FLOORS.forEach(fl=>{
     const g=new THREE.Group(), y=fl.lv*FG;
     const geo=new THREE.BoxGeometry(FW,FH,FD);
-    const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:fl.fc,transparent:true,opacity:fl.lv<0?.65:.88}));
+    const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:fl.fc,transparent:true,opacity:fl.lv<0?.75:.95}));
     m.position.y=y; g.add(m);
-    const em=new THREE.LineBasicMaterial({color:fl.ec,transparent:true,opacity:fl.lv<0?.22:.52});
+    const em=new THREE.LineBasicMaterial({color:fl.ec,transparent:true,opacity:fl.lv<0?.35:.72});
     const el2=new THREE.LineSegments(new THREE.EdgesGeometry(geo),em); el2.position.y=y; g.add(el2);
     if(fl.lv>=0){
       const wg=new THREE.BoxGeometry(20,FH,13);
@@ -899,6 +903,8 @@ drawRadar();
     {pos:new THREE.Vector3(-FW/2-5, 3*FG+.3,0),  txt:'L3 · ENTERTAINMENT', cls:'zone'},
     {pos:new THREE.Vector3(-18,FH/2+2.2,5),       txt:'Zone C · CRITICAL',  cls:'crit'},
     {pos:new THREE.Vector3(20, FH/2+2,1),         txt:'Zone A · ELEVATED',  cls:'zone'},
+    {pos:new THREE.Vector3(FW/2+34,FG*6+2.5,-4),  txt:'HOTEL + METRO L3',   cls:'zone'},
+    {pos:new THREE.Vector3(FW/2+38,FG*14+3,14),   txt:'ICON TOWER B1',      cls:'zone'},
     // Entity labels
     ...ENTITIES.filter(e=>e.type!=='drone'||e.id==='DSQ-02').map(e=>({
       pos:new THREE.Vector3(e.pos.x,e.pos.y+.6,e.pos.z),
@@ -1243,6 +1249,46 @@ drawRadar();
   intGrp.visible=false;
   scene.add(intGrp);
 
+  // ── EXTERNAL CONNECTIONS (per IFC spec 17.5.4.3 & 17.5.4.4) ──
+  const connGrp=new THREE.Group();
+  // Hotel / Metro Link Bridge — Level 3 (First Floor), east side
+  // Spec: "dedicated passage in Level 3 (First Floor)"
+  const hotelBY=3*FG+FH/2+.15;
+  const hotelBridgePts=[new THREE.Vector3(FW/2,hotelBY,0),new THREE.Vector3(FW/2+18,hotelBY,0),new THREE.Vector3(FW/2+18,hotelBY,-4),new THREE.Vector3(FW/2+28,hotelBY,-4)];
+  connGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(hotelBridgePts),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.65})));
+  // Bridge deck (flat box)
+  const hBridge=new THREE.Mesh(new THREE.BoxGeometry(18,FH,3.5),new THREE.MeshBasicMaterial({color:0xb89018,transparent:true,opacity:.18}));
+  hBridge.position.set(FW/2+9,hotelBY,-.5); connGrp.add(hBridge);
+  const hBridgeE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(18,FH,3.5)),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.5}));
+  hBridgeE.position.set(FW/2+9,hotelBY,-.5); connGrp.add(hBridgeE);
+  // Hotel tower stub (connected building mass)
+  const hotelTower=new THREE.Mesh(new THREE.BoxGeometry(12,FG*6,14),new THREE.MeshBasicMaterial({color:0x0e2235,transparent:true,opacity:.45}));
+  hotelTower.position.set(FW/2+34,FG*2.5,-4); connGrp.add(hotelTower);
+  const hotelTowerE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(12,FG*6,14)),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.35}));
+  hotelTowerE.position.set(FW/2+34,FG*2.5,-4); connGrp.add(hotelTowerE);
+  // Hotel label marker
+  const hotelTop=new THREE.Mesh(new THREE.SphereGeometry(.3,8,8),new THREE.MeshBasicMaterial({color:0xc8a820}));
+  hotelTop.position.set(FW/2+34,FG*6+1,-4); connGrp.add(hotelTop);
+  // Icon Tower Connection — Level 1 / B1 (Parking 2), east side
+  // Spec: "dedicated passage in Level 1 (Parking 2)"
+  const iconTY=-1*FG+FH/2+.15;
+  const iconTunnelPts=[new THREE.Vector3(FW/2,iconTY,8),new THREE.Vector3(FW/2+20,iconTY,8),new THREE.Vector3(FW/2+30,iconTY,14)];
+  connGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(iconTunnelPts),new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.6})));
+  // Tunnel box
+  const iconTunnel=new THREE.Mesh(new THREE.BoxGeometry(22,FH*.8,2.8),new THREE.MeshBasicMaterial({color:0x0a2030,transparent:true,opacity:.35}));
+  iconTunnel.position.set(FW/2+11,iconTY,8); connGrp.add(iconTunnel);
+  const iconTunnelE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(22,FH*.8,2.8)),new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.45}));
+  iconTunnelE.position.set(FW/2+11,iconTY,8); connGrp.add(iconTunnelE);
+  // Icon Tower mass (taller landmark tower)
+  const iconTower=new THREE.Mesh(new THREE.BoxGeometry(10,FG*14,10),new THREE.MeshBasicMaterial({color:0x0c1c2e,transparent:true,opacity:.55}));
+  iconTower.position.set(FW/2+38,FG*6,14); connGrp.add(iconTower);
+  const iconTowerE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(10,FG*14,10)),new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.4}));
+  iconTowerE.position.set(FW/2+38,FG*6,14); connGrp.add(iconTowerE);
+  // Icon Tower top marker
+  const iconTop=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),new THREE.MeshBasicMaterial({color:0x3ddbbe}));
+  iconTop.position.set(FW/2+38,FG*14+1.5,14); connGrp.add(iconTop);
+  connGrp.visible=true; scene.add(connGrp);
+
   // ── LAYERS ──
   const LAYER_MAP={
     density:densGrp, predict:predGrp, cameras:camGrp, acs:acsGrp,
@@ -1250,6 +1296,7 @@ drawRadar();
     evac:evacGrp, patrol:patrolGrp, bms:bmsGrp,
     fov:fovGrp, interior:intGrp,
     ext:extGrp, parking:parkGrp, doors:doorGrp, vehicles:vehicleGrp,
+    connections:connGrp,
   };
   window.togL=(n,el2)=>{ el2.classList.toggle('on'); LAYER_MAP[n].visible=el2.classList.contains('on'); };
   window.selFl=(id,btn)=>{
@@ -1346,9 +1393,14 @@ drawRadar();
   animate();
 
   window.addEventListener('resize',()=>{
-    const w=el.clientWidth, h=el.clientHeight;
+    const w=el.offsetWidth, h=el.offsetHeight;
     if(w>0&&h>0){ cam.aspect=w/h; cam.updateProjectionMatrix(); renderer.setSize(w,h); }
   });
+} catch(e) {
+  console.error('Digital Twin init error:', e);
+  const el2=document.getElementById('twinCanvas');
+  if(el2) el2.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:JetBrains Mono,monospace;font-size:11px;color:#4a6a84;flex-direction:column;gap:8px"><span style="color:#0ab0cc;font-size:20px">◈</span><span>3D ENGINE ERROR — CHECK CONSOLE</span></div>';
+}
 })();
 
 // ═══════════════════════════════════════════════════════════════
