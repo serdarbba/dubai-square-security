@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBA Security Intelligence — Operations Center | Dubai Square</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+:root{
+  --bg:#02080f; --s1:#04101e; --s2:#061422; --line:#0d2235; --line2:#122d46;
+  --blue:#0ab0cc; --teal:#3ddbbe; --green:#38d96a; --red:#d64040;
+  --amber:#c8920a; --gold:#c8a820; --purple:#9880e0; --pink:#d060a0;
+  --txt:#8aaec8; --txt2:#4a6a84; --white:#d4e8f4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:44px;
+  background:var(--s1);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;padding:0 16px;gap:12px;z-index:500;
+}
+.t-logo{font-size:12px;font-weight:600;color:var(--white);display:flex;align-items:center;gap:7px}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 7px var(--blue);animation:glow 2s ease infinite}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.4}}
+.t-div{width:1px;height:16px;background:var(--line2)}
+.t-tag{font-size:9.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace;letter-spacing:.8px}
+.t-sp{flex:1}
+.t-stats{display:flex;gap:18px}
+.t-stat{display:flex;align-items:center;gap:5px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.ts-d{width:4px;height:4px;border-radius:50%}
+.ts-v{color:var(--white);font-weight:500;margin-left:1px}
+.t-live{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--red);border:1px solid rgba(214,64,64,.2);padding:3px 9px;border-radius:3px;letter-spacing:1px}
+.t-link{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;border:1px solid var(--line2);padding:3px 10px;border-radius:3px;transition:all .15s}
+.t-link:hover{color:var(--white);border-color:rgba(10,176,204,.35)}
+
+/* ── MAIN LAYOUT ── */
+.ops-body{
+  position:fixed;top:44px;left:0;right:0;bottom:24px;
+  display:grid;grid-template-columns:300px 1fr 220px;
+  overflow:hidden;
+}
+
+/* ── LEFT: DIGITAL TWIN ── */
+.twin-panel{
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;overflow:hidden;
+  position:relative;
+}
+.panel-head{
+  padding:8px 12px;border-bottom:1px solid var(--line);
+  font-size:8.5px;font-family:'JetBrains Mono',monospace;
+  color:var(--txt2);letter-spacing:2px;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.panel-head::before{content:'';width:10px;height:1px;background:var(--blue)}
+#twinCvs{flex:1;overflow:hidden;position:relative}
+#twinCvs canvas{display:block;width:100%!important;height:100%!important}
+
+/* Floor buttons */
+.twin-floors{
+  display:flex;padding:6px 8px;gap:3px;border-top:1px solid var(--line);
+  flex-shrink:0;
+}
+.fl-btn{
+  flex:1;padding:4px 0;border-radius:3px;border:1px solid var(--line);
+  background:transparent;color:var(--txt2);font-size:8.5px;
+  font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s;text-align:center;
+}
+.fl-btn:hover{background:rgba(10,176,204,.06);color:var(--txt)}
+.fl-btn.act{background:rgba(10,176,204,.1);border-color:rgba(10,176,204,.35);color:var(--blue)}
+
+/* ── CENTER: CAMERAS ── */
+.cam-panel{
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.cam-grid{
+  flex:1;display:grid;grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);gap:1px;background:var(--line);
+  padding:1px;
+}
+.cam-wrap{
+  background:var(--bg);position:relative;overflow:hidden;
+  cursor:pointer;transition:filter .15s;
+}
+.cam-wrap:hover{filter:brightness(1.08)}
+.cam-wrap canvas{width:100%;height:100%;display:block}
+.cam-hud{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:5px 7px;pointer-events:none;
+}
+.cam-id{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.8);line-height:1}
+.cam-badge{
+  font-size:7.5px;font-family:'JetBrains Mono',monospace;
+  padding:2px 5px;border-radius:2px;
+}
+.cam-bottom{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  padding:5px 7px;pointer-events:none;
+}
+.cam-zone{font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.55)}
+.cam-ts{font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.4)}
+.cam-scan{position:absolute;top:0;left:0;right:0;height:1px;background:rgba(10,176,204,.5);animation:scan 6s linear infinite;opacity:0}
+.cam-wrap:nth-child(1) .cam-scan{animation-delay:0s;opacity:1}
+.cam-wrap:nth-child(2) .cam-scan{animation-delay:2s;opacity:1}
+.cam-wrap:nth-child(4) .cam-scan{animation-delay:1s;opacity:1}
+@keyframes scan{0%{top:0;opacity:.6}100%{top:100%;opacity:0}}
+
+/* ── RIGHT: INCIDENTS ── */
+.right-panel{
+  border-left:1px solid var(--line);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--s1);
+}
+.inc-list{flex:1;overflow-y:auto;padding:6px}
+.inc{
+  padding:8px 10px;border-radius:3px;border:1px solid var(--line);
+  background:rgba(2,8,15,.6);margin-bottom:4px;
+}
+.inc-t{font-size:10px;font-weight:500;color:var(--white);display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.inc-d{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.inc-m{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.inc-s{font-size:8.5px;font-family:'JetBrains Mono',monospace;margin-top:3px}
+
+.thr-block{padding:10px 12px;border-top:1px solid var(--line);flex-shrink:0}
+.thr-lbl{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;margin-bottom:6px}
+.thr-bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-bottom:4px}
+.thr-fill{height:100%;border-radius:2px;width:62%;background:linear-gradient(90deg,var(--green),var(--amber))}
+.thr-row{display:flex;justify-content:space-between;font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.thr-val{text-align:center;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--amber);letter-spacing:2px;margin-top:6px}
+
+/* AI ACTIONS BLOCK */
+.ai-block{padding:10px 12px;border-top:1px solid var(--line);flex-shrink:0}
+.ai-lbl{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.ai-lbl::before{content:'';width:8px;height:1px;background:var(--blue)}
+.ai-actions{display:flex;flex-direction:column;gap:3px}
+.ai-act{
+  padding:5px 8px;border-radius:3px;border:1px solid var(--line);
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  cursor:pointer;text-align:left;transition:all .15s;color:var(--txt2);
+  display:flex;align-items:center;gap:6px;background:transparent;
+}
+.ai-act:hover{border-color:rgba(10,176,204,.3);color:var(--white);background:rgba(10,176,204,.04)}
+.ai-act.executing{color:var(--green);border-color:rgba(56,217,106,.3);background:rgba(56,217,106,.04);animation:blink .8s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ── STATUS BAR ── */
+.statusbar{
+  position:fixed;bottom:0;left:0;right:0;height:24px;
+  background:var(--s1);border-top:1px solid var(--line);
+  display:flex;align-items:center;padding:0 14px;gap:20px;
+  font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);
+  z-index:500;
+}
+.sb-sp{flex:1}
+.sb-dot{width:4px;height:4px;border-radius:50%;display:inline-block;margin-right:4px}
+
+/* ── CAMERA MODAL ── */
+.cam-modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.88);
+  z-index:1000;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+}
+.cam-modal.open{display:flex}
+.cm-inner{
+  background:var(--s1);border:1px solid var(--line2);
+  border-radius:6px;overflow:hidden;
+  display:grid;grid-template-columns:1fr 280px;
+  width:90vw;max-width:1100px;height:75vh;
+}
+.cm-video{position:relative;overflow:hidden;background:var(--bg)}
+.cm-video canvas{width:100%!important;height:100%!important;display:block}
+.cm-scan{position:absolute;top:0;left:0;right:0;height:1px;background:rgba(10,176,204,.6);animation:scan 4s linear infinite}
+.cm-hud-tl{position:absolute;top:10px;left:12px;font-size:11px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.85)}
+.cm-hud-ts{position:absolute;top:10px;right:12px;font-size:10px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.55)}
+.cm-hud-br{position:absolute;bottom:10px;left:12px;font-size:10px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.5)}
+.cm-hud-pc{position:absolute;bottom:10px;right:12px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--teal)}
+.cm-corner{position:absolute;width:16px;height:16px;border-color:rgba(10,176,204,.6);border-style:solid}
+.cm-c-tl{top:6px;left:6px;border-width:1px 0 0 1px}
+.cm-c-tr{top:6px;right:6px;border-width:1px 1px 0 0}
+.cm-c-bl{bottom:6px;left:6px;border-width:0 0 1px 1px}
+.cm-c-br{bottom:6px;right:6px;border-width:0 1px 1px 0}
+
+.cm-info{
+  padding:0;display:flex;flex-direction:column;
+  border-left:1px solid var(--line);overflow-y:auto;
+}
+.cm-info-head{padding:14px 16px;border-bottom:1px solid var(--line)}
+.cm-zone{font-size:15px;font-weight:600;color:var(--white);margin-bottom:4px}
+.cm-id{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue)}
+.cm-rows{padding:12px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.cm-row{display:flex;justify-content:space-between;font-size:10.5px}
+.cm-k{color:var(--txt2);font-family:'JetBrains Mono',monospace;font-size:9.5px}
+.cm-v{color:var(--white);font-weight:500}
+
+/* AI ANALYSIS in modal */
+.cm-ai{padding:12px 16px;flex:1}
+.cm-ai-head{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.cm-ai-head::before{content:'';width:8px;height:1px;background:var(--blue)}
+.cm-ai-text{font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--txt);line-height:1.8}
+.cm-ai-text .ok{color:var(--green)}
+.cm-ai-text .warn{color:var(--amber)}
+.cm-ai-text .crit{color:var(--red)}
+.cm-ai-text .act{display:block;margin-top:4px;padding:4px 8px;border-radius:3px;background:rgba(56,217,106,.06);border:1px solid rgba(56,217,106,.15);color:var(--green);font-size:9.5px}
+.cm-ai-text .act::before{content:'→ '}
+
+.cm-close{
+  position:absolute;top:10px;right:10px;
+  width:28px;height:28px;border-radius:4px;
+  background:rgba(4,16,30,.9);border:1px solid var(--line2);
+  color:var(--txt2);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;z-index:10;
+}
+.cm-close:hover{color:var(--white);border-color:var(--blue)}
+.cm-inner{position:relative}
+
+/* DETECT BOX (AI bounding box) */
+.det-box{
+  position:absolute;border:1px solid;pointer-events:none;
+  transition:all .3s;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="t-logo"><div class="t-dot"></div><span style="color:var(--blue)">BBA</span>&nbsp;Security Intelligence</div>
+  <div class="t-div"></div>
+  <span class="t-tag">DUBAI SQUARE · OPERATIONS CENTER</span>
+  <div class="t-sp"></div>
+  <div class="t-stats">
+    <div class="t-stat"><div class="ts-d" style="background:var(--green)"></div>Cameras <span class="ts-v">898/900</span></div>
+    <div class="t-stat"><div class="ts-d" style="background:var(--amber);animation:glow 1.5s ease infinite"></div>Incidents <span class="ts-v" style="color:var(--amber)">2</span></div>
+    <div class="t-stat"><div class="ts-d" style="background:var(--teal)"></div>Drones <span class="ts-v" style="color:var(--teal)">3</span></div>
+    <div class="t-stat"><div class="ts-d" style="background:var(--green)"></div>Visitors <span class="ts-v" id="vcnt">94,847</span></div>
+  </div>
+  <div class="t-live"><div class="ts-d" style="background:var(--red);animation:glow .8s ease infinite"></div>LIVE</div>
+  <a href="../twin/" class="t-link">3D Twin</a>
+  <a href="../demo/" class="t-link">AI Operator</a>
+  <a href="../" class="t-link">← Proposal</a>
+</div>
+
+<!-- MAIN BODY -->
+<div class="ops-body">
+
+  <!-- LEFT: DIGITAL TWIN -->
+  <div class="twin-panel">
+    <div class="panel-head">Digital Twin · Live 3D</div>
+    <div id="twinCvs"></div>
+    <div class="twin-floors" id="floorBtns">
+      <button class="fl-btn act" onclick="selFl('ALL',this)">ALL</button>
+      <button class="fl-btn" onclick="selFl('L3',this)">L3</button>
+      <button class="fl-btn" onclick="selFl('L2',this)">L2</button>
+      <button class="fl-btn" onclick="selFl('L1',this)">L1</button>
+      <button class="fl-btn" onclick="selFl('GF',this)">GF</button>
+      <button class="fl-btn" onclick="selFl('B1',this)">B1</button>
+    </div>
+  </div>
+
+  <!-- CENTER: CAMERA FEEDS -->
+  <div class="cam-panel">
+    <div class="panel-head">Camera Feeds · 9 of 900</div>
+    <div class="cam-grid" id="camGrid"></div>
+  </div>
+
+  <!-- RIGHT: INCIDENTS -->
+  <div class="right-panel">
+    <div class="panel-head">Active Incidents</div>
+    <div class="inc-list">
+      <div class="inc">
+        <div class="inc-t"><div class="inc-d" style="background:var(--red)"></div>Crowd Surge — Zone C</div>
+        <div class="inc-m">14:32 · CAM-C01 · West Atrium</div>
+        <div class="inc-s" style="color:var(--amber)">4.2 p/m² · Guards alerted</div>
+      </div>
+      <div class="inc">
+        <div class="inc-t"><div class="inc-d" style="background:var(--amber)"></div>ACS Alert — Bay 4</div>
+        <div class="inc-m">14:14 · Badge #2847 denied</div>
+        <div class="inc-s" style="color:var(--txt2)">Investigating</div>
+      </div>
+      <div class="inc" style="opacity:.55">
+        <div class="inc-t"><div class="inc-d" style="background:var(--gold)"></div>VIP Protocol — Gate 3</div>
+        <div class="inc-m">13:58 · Route cleared</div>
+        <div class="inc-s" style="color:var(--green)">✓ Completed</div>
+      </div>
+      <div class="inc" style="opacity:.4">
+        <div class="inc-t"><div class="inc-d" style="background:var(--txt2)"></div>Loitering — Store #247</div>
+        <div class="inc-m">14:02 · West Wing</div>
+        <div class="inc-s" style="color:var(--green)">✓ Guard dispatched</div>
+      </div>
+    </div>
+
+    <div class="thr-block">
+      <div class="thr-lbl">Threat Level</div>
+      <div class="thr-bar"><div class="thr-fill"></div></div>
+      <div class="thr-row"><span>LOW</span><span>MED</span><span>HIGH</span><span>CRIT</span></div>
+      <div class="thr-val">ELEVATED</div>
+    </div>
+
+    <div class="ai-block">
+      <div class="ai-lbl">AI Recommended Actions</div>
+      <div class="ai-actions" id="aiActions">
+        <button class="ai-act" onclick="execAction(this,'Dispatch guard to Zone C')">👮 Dispatch guard → Zone C</button>
+        <button class="ai-act" onclick="execAction(this,'Close east entrance gates')">🚧 Throttle Zone C entry</button>
+        <button class="ai-act" onclick="execAction(this,'Deploy DSQ-03 drone overhead')">🚁 Deploy DSQ-03 overhead</button>
+        <button class="ai-act" onclick="execAction(this,'PA announcement Zone C')">📢 PA: Zone C dispersal</button>
+        <button class="ai-act" onclick="execAction(this,'Notify Dubai Police')">🚔 Notify Dubai Police</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <span><span class="sb-dot" style="background:var(--green)"></span>898 cameras online</span>
+  <span><span class="sb-dot" style="background:var(--teal)"></span>312 ACS operational</span>
+  <span><span class="sb-dot" style="background:var(--amber)"></span>2 active incidents</span>
+  <span><span class="sb-dot" style="background:var(--teal)"></span>DSQ-02 patrol active</span>
+  <div class="sb-sp"></div>
+  <span id="clockFull" style="color:var(--txt)"></span>
+  <span>Auth Level 2 — Assist</span>
+</div>
+
+<!-- CAMERA MODAL -->
+<div class="cam-modal" id="camModal" onclick="closeCamModal(event)">
+  <div class="cm-inner" id="cmInner">
+    <div class="cm-video" id="cmVideo">
+      <canvas id="modalCvs"></canvas>
+      <div class="cm-scan"></div>
+      <div class="cm-hud-tl" id="cm-id">CAM-C01</div>
+      <div class="cm-hud-ts" id="cm-ts"></div>
+      <div class="cm-hud-br" id="cm-zone">Zone C · West Atrium</div>
+      <div class="cm-hud-pc" id="cm-pc">42 persons</div>
+      <div class="cm-corner cm-c-tl"></div>
+      <div class="cm-corner cm-c-tr"></div>
+      <div class="cm-corner cm-c-bl"></div>
+      <div class="cm-corner cm-c-br"></div>
+    </div>
+    <div class="cm-info">
+      <div class="cm-info-head">
+        <div class="cm-zone" id="cm-zone-big">Zone C — West Atrium</div>
+        <div class="cm-id" id="cm-cam-id">CAM-C01 · Ground Floor</div>
+      </div>
+      <div class="cm-rows">
+        <div class="cm-row"><span class="cm-k">Density</span><span class="cm-v" id="cm-density">4.2 p/m²</span></div>
+        <div class="cm-row"><span class="cm-k">Persons detected</span><span class="cm-v" id="cm-persons">42</span></div>
+        <div class="cm-row"><span class="cm-k">Status</span><span class="cm-v" id="cm-status">CRITICAL</span></div>
+        <div class="cm-row"><span class="cm-k">Last event</span><span class="cm-v" id="cm-event">14:32 · Surge alert</span></div>
+      </div>
+      <div class="cm-ai">
+        <div class="cm-ai-head">AI Analysis</div>
+        <div class="cm-ai-text" id="cm-ai-text">Analyzing...</div>
+      </div>
+    </div>
+    <button class="cm-close" onclick="closeModal()">✕</button>
+  </div>
+</div>
+
+<script>
+// ── CAMERA DEFINITIONS ────────────────────────────────────────
+const CAMS = [
+  {id:'CAM-C01', zone:'Zone C · West Atrium', floor:'GF', status:'CRITICAL',
+   bg:'#120808', dot:'#e05050', overlay:'rgba(200,40,40,.38)', count:42,
+   type:'atrium', density:'4.2 p/m²', event:'14:32 · Crowd surge active',
+   analysis:`<span class="crit">⚠ CRITICAL — Density 4.2 p/m² exceeds 4.0 threshold.</span>\n\n<span class="warn">Movement vectors indicate continued inflow from East corridor.</span>\n\n<span class="act">Recommend immediate guard deployment × 3</span><span class="act">Throttle Zone C entry gates</span><span class="act">PA dispersal announcement</span>`},
+
+  {id:'CAM-C02', zone:'Zone C · West Atrium', floor:'GF', status:'CRITICAL',
+   bg:'#160909', dot:'#d06060', overlay:'rgba(180,30,30,.3)', count:36,
+   type:'corridor', density:'4.2 p/m²', event:'14:32 · Angle 2',
+   analysis:`<span class="crit">Confirming surge — same zone, angle 2.</span>\n\n<span class="warn">Cluster forming near west service exit.</span>\n\n<span class="act">Block service exit: prevents unauthorized egress</span>`},
+
+  {id:'CAM-A01', zone:'Zone A · East Entrance', floor:'GF', status:'ELEVATED',
+   bg:'#141208', dot:'#c8c010', overlay:'rgba(180,170,10,.18)', count:22,
+   type:'entrance', density:'2.8 p/m²', event:'14:28 · Normal flow',
+   analysis:`<span class="warn">◆ ELEVATED — 2.8 p/m². Within safe range but trending up.</span>\n\n<span class="ok">Entry flow normal. 3 ANPR matches in last 10 min.</span>\n\n<span class="act">Monitor — no action required yet</span>`},
+
+  {id:'CAM-ANPR1', zone:'ANPR · Gate 1', floor:'GF', status:'OK',
+   bg:'#080e12', dot:'#3ddbbe', overlay:'rgba(40,180,160,.06)', count:2,
+   type:'anpr', density:'—', event:'14:29 · 247 plates today',
+   analysis:`<span class="ok">✓ Gate 1 operational. No blacklist hits in last 30 min.</span>\n\n247 vehicles processed today. Avg wait: 8 sec.\n\n<span class="act">ANPR database: current — no action needed</span>`},
+
+  {id:'CAM-B01', zone:'Zone B · Central Atrium', floor:'GF', status:'OK',
+   bg:'#080e0a', dot:'#38d96a', overlay:'rgba(40,180,80,.07)', count:14,
+   type:'atrium', density:'1.9 p/m²', event:'14:31 · Nominal',
+   analysis:`<span class="ok">✓ NORMAL — 1.9 p/m². Well within safe limits.</span>\n\nFountain area clear. Retail activity normal.\n\n<span class="act">No action required</span>`},
+
+  {id:'CAM-L101', zone:'Zone E · Level 1 Retail', floor:'L1', status:'HIGH',
+   bg:'#14100a', dot:'#c89020', overlay:'rgba(180,130,10,.22)', count:28,
+   type:'corridor', density:'3.4 p/m²', event:'14:30 · Elevated',
+   analysis:`<span class="warn">▲ HIGH — 3.4 p/m². Food court contributing to L1 overflow.</span>\n\n<span class="warn">Predicted to reach 3.8 p/m² in ~15 min.</span>\n\n<span class="act">Pre-position guard at L1 central junction</span><span class="act">Open escalator B to redirect flow</span>`},
+
+  {id:'CAM-B101', zone:'Parking B1', floor:'B1', status:'OK',
+   bg:'#0a0a0a', dot:'#3a5868', overlay:'rgba(40,80,100,.08)', count:5,
+   type:'parking', density:'Low', event:'14:20 · Nominal',
+   analysis:`<span class="ok">✓ Parking B1 nominal. 340/480 spaces occupied.</span>\n\nNo incidents. HVM barriers operational × 6.\n\n<span class="act">No action required</span>`},
+
+  {id:'CAM-DR02', zone:'DSQ-02 · North Perimeter', floor:'EXT', status:'PATROL',
+   bg:'#040c0a', dot:'#3ddbbe', overlay:'rgba(40,180,160,.06)', count:0,
+   type:'aerial', density:'—', event:'14:32 · Patrol active',
+   analysis:`<span class="ok">DSQ-02 operational. Altitude 180m. Battery 74%.</span>\n\nNorth perimeter clear. No anomalies detected.\n\nSouth sweep ETA: 4 min.\n\n<span class="act">Maintain current patrol route</span>`},
+
+  {id:'CAM-VIP', zone:'VIP Route · Gate 3', floor:'GF', status:'VIP',
+   bg:'#100e06', dot:'#c8a820', overlay:'rgba(180,160,20,.12)', count:4,
+   type:'vip', density:'Secure', event:'13:58 · Route completed',
+   analysis:`<span class="ok">✓ VIP Protocol completed at 13:58.</span>\n\nEscort confirmed. Route 3→Lounge clear.\nNext VIP movement: 16:30 (pending).\n\n<span class="act">Pre-clear Gate 3 corridor at 16:20</span>`},
+];
+
+// ── CROWD SIMULATION ──────────────────────────────────────────
+class CrowdFeed {
+  constructor(canvas, cfg) {
+    this.cv = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.cfg = cfg;
+    this.people = [];
+    this.cars = [];
+    this.t = Math.random() * 100;
+    this.init();
+  }
+
+  init() {
+    const n = this.cfg.count;
+    for (let i = 0; i < n; i++) {
+      this.people.push({
+        x: Math.random() * this.cv.width,
+        y: Math.random() * this.cv.height,
+        vx: (Math.random() - .5) * .9,
+        vy: (Math.random() - .5) * .9,
+        r: 1.8 + Math.random() * 1.4,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+    if (this.cfg.type === 'anpr') {
+      this.cars.push({ x: -30, y: this.cv.height * .5, spd: 1.2, w: 24, h: 14 });
+    }
+  }
+
+  update() {
+    this.t += .016;
+    this.people.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < p.r) p.vx = Math.abs(p.vx);
+      if (p.x > this.cv.width - p.r) p.vx = -Math.abs(p.vx);
+      if (p.y < p.r) p.vy = Math.abs(p.vy);
+      if (p.y > this.cv.height - p.r) p.vy = -Math.abs(p.vy);
+      p.vx += (Math.random() - .5) * .08;
+      p.vy += (Math.random() - .5) * .08;
+      const spd = Math.hypot(p.vx, p.vy);
+      if (spd > 1.4) { p.vx /= spd / 1.4; p.vy /= spd / 1.4; }
+      // Clustering for CRITICAL zones
+      if (this.cfg.status === 'CRITICAL') {
+        const cx = this.cv.width * .45, cy = this.cv.height * .55;
+        p.vx += (cx - p.x) * .0008;
+        p.vy += (cy - p.y) * .0008;
+      }
+    });
+    this.cars.forEach(c => {
+      c.x += c.spd;
+      if (c.x > this.cv.width + 40) c.x = -40;
+    });
+  }
+
+  drawBackground() {
+    const ctx = this.ctx, w = this.cv.width, h = this.cv.height;
+    ctx.fillStyle = this.cfg.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const type = this.cfg.type;
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+
+    if (type === 'atrium' || type === 'corridor') {
+      // Floor tile perspective
+      for (let i = 0; i <= 6; i++) {
+        const x = (w / 6) * i;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let i = 0; i <= 5; i++) {
+        const y = (h / 5) * i;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      // Corridor walls
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, w, h);
+    } else if (type === 'parking') {
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      // Parking spaces
+      for (let i = 0; i < 4; i++) {
+        const y = (h / 4) * i + 8;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        for (let j = 1; j < 6; j++) {
+          const x = (w / 6) * j;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h / 4 - 8); ctx.stroke();
+        }
+      }
+    } else if (type === 'entrance') {
+      // Wide entrance perspective
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(w * .5, h * .35); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(w, h); ctx.lineTo(w * .5, h * .35); ctx.stroke();
+      for (let i = 1; i < 5; i++) {
+        const t = i / 5;
+        ctx.beginPath();
+        ctx.moveTo(w * .5 * t, h * .35 + (h * .65) * t);
+        ctx.lineTo(w - w * .5 * t, h * .35 + (h * .65) * t);
+        ctx.stroke();
+      }
+    } else if (type === 'aerial') {
+      // Top-down aerial
+      ctx.strokeStyle = 'rgba(61,219,190,0.08)';
+      ctx.strokeRect(w * .05, h * .05, w * .9, h * .9);
+      ctx.strokeRect(w * .2, h * .2, w * .6, h * .6);
+      for (let i = 1; i < 5; i++) {
+        ctx.beginPath(); ctx.moveTo((w / 5) * i, 0); ctx.lineTo((w / 5) * i, h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, (h / 5) * i); ctx.lineTo(w, (h / 5) * i); ctx.stroke();
+      }
+    } else if (type === 'anpr') {
+      // Gate view
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath(); ctx.moveTo(0, h * .5); ctx.lineTo(w, h * .5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(w * .5, 0); ctx.lineTo(w * .5, h); ctx.stroke();
+      // Gate posts
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(0, 0, 8, h); ctx.fillRect(w - 8, 0, 8, h);
+    } else if (type === 'vip') {
+      // Corridor with gold accent
+      ctx.strokeStyle = 'rgba(200,168,32,0.06)';
+      for (let i = 0; i <= 6; i++) {
+        const x = (w / 6) * i;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(200,168,32,0.12)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, h * .35); ctx.lineTo(w, h * .35); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, h * .65); ctx.lineTo(w, h * .65); ctx.stroke();
+    }
+  }
+
+  draw() {
+    const ctx = this.ctx, w = this.cv.width, h = this.cv.height;
+    this.drawBackground();
+
+    // Density overlay
+    if (this.cfg.overlay) {
+      ctx.fillStyle = this.cfg.overlay;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // People dots
+    const pulse = Math.sin(this.t * 3) * .15;
+    this.people.forEach((p, i) => {
+      const alpha = .7 + Math.sin(this.t * 2 + p.phase) * .2;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.cfg.dot + Math.round(alpha * 255).toString(16).padStart(2,'0');
+      ctx.fill();
+      // Shadow dot for depth
+      if (this.cfg.status === 'CRITICAL' || this.cfg.status === 'HIGH') {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y + p.r * .5, p.r * .6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fill();
+      }
+    });
+
+    // AI bounding boxes for critical feeds
+    if (this.cfg.status === 'CRITICAL' && this.people.length > 10) {
+      ctx.strokeStyle = 'rgba(214,64,64,0.6)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      // Group bounding box around cluster
+      const cx = this.cv.width * .45, cy = this.cv.height * .55;
+      ctx.strokeRect(cx - 30, cy - 25, 60, 50);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(214,64,64,.7)';
+      ctx.fillRect(cx - 30, cy - 34, 52, 10);
+      ctx.fillStyle = '#fff';
+      ctx.font = `6px monospace`;
+      ctx.fillText('CROWD DETECTED', cx - 29, cy - 27);
+    }
+
+    // Car animation (ANPR)
+    this.cars.forEach(c => {
+      ctx.fillStyle = 'rgba(61,219,190,0.8)';
+      ctx.fillRect(c.x, c.y - c.h / 2, c.w, c.h);
+      // Headlights
+      ctx.fillStyle = 'rgba(255,255,200,.9)';
+      ctx.fillRect(c.x + c.w - 3, c.y - 3, 3, 3);
+      ctx.fillRect(c.x + c.w - 3, c.y + 1, 3, 3);
+      // ANPR scan
+      ctx.fillStyle = 'rgba(10,176,204,.4)';
+      ctx.fillRect(c.x - 2, c.y - c.h / 2, 2, c.h);
+    });
+
+    // VIP marker
+    if (this.cfg.type === 'vip') {
+      const gx = w * .5 + Math.sin(this.t * .5) * w * .2;
+      const gy = h * .5;
+      ctx.beginPath();
+      ctx.arc(gx, gy, 5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200,168,32,.9)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,168,32,.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(gx, gy, 10 + Math.sin(this.t * 3) * 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Drone POV elements
+    if (this.cfg.type === 'aerial') {
+      ctx.strokeStyle = 'rgba(61,219,190,.5)';
+      ctx.lineWidth = 1;
+      // Crosshair
+      const cx = w * .5 + Math.sin(this.t * .2) * w * .1;
+      const cy = h * .5 + Math.cos(this.t * .15) * h * .1;
+      ctx.beginPath(); ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10); ctx.stroke();
+      ctx.strokeRect(cx - 6, cy - 6, 12, 12);
+      // Altitude/speed HUD
+      ctx.fillStyle = 'rgba(61,219,190,.6)';
+      ctx.font = '6px monospace';
+      ctx.fillText(`ALT: 180m`, 6, 12);
+      ctx.fillText(`SPD: 8m/s`, 6, 21);
+    }
+  }
+}
+
+// ── BUILD CAMERA GRID ─────────────────────────────────────────
+const feeds = [];
+const grid = document.getElementById('camGrid');
+
+function statusColor(s) {
+  if (s==='CRITICAL') return ['rgba(214,64,64,.15)','var(--red)'];
+  if (s==='HIGH')     return ['rgba(200,146,10,.1)','var(--amber)'];
+  if (s==='ELEVATED') return ['rgba(200,192,16,.1)','#c8c010'];
+  if (s==='PATROL')   return ['rgba(61,219,190,.1)','var(--teal)'];
+  if (s==='VIP')      return ['rgba(200,168,32,.1)','var(--gold)'];
+  return ['rgba(56,217,106,.08)','var(--green)'];
+}
+
+CAMS.forEach((cam, i) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'cam-wrap';
+  wrap.onclick = () => openCam(i);
+
+  const canvas = document.createElement('canvas');
+  wrap.appendChild(canvas);
+
+  const [bgC, txtC] = statusColor(cam.status);
+  wrap.innerHTML += `
+    <div class="cam-scan"></div>
+    <div class="cam-hud">
+      <span class="cam-id">${cam.id}</span>
+      <span class="cam-badge" style="background:${bgC};color:${txtC}">${cam.status}</span>
+    </div>
+    <div class="cam-bottom">
+      <span class="cam-zone">${cam.zone}</span>
+      <span class="cam-ts clock"></span>
+    </div>`;
+  wrap.querySelector('canvas').style.position = 'absolute';
+  wrap.querySelector('canvas').style.inset = '0';
+  wrap.style.position = 'relative';
+
+  grid.appendChild(wrap);
+
+  // Init simulation
+  const cvs = wrap.querySelector('canvas');
+  const feed = new CrowdFeed(cvs, cam);
+  feeds.push({feed, cam});
+});
+
+// ── RESIZE CAMERA FEEDS ───────────────────────────────────────
+function resizeFeeds() {
+  const cells = grid.querySelectorAll('.cam-wrap');
+  cells.forEach((cell, i) => {
+    const cvs = cell.querySelector('canvas');
+    const w = cell.clientWidth, h = cell.clientHeight;
+    if (w > 0 && h > 0) {
+      cvs.width = w;
+      cvs.height = h;
+      if (feeds[i]) feeds[i].feed.cv = cvs;
+    }
+  });
+}
+setTimeout(resizeFeeds, 100);
+window.addEventListener('resize', resizeFeeds);
+
+// ── CAMERA MODAL ─────────────────────────────────────────────
+let modalFeed = null, modalRaf = null;
+
+function openCam(i) {
+  const cam = CAMS[i];
+  const modal = document.getElementById('camModal');
+  const mcvs = document.getElementById('modalCvs');
+  const mEl = document.getElementById('cmVideo');
+
+  mcvs.width = mEl.clientWidth || 700;
+  mcvs.height = mEl.clientHeight || 480;
+
+  document.getElementById('cm-id').textContent = cam.id;
+  document.getElementById('cm-zone').textContent = cam.zone;
+  document.getElementById('cm-zone-big').textContent = cam.zone;
+  document.getElementById('cm-cam-id').textContent = `${cam.id} · Floor ${cam.floor}`;
+  document.getElementById('cm-density').textContent = cam.density;
+  document.getElementById('cm-persons').textContent = cam.count > 0 ? cam.count + ' detected' : '—';
+  document.getElementById('cm-status').innerHTML = `<span style="color:${statusColor(cam.status)[1]}">${cam.status}</span>`;
+  document.getElementById('cm-event').textContent = cam.event;
+  document.getElementById('cm-ai-text').innerHTML = cam.analysis.replace(/\n/g,'<br>');
+
+  if (modalFeed) { cancelAnimationFrame(modalRaf); }
+  const bigCam = {...cam, count: cam.count * 2};
+  modalFeed = new CrowdFeed(mcvs, bigCam);
+
+  function loopModal() {
+    modalFeed.update();
+    modalFeed.draw();
+    const now = new Date().toTimeString().slice(0, 8);
+    document.getElementById('cm-ts').textContent = now;
+    document.getElementById('cm-pc').textContent = cam.count > 0 ? `${cam.count} persons` : '—';
+    modalRaf = requestAnimationFrame(loopModal);
+  }
+  loopModal();
+  modal.classList.add('open');
+}
+
+window.closeModal = function() {
+  document.getElementById('camModal').classList.remove('open');
+  if (modalRaf) cancelAnimationFrame(modalRaf);
+};
+window.closeCamModal = function(e) {
+  if (e.target === document.getElementById('camModal')) closeModal();
+};
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── AI ACTIONS ───────────────────────────────────────────────
+window.execAction = function(btn, label) {
+  btn.classList.add('executing');
+  btn.textContent = '⟳ Executing: ' + label + '…';
+  setTimeout(() => {
+    btn.classList.remove('executing');
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'rgba(56,217,106,.3)';
+    btn.textContent = '✓ ' + label;
+    btn.disabled = true;
+  }, 2200);
+};
+
+// ── THREE.JS DIGITAL TWIN ─────────────────────────────────────
+(function initTwin() {
+  const el = document.getElementById('twinCvs');
+  const W = el.clientWidth || 300;
+  const H = el.clientHeight || 400;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x02080f);
+  scene.fog = new THREE.FogExp2(0x02080f, 0.012);
+
+  const camera = new THREE.PerspectiveCamera(52, W / H, 0.1, 400);
+  camera.position.set(38, 32, 38);
+  camera.lookAt(0, 4, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  el.appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = .07;
+  controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 8; controls.maxDistance = 80;
+  controls.target.set(0, 4, 0);
+
+  scene.add(new THREE.AmbientLight(0x0a1e30, 1.8));
+  const d1 = new THREE.DirectionalLight(0x3a7a9a, .6); d1.position.set(30,50,30); scene.add(d1);
+  const incPt = new THREE.PointLight(0xd64040, 1.0, 18); incPt.position.set(-13,5,4); scene.add(incPt);
+
+  const FW=36,FD=20,FH=.2,FG=3.2;
+  const FLOORS=[
+    {id:'B2',lv:-2,fc:0x040c18,ec:0x0c1e2e},
+    {id:'B1',lv:-1,fc:0x050e1c,ec:0x0f2238},
+    {id:'GF',lv: 0,fc:0x061624,ec:0x0ab0cc},
+    {id:'L1',lv: 1,fc:0x061422,ec:0x089ab4},
+    {id:'L2',lv: 2,fc:0x061220,ec:0x3ddbbe},
+    {id:'L3',lv: 3,fc:0x05101e,ec:0x9880e0},
+  ];
+
+  const flGrps = {};
+  FLOORS.forEach(fl => {
+    const g = new THREE.Group();
+    const y = fl.lv * FG;
+    const geo = new THREE.BoxGeometry(FW, FH, FD);
+    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({color:fl.fc,transparent:true,opacity:fl.lv<0?.5:.7}));
+    m.position.y = y; g.add(m);
+    const em = new THREE.LineBasicMaterial({color:fl.ec,transparent:true,opacity:fl.lv<0?.08:.28});
+    const el2 = new THREE.LineSegments(new THREE.EdgesGeometry(geo), em);
+    el2.position.y = y; g.add(el2);
+    if (fl.lv >= 0) {
+      const wg = new THREE.BoxGeometry(14, FH, 10);
+      const wm = new THREE.Mesh(wg, new THREE.MeshLambertMaterial({color:fl.fc,transparent:true,opacity:.6}));
+      wm.position.set(3,y,-(FD/2+5)); g.add(wm);
+      const we = new THREE.LineSegments(new THREE.EdgesGeometry(wg), em.clone());
+      we.position.set(3,y,-(FD/2+5)); g.add(we);
+    }
+    scene.add(g); flGrps[fl.id] = g;
+  });
+
+  // Atrium
+  const aG=new THREE.BoxGeometry(10,FG*4,7);
+  const atr=new THREE.Mesh(aG,new THREE.MeshLambertMaterial({color:0x0ab0cc,transparent:true,opacity:.025,side:THREE.DoubleSide}));
+  atr.position.set(1,FG*1.5,2); scene.add(atr);
+  const aEl=new THREE.LineSegments(new THREE.EdgesGeometry(aG),new THREE.LineBasicMaterial({color:0x0ab0cc,transparent:true,opacity:.15}));
+  aEl.position.set(1,FG*1.5,2); scene.add(aEl);
+
+  // Zone C density
+  const zC=new THREE.Mesh(new THREE.PlaneGeometry(10,7),new THREE.MeshBasicMaterial({color:0xd64040,transparent:true,opacity:.38,side:THREE.DoubleSide}));
+  zC.rotation.x=-Math.PI/2; zC.position.set(-12,FH/2+.01,3); scene.add(zC);
+
+  // Incident marker
+  const inc=new THREE.Mesh(new THREE.SphereGeometry(.45,12,12),new THREE.MeshBasicMaterial({color:0xd64040}));
+  inc.position.set(-12,FH/2+1.3,3); scene.add(inc);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.6,.8,28),new THREE.MeshBasicMaterial({color:0xd64040,transparent:true,opacity:.5,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2; ring.position.set(-12,FH/2+.1,3); scene.add(ring);
+  const ring2=ring.clone(); ring2.material=ring.material.clone(); scene.add(ring2);
+
+  // Drone
+  const drn=new THREE.Mesh(new THREE.OctahedronGeometry(.32,0),new THREE.MeshBasicMaterial({color:0x3ddbbe}));
+  drn.position.set(14,10,0); scene.add(drn);
+  const trail=new THREE.Mesh(new THREE.TorusGeometry(16,.04,8,48),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.1}));
+  trail.rotation.x=Math.PI/2; trail.position.y=10; scene.add(trail);
+
+  // VIP dot
+  const vip=new THREE.Mesh(new THREE.SphereGeometry(.28,12,12),new THREE.MeshBasicMaterial({color:0xc8a820}));
+  const vipPath=[new THREE.Vector3(FW/2-1,FH/2+.4,3),new THREE.Vector3(8,FH/2+.4,1),new THREE.Vector3(0,FH/2+.4,-1),new THREE.Vector3(-8,FH/2+.4,1),new THREE.Vector3(-14,FH/2+.4,3)];
+  const vCurve=new THREE.CatmullRomCurve3(vipPath,false);
+  scene.add(vip);
+  const vLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(vCurve.getPoints(50)),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.3}));
+  scene.add(vLine);
+
+  // Grid
+  const grid3=new THREE.GridHelper(100,36,0x07182a,0x05101e);
+  grid3.position.y=-2*FG-.5; scene.add(grid3);
+
+  // Floor selector
+  window.selFl = function(id, btn) {
+    document.querySelectorAll('.fl-btn').forEach(b=>b.classList.remove('act'));
+    btn.classList.add('act');
+    FLOORS.forEach(fl=>{ flGrps[fl.id].visible=id==='ALL'||fl.id===id; });
+    if(id!=='ALL'){ const fl=FLOORS.find(f=>f.id===id); if(fl) controls.target.set(0,fl.lv*FG,0); }
+    else controls.target.set(0,4,0);
+  };
+
+  let tt=0, vT=0, dAngle=0;
+  function loopTwin() {
+    requestAnimationFrame(loopTwin);
+    tt+=.016; controls.update();
+    inc.scale.setScalar(1+Math.sin(tt*3.5)*.2);
+    const rExp=(r,ph)=>{ const s=1+((tt*.6+ph)%3)*1.6; r.scale.set(s,s,1); r.material.opacity=Math.max(0,.5-((tt*.6+ph)%3)*.17); };
+    rExp(ring,0); rExp(ring2,1.5);
+    incPt.intensity=.8+Math.sin(tt*2.5)*.4;
+    dAngle+=.28*.016;
+    drn.position.x=Math.cos(dAngle)*16; drn.position.z=Math.sin(dAngle)*16;
+    drn.position.y=10+Math.sin(tt*1.4)*.4; drn.rotation.y+=.02;
+    vT=(vT+.002)%1;
+    const vp=vCurve.getPoint(vT); vip.position.copy(vp);
+    vip.scale.setScalar(1+Math.sin(tt*2.5)*.1);
+    renderer.render(scene, camera);
+  }
+  loopTwin();
+
+  function resizeTwin() {
+    const w=el.clientWidth, h=el.clientHeight;
+    if(w>0&&h>0){ camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+  }
+  window.addEventListener('resize', resizeTwin);
+  window.camZ = f => camera.position.multiplyScalar(f);
+  window.camRst = () => { camera.position.set(38,32,38); controls.target.set(0,4,0); };
+})();
+
+// ── MAIN ANIMATION LOOP ───────────────────────────────────────
+function mainLoop() {
+  requestAnimationFrame(mainLoop);
+  feeds.forEach(({feed}) => { feed.update(); feed.draw(); });
+}
+mainLoop();
+
+// ── CLOCK ─────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date().toTimeString().slice(0,8);
+  document.getElementById('clockFull').textContent = now + ' GST';
+  document.querySelectorAll('.clock').forEach(el => el.textContent = now);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── VISITOR COUNTER ───────────────────────────────────────────
+let vc=94847;
+setInterval(()=>{ vc+=Math.floor(Math.random()*5)-1; document.getElementById('vcnt').textContent=vc.toLocaleString(); },3000);
+
+window.addEventListener('resize', () => {
+  setTimeout(resizeFeeds, 50);
+  const mcvs=document.getElementById('modalCvs'), mEl=document.getElementById('cmVideo');
+  if(mcvs&&mEl){ mcvs.width=mEl.clientWidth; mcvs.height=mEl.clientHeight; }
+});
+</script>
+</body>
+</html>

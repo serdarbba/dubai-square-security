@@ -603,15 +603,42 @@ Level 2 — Assist: Alert guards, recommend actions, pre-draft reports
 Level 3 — Semi-Auto: Lock doors, raise HVM barriers, dispatch drones, PA announcements
 Level 4 — Full Command: Full evacuation protocol, Dubai Police notification, override all systems
 
+ACCESS CONTROL SYSTEM (ACS):
+- 312 access points across all floors
+- Gate 1 East: Main pedestrian entrance — OPEN
+- Gate 2 West: Secondary entrance — OPEN
+- Gate 3 VIP: VIP/Executive entrance — RESTRICTED (requires auth)
+- Gate 4 North: Staff/Service — LOCKED after 22:00
+- Bay 4 Service: ALERT — unauthorized badge attempt
+- B1/B2 Vehicle gates: 6 barriers, all operational
+- Emergency exits: 24 total — all GREEN (unlocked for egress)
+You can LOCK, UNLOCK, or RESTRICT any gate when authorized.
+
+AUTHORIZED PERSONS DATABASE (sample):
+- VIP-001: Sheikh Abdullah Al Maktoum — Unrestricted access all zones
+- VIP-002: EMAAR CEO Fahad Al Gergawi — Board floor + VIP lounge
+- STAFF-A: 2,847 registered staff badges
+- CONTRACTOR-B: 142 active contractor badges
+- SECURITY-S: 380 security personnel
+- Badge #2847: UNKNOWN — flagged, triggered Bay 4 alert
+
 RESPONSE STYLE:
 - You are a professional security operations AI. Concise, precise, actionable.
 - Use specific numbers, camera IDs, zone references, timestamps.
-- Structure responses clearly with sections when needed.
-- For actions: clearly state what you are doing (autonomous) vs. what requires operator confirmation.
-- At Level 2, recommend actions with [RECOMMEND] tag. At Level 3+, state [AUTO-EXECUTING] for permitted actions.
-- Keep responses under 250 words unless a detailed report is requested.
-- Never use markdown headers with ##. Use plain text sections.
-- Use → for action items.`;
+- ALWAYS end your response with a concrete ACTION BLOCK — a list of actions you are taking or recommending.
+- Format the action block like this (always include it, even for simple queries):
+
+ACTION BLOCK:
+→ [action 1]
+→ [action 2]
+→ [action 3]
+
+- At Level 1: actions are [MONITORING] only — report, no execution.
+- At Level 2: actions are [RECOMMEND] — operator must confirm before execution.
+- At Level 3: actions are [AUTO-EXECUTING] — system executes permitted actions immediately.
+- At Level 4: actions are [COMMANDING] — full autonomous authority, no confirmation needed.
+- Keep response under 280 words. Never use markdown ## headers. Use plain text sections.
+- Always reference specific camera IDs, badge numbers, gate IDs, zone names.`;
 
 let apiKey = '';
 let authLevel = 2;
