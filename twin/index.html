@@ -64,12 +64,14 @@ canvas { display:block; }
   border:1px solid rgba(214,64,64,.2); padding:3px 9px; border-radius:3px;
   letter-spacing:1.2px;
 }
-.top-link {
-  font-size:9.5px; font-family:'JetBrains Mono',monospace; color:var(--txt2);
-  text-decoration:none; border:1px solid var(--line2);
-  padding:3px 10px; border-radius:3px; transition:all .15s;
-}
+.top-link { font-size:9.5px; font-family:'JetBrains Mono',monospace; color:var(--txt2); text-decoration:none; border:1px solid var(--line2); padding:3px 10px; border-radius:3px; transition:all .15s; }
 .top-link:hover { color:var(--white); border-color:rgba(10,176,204,.35); }
+
+/* ── PAGE NAV ── */
+.page-nav { display:flex; gap:0; border:1px solid var(--line2); border-radius:4px; overflow:hidden; }
+.pn-item { border:none!important; border-radius:0!important; }
+.pn-item + .pn-item { border-left:1px solid var(--line2)!important; }
+.pn-cur { background:rgba(10,176,204,.12); color:var(--blue)!important; }
 
 /* ── PANELS ── */
 .panel {
@@ -223,8 +225,12 @@ canvas { display:block; }
     <div class="top-stat"><div class="ts-dot" style="background:var(--green)"></div>Visitors<span class="ts-v" id="vc">94,847</span></div>
   </div>
   <div class="top-live"><div class="ts-dot" style="background:var(--red);animation:pulse .8s ease infinite"></div>LIVE</div>
-  <a href="../" class="top-link">← Proposal</a>
-  <a href="../demo/" class="top-link">AI Operator</a>
+  <div class="page-nav">
+    <a href="../" class="top-link pn-item">Proposal</a>
+    <a href="../ops/" class="top-link pn-item">Ops Center</a>
+    <a href="../twin/" class="top-link pn-item pn-cur">Digital Twin</a>
+    <a href="../demo/" class="top-link pn-item">AI Operator</a>
+  </div>
 </div>
 
 <!-- INCIDENT BADGE -->

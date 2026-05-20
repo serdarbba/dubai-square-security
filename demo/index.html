@@ -64,6 +64,13 @@ body{
   animation:pulse 1s ease-in-out infinite;
 }
 
+/* ── PAGE NAV ── */
+.page-nav{display:flex;gap:0;border:1px solid rgba(30,53,85,.8);border-radius:4px;overflow:hidden;margin-left:8px}
+.pn{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--muted2);padding:4px 12px;text-decoration:none;transition:all .15s;white-space:nowrap}
+.pn:hover{background:rgba(0,212,255,.08);color:var(--white)}
+.pn+.pn{border-left:1px solid rgba(30,53,85,.8)}
+.pn-act{background:rgba(0,212,255,.12);color:var(--blue)!important}
+
 /* ── MAIN LAYOUT ── */
 .main{flex:1;display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden}
 
@@ -412,6 +419,12 @@ body{
     </div>
   </div>
   <div class="tb-live"><div class="tb-live-dot"></div>LIVE</div>
+  <div class="page-nav">
+    <a href="../" class="pn">Proposal</a>
+    <a href="../ops/" class="pn">Ops Center</a>
+    <a href="../twin/" class="pn">Digital Twin</a>
+    <a href="../demo/" class="pn pn-act">AI Operator</a>
+  </div>
 </div>
 
 <!-- MAIN -->

@@ -243,9 +243,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="t-stat"><div class="ts-d" style="background:var(--green)"></div>Visitors <span class="ts-v" id="vcnt">94,847</span></div>
   </div>
   <div class="t-live"><div class="ts-d" style="background:var(--red);animation:glow .8s ease infinite"></div>LIVE</div>
-  <a href="../twin/" class="t-link">3D Twin</a>
-  <a href="../demo/" class="t-link">AI Operator</a>
-  <a href="../" class="t-link">← Proposal</a>
+  <div style="display:flex;gap:0;border:1px solid var(--line2);border-radius:4px;overflow:hidden;margin-left:4px">
+    <a href="../" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 12px;transition:all .15s;border-right:1px solid var(--line2)" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--txt2)'">Proposal</a>
+    <a href="../ops/" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--blue);background:rgba(10,176,204,.12);text-decoration:none;padding:4px 12px;transition:all .15s;border-right:1px solid var(--line2)">Ops Center</a>
+    <a href="../twin/" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 12px;transition:all .15s;border-right:1px solid var(--line2)" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--txt2)'">Digital Twin</a>
+    <a href="../demo/" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 12px;transition:all .15s" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--txt2)'">AI Operator</a>
+  </div>
 </div>
 
 <!-- MAIN BODY -->
