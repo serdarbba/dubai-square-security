@@ -24,10 +24,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .t-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:glow 2s ease infinite}
 @keyframes glow{0%,100%{opacity:1}50%{opacity:.35}}
 .t-div{width:1px;height:16px;background:var(--line2);flex-shrink:0}
-.t-tag{font-size:9.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace;letter-spacing:.8px}
+.t-tag{font-size:10px;color:var(--txt2);font-family:'JetBrains Mono',monospace;letter-spacing:.6px}
 .t-sp{flex:1}
 .t-stats{display:flex;gap:20px}
-.t-stat{display:flex;align-items:center;gap:5px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.t-stat{display:flex;align-items:center;gap:5px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
 .ts-d{width:4px;height:4px;border-radius:50%}
 .ts-v{color:var(--white);font-weight:500;margin-left:1px}
 .t-live{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--red);border:1px solid rgba(214,64,64,.2);padding:3px 8px;border-radius:3px;letter-spacing:1px}
@@ -38,15 +38,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .pn-act{background:rgba(10,176,204,.12);color:var(--blue)!important}
 
 /* ── MAIN LAYOUT ── */
-.main{position:fixed;top:44px;left:0;right:0;bottom:68px;display:grid;grid-template-columns:170px 1fr 290px;overflow:hidden}
+.main{position:fixed;top:44px;left:0;right:0;bottom:68px;display:grid;grid-template-columns:200px 1fr 320px;overflow:hidden}
 
 /* ── LEFT: CONTROLS ── */
 .ctrl-panel{border-right:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
-.ph{padding:8px 12px;border-bottom:1px solid var(--line);font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ph{padding:8px 12px;border-bottom:1px solid var(--line);font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-shrink:0}
 .ph::before{content:'';width:8px;height:1px;background:var(--blue)}
 
 .floor-list{padding:6px;display:flex;flex-direction:column;gap:2px}
-.fb{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:3px;cursor:pointer;transition:all .15s;border:1px solid transparent;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);background:none;text-align:left;width:100%}
+.fb{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:3px;cursor:pointer;transition:all .15s;border:1px solid transparent;font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);background:none;text-align:left;width:100%}
 .fb:hover{background:rgba(10,176,204,.05);color:var(--txt)}
 .fb.act{background:rgba(10,176,204,.1);border-color:rgba(10,176,204,.3);color:var(--blue)}
 .fb-bar{width:5px;height:5px;border-radius:1px;flex-shrink:0}
@@ -56,18 +56,46 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .lb:hover{background:rgba(10,176,204,.04)}
 .lb.on{background:rgba(10,176,204,.04);border-color:rgba(10,176,204,.12)}
 .lb-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.lb-nm{font-size:9.5px;color:var(--txt);flex:1}
-.lb-sw{width:20px;height:11px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--line2);position:relative;transition:all .15s;flex-shrink:0}
-.lb-sw::after{content:'';position:absolute;width:7px;height:7px;border-radius:50%;background:var(--txt2);top:1px;left:1px;transition:all .15s}
+.lb-nm{font-size:10.5px;color:var(--txt);flex:1}
+.lb-sw{width:22px;height:12px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--line2);position:relative;transition:all .15s;flex-shrink:0}
+.lb-sw::after{content:'';position:absolute;width:8px;height:8px;border-radius:50%;background:var(--txt2);top:1px;left:1px;transition:all .15s}
 .lb.on .lb-sw{background:rgba(10,176,204,.2);border-color:rgba(10,176,204,.4)}
-.lb.on .lb-sw::after{left:10px;background:var(--blue)}
+.lb.on .lb-sw::after{left:11px;background:var(--blue)}
+
+/* ACS Control */
+.acs-ctrl{padding:6px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.acs-door{padding:7px 9px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5)}
+.acs-door.alert{border-color:rgba(214,64,64,.28)}
+.acs-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.acs-nm{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt)}
+.acs-st{font-size:8.5px;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.5px}
+.acs-btns{display:flex;gap:3px}
+.acs-btn{flex:1;padding:4px 0;border-radius:2px;border:1px solid var(--line2);background:transparent;font-size:8px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .18s;color:var(--txt2);letter-spacing:.4px}
+.acs-btn.grn{border-color:rgba(56,217,106,.2);color:rgba(56,217,106,.55)}
+.acs-btn.grn:hover,.acs-btn.grn.act{background:rgba(56,217,106,.1);color:var(--green);border-color:rgba(56,217,106,.45)}
+.acs-btn.red{border-color:rgba(214,64,64,.2);color:rgba(214,64,64,.55)}
+.acs-btn.red:hover,.acs-btn.red.act{background:rgba(214,64,64,.1);color:var(--red);border-color:rgba(214,64,64,.45)}
+.acs-btn.yel{border-color:rgba(200,146,10,.2);color:rgba(200,146,10,.55)}
+.acs-btn.yel:hover,.acs-btn.yel.act{background:rgba(200,146,10,.1);color:var(--amber);border-color:rgba(200,146,10,.45)}
 
 /* Threat score */
 .threat-score{padding:10px 12px;border-top:1px solid var(--line);flex-shrink:0}
-.ts-head{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;margin-bottom:8px}
+.ts-head{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;margin-bottom:8px}
 .ts-radar{width:100%;height:80px;display:flex;align-items:center;justify-content:center}
-.ts-num{text-align:center;font-size:22px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--amber);margin-top:4px}
-.ts-lbl{text-align:center;font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px}
+.ts-num{text-align:center;font-size:26px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--amber);margin-top:4px}
+.ts-lbl{text-align:center;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px}
+
+/* Quick action overlay */
+.qact{position:absolute;top:12px;left:12px;z-index:50;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.qact>*{pointer-events:auto}
+.qa-btn{padding:5px 12px;border-radius:3px;border:1px solid var(--line2);background:rgba(4,14,28,.92);font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;letter-spacing:.6px;transition:all .18s;color:var(--txt2);white-space:nowrap;display:block;text-align:left}
+.qa-btn:hover{color:var(--white);border-color:rgba(10,176,204,.35);background:rgba(10,176,204,.06)}
+.qa-btn.danger{border-color:rgba(214,64,64,.28);color:rgba(214,64,64,.75)}
+.qa-btn.danger:hover{background:rgba(214,64,64,.1);color:var(--red);border-color:rgba(214,64,64,.5)}
+.qa-btn.safe{border-color:rgba(56,217,106,.22);color:rgba(56,217,106,.7)}
+.qa-btn.safe:hover{background:rgba(56,217,106,.08);color:var(--green);border-color:rgba(56,217,106,.45)}
+.qa-btn.active-ld{background:rgba(214,64,64,.12)!important;color:var(--red)!important;border-color:rgba(214,64,64,.5)!important;animation:glow .9s ease infinite}
+.qa-btn.active-ev{background:rgba(56,217,106,.1)!important;color:var(--green)!important;border-color:rgba(56,217,106,.45)!important}
 
 /* ── CENTER: 3D TWIN ── */
 .twin-main{position:relative;overflow:hidden}
@@ -99,70 +127,81 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .intel-panel{border-left:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
 
 /* AI Predictions */
-.pred-list{padding:8px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
-.pred-item{padding:8px 10px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5);transition:border-color .15s}
+.pred-list{padding:8px;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+.pred-item{padding:9px 11px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5);transition:border-color .15s}
 .pred-item:hover{border-color:var(--line2)}
-.pred-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.pred-zone{font-size:10px;font-weight:500;color:var(--white)}
-.pred-conf{font-size:8.5px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:2px}
-.pred-bar{height:2px;background:rgba(255,255,255,.06);border-radius:1px;margin-bottom:4px}
-.pred-fill{height:100%;border-radius:1px;transition:width 1s ease}
-.pred-meta{display:flex;justify-content:space-between;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.pred-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.pred-zone{font-size:11px;font-weight:500;color:var(--white)}
+.pred-conf{font-size:9.5px;font-family:'JetBrains Mono',monospace;padding:2px 7px;border-radius:2px}
+.pred-bar{height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-bottom:5px}
+.pred-fill{height:100%;border-radius:2px;transition:width 1s ease}
+.pred-meta{display:flex;justify-content:space-between;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
 
 /* Entities */
 .entity-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:3px;min-height:0}
-.ent{padding:7px 10px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px}
+.ent{padding:8px 10px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px}
 .ent:hover{border-color:var(--line2);background:rgba(10,176,204,.03)}
+.ent.sel{border-color:rgba(10,176,204,.5)!important;background:rgba(10,176,204,.07)!important}
 .ent.blink{animation:entblink 1s ease infinite}
 @keyframes entblink{0%,100%{border-color:rgba(214,64,64,.4)}50%{border-color:rgba(214,64,64,.1)}}
-.ent-icon{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.ent-icon{width:24px;height:24px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .ent-info{flex:1;min-width:0}
-.ent-name{font-size:10px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ent-sub{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-top:1px}
-.ent-badge{font-size:7.5px;font-family:'JetBrains Mono',monospace;padding:2px 5px;border-radius:2px;flex-shrink:0}
+.ent-name{font-size:11px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ent-sub{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-top:2px}
+.ent-badge{font-size:8.5px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:2px;flex-shrink:0}
+/* Entity detail card */
+.ent-detail{display:none;flex-direction:column;gap:5px;padding:8px 10px 10px;border-radius:3px;border:1px solid rgba(10,176,204,.25);background:rgba(2,8,15,.7);margin-top:-2px;border-top:none;border-radius:0 0 3px 3px}
+.ent-detail.open{display:flex}
+.ed-row{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;font-family:'JetBrains Mono',monospace}
+.ed-k{color:var(--txt2)}.ed-v{color:var(--white);font-weight:500}
+.ed-btns{display:flex;gap:4px;margin-top:2px}
+.ed-btn{flex:1;padding:5px 0;border-radius:2px;border:1px solid var(--line2);background:transparent;font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;color:var(--txt2);transition:all .15s;letter-spacing:.3px}
+.ed-btn:hover{color:var(--white);border-color:rgba(10,176,204,.4);background:rgba(10,176,204,.06)}
+.ed-btn.red-btn{border-color:rgba(214,64,64,.25);color:rgba(214,64,64,.7)}
+.ed-btn.red-btn:hover{background:rgba(214,64,64,.08);color:var(--red);border-color:rgba(214,64,64,.45)}
 
 /* Telemetry */
-.telem{flex-shrink:0;border-top:1px solid var(--line);height:140px;display:flex;flex-direction:column;overflow:hidden}
+.telem{flex-shrink:0;border-top:1px solid var(--line);height:148px;display:flex;flex-direction:column;overflow:hidden}
 .telem-body{flex:1;overflow-y:auto;padding:6px 8px}
-.tl-row{display:flex;gap:6px;align-items:flex-start;padding:2px 0;font-size:9px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid rgba(12,30,48,.8);line-height:1.5}
-.tl-t{color:var(--txt2);flex-shrink:0;width:44px}
-.tl-type{flex-shrink:0;width:38px;font-weight:500}
+.tl-row{display:flex;gap:6px;align-items:flex-start;padding:2.5px 0;font-size:9.5px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid rgba(12,30,48,.8);line-height:1.55}
+.tl-t{color:var(--txt2);flex-shrink:0;width:48px}
+.tl-type{flex-shrink:0;width:42px;font-weight:500}
 .tl-msg{color:var(--txt);min-width:0}
 
 /* Zone status */
 .zs-wrap{padding:3px 8px 5px;border-bottom:1px solid var(--line);flex-shrink:0}
-.zs-row{display:flex;align-items:center;gap:5px;padding:2.5px 0;font-size:8px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid rgba(12,30,48,.5)}
+.zs-row{display:flex;align-items:center;gap:5px;padding:3px 0;font-size:9px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid rgba(12,30,48,.5)}
 .zs-row:last-child{border-bottom:none}
-.zs-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.zs-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .zs-nm{flex:1;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.zs-val{color:var(--txt);width:50px;text-align:right;flex-shrink:0}
-.zs-st{width:46px;text-align:right;flex-shrink:0;font-weight:500}
+.zs-val{color:var(--txt);width:54px;text-align:right;flex-shrink:0}
+.zs-st{width:50px;text-align:right;flex-shrink:0;font-weight:600}
 
 /* ── TIMELINE ── */
 .timeline{position:fixed;bottom:0;left:0;right:0;height:68px;background:var(--s1);border-top:1px solid var(--line);z-index:400;display:flex;flex-direction:column}
 .tl-head{padding:5px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-.tl-label{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px}
+.tl-label{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1px}
 .tl-sp{flex:1}
-.tl-now{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--blue)}
+.tl-now{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue)}
 .tl-track{position:relative;flex:1;margin:0 16px 8px;cursor:pointer}
 .tl-axis{position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--line2)}
 .tl-marks{position:absolute;bottom:0;left:0;right:0;top:0}
 .tl-mark{position:absolute;bottom:0;display:flex;flex-direction:column;align-items:center}
 .tl-mark-line{width:1px;flex:1;min-height:4px}
-.tl-mark-lbl{font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);white-space:nowrap;margin-top:2px}
+.tl-mark-lbl{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);white-space:nowrap;margin-top:2px}
 .tl-event{position:absolute;bottom:3px;width:6px;height:6px;border-radius:50%;transform:translateX(-50%);cursor:pointer;transition:transform .15s}
 .tl-event:hover{transform:translateX(-50%) scale(1.5)}
 .tl-now-line{position:absolute;bottom:0;top:0;width:1px;background:var(--blue);opacity:.8}
 
 /* 3D HTML labels */
-.lbl{position:fixed;z-index:100;pointer-events:none;font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--blue);background:rgba(2,8,15,.88);border:1px solid rgba(10,176,204,.2);padding:2px 7px;border-radius:2px;white-space:nowrap;letter-spacing:.4px;transform:translate(-50%,-100%);margin-top:-6px}
-.lbl.zone{color:var(--txt2);border-color:rgba(255,255,255,.08);font-size:8px}
-.lbl.crit{color:var(--red);border-color:rgba(214,64,64,.3);animation:lblblink 1.8s ease infinite}
-@keyframes lblblink{0%,100%{border-color:rgba(214,64,64,.3)}50%{border-color:rgba(214,64,64,.7)}}
-.lbl.ent-vip{color:var(--gold);border-color:rgba(200,168,32,.3)}
-.lbl.ent-guard{color:var(--teal);border-color:rgba(61,219,190,.25)}
-.lbl.ent-suspect{color:var(--red);border-color:rgba(214,64,64,.35);animation:lblblink 1.2s ease infinite}
-.lbl.ent-drone{color:var(--teal);border-color:rgba(61,219,190,.2)}
+.lbl{position:fixed;z-index:100;pointer-events:none;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue);background:rgba(2,8,15,.9);border:1px solid rgba(10,176,204,.25);padding:3px 9px;border-radius:2px;white-space:nowrap;letter-spacing:.4px;transform:translate(-50%,-100%);margin-top:-6px}
+.lbl.zone{color:var(--txt);border-color:rgba(255,255,255,.12);font-size:9.5px}
+.lbl.crit{color:var(--red);border-color:rgba(214,64,64,.4);animation:lblblink 1.8s ease infinite}
+@keyframes lblblink{0%,100%{border-color:rgba(214,64,64,.4)}50%{border-color:rgba(214,64,64,.12)}}
+.lbl.ent-vip{color:var(--gold);border-color:rgba(200,168,32,.4);font-weight:500}
+.lbl.ent-guard{color:var(--teal);border-color:rgba(61,219,190,.3)}
+.lbl.ent-suspect{color:var(--red);border-color:rgba(214,64,64,.4);animation:lblblink 1.2s ease infinite;font-weight:500}
+.lbl.ent-drone{color:var(--teal);border-color:rgba(61,219,190,.25)}
 
 /* Tooltip */
 #tip{position:fixed;z-index:600;pointer-events:none;background:rgba(4,14,28,.97);border:1px solid rgba(10,176,204,.3);border-radius:3px;padding:6px 11px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--white);display:none;white-space:nowrap}
@@ -222,7 +261,47 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div class="lb" onclick="togL('evac',this)"><div class="lb-dot" style="background:var(--green)"></div><span class="lb-nm">Evac Routes</span><div class="lb-sw"></div></div>
       <div class="lb" onclick="togL('patrol',this)"><div class="lb-dot" style="background:var(--teal)"></div><span class="lb-nm">Guard Patrols</span><div class="lb-sw"></div></div>
       <div class="lb" onclick="togL('bms',this)"><div class="lb-dot" style="background:var(--purple)"></div><span class="lb-nm">BMS / Sensors</span><div class="lb-sw"></div></div>
+      <div class="lb" onclick="togL('fov',this)"><div class="lb-dot" style="background:var(--blue)"></div><span class="lb-nm">Camera FOV</span><div class="lb-sw"></div></div>
+      <div class="lb" onclick="togL('interior',this)"><div class="lb-dot" style="background:var(--txt2)"></div><span class="lb-nm">Floor Plans</span><div class="lb-sw"></div></div>
     </div>
+
+    <div class="ph" style="margin-top:2px">ACS Control <span style="color:var(--teal);margin-left:6px;font-size:8px">LIVE</span></div>
+    <div class="acs-ctrl" id="acsCtrl">
+      <div class="acs-door" id="acs-G1">
+        <div class="acs-top">
+          <span class="acs-nm">Gate 1 · East</span>
+          <span class="acs-st" id="ast-G1" style="color:var(--green)">OPEN</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn act" onclick="acsCmd('G1','OPEN',this)">OPEN</button>
+          <button class="acs-btn red" onclick="acsCmd('G1','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('G1','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-G3">
+        <div class="acs-top">
+          <span class="acs-nm">Gate 3 · VIP</span>
+          <span class="acs-st" id="ast-G3" style="color:var(--gold)">RESTRICTED</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('G3','OPEN',this)">OPEN</button>
+          <button class="acs-btn red act" onclick="acsCmd('G3','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('G3','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door alert" id="acs-B4">
+        <div class="acs-top">
+          <span class="acs-nm" style="color:var(--red)">⚠ Bay 4 Service</span>
+          <span class="acs-st" id="ast-B4" style="color:var(--red)">ALERT</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('B4','OPEN',this)">OPEN</button>
+          <button class="acs-btn red act" onclick="acsCmd('B4','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('B4','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+    </div>
+
     <div class="threat-score">
       <div class="ts-head">THREAT SCORE</div>
       <canvas id="radarCvs" width="148" height="80" style="display:block;margin:0 auto"></canvas>
@@ -234,6 +313,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <!-- CENTER: 3D -->
   <div class="twin-main" id="twinMain">
     <div id="twinCanvas"></div>
+    <!-- Quick Action strip -->
+    <div class="qact">
+      <button class="qa-btn danger" id="ldBtn" onclick="triggerLockdown(this)">⬛ FACILITY LOCKDOWN</button>
+      <button class="qa-btn safe" id="evBtn" onclick="triggerEvac(this)">↑ EVACUATE ZONE C</button>
+      <button class="qa-btn" onclick="dispatchGuard(this)">👮 DISPATCH GUARD → C</button>
+      <button class="qa-btn" onclick="deployDrone(this)">🚁 DEPLOY DSQ-03</button>
+    </div>
     <!-- ANPR live reads overlay -->
     <div style="position:absolute;bottom:12px;left:10px;pointer-events:none;z-index:50;width:162px;background:rgba(4,14,28,.93);border:1px solid rgba(10,176,204,.15);border-radius:3px">
       <div style="font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;padding:4px 8px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:5px"><div style="width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0"></div>ANPR · GATE 1 LIVE</div>
@@ -363,22 +449,80 @@ PREDICTIONS.forEach(p => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ENTITIES UI
+// ENTITIES UI  (interactive — click to select + detail card)
 // ═══════════════════════════════════════════════════════════════
 const entityList = document.getElementById('entityList');
-ENTITIES.forEach(e => {
+let selectedEntIdx = null;
+const ENT_HISTORY = {
+  'VIP-001': ['14:31:42 · Gate 3 access granted','14:28:10 · Main Entrance arrival','13:58:00 · VIP Protocol activated'],
+  'VIP-002': ['14:20:00 · Level 2 Lounge entered','13:45:00 · EMAAR Board meeting','12:30:00 · Arrival confirmed'],
+  'SEC-047': ['14:32:00 · Dispatched Zone C','14:15:00 · Patrol completed','13:50:00 · Incident response'],
+  'SEC-012': ['14:30:00 · Gate 1 post assigned','14:00:00 · Shift start','13:00:00 · Briefing completed'],
+  'SEC-031': ['14:25:00 · L1 patrol active','14:10:00 · Incident cleared','13:55:00 · Started patrol'],
+  'UNK-B4':  ['14:14:00 · ⚠ Unauthorized access attempt','14:13:45 · Badge denied × 3','14:13:00 · Perimeter breach sensor'],
+  'DSQ-01':  ['13:05:00 · Sector A sweep done','12:40:00 · Launch authorized','12:30:00 · Pre-flight check'],
+  'DSQ-02':  ['14:28:00 · N perimeter patrol','14:00:00 · Battery charged','13:30:00 · Sector 3 clear'],
+  'DSQ-03':  ['14:15:00 · Standby status','13:45:00 · Returned to base','13:00:00 · Manual override'],
+};
+
+function selectEnt(idx) {
+  if (selectedEntIdx === idx) {
+    // Deselect
+    selectedEntIdx = null;
+    document.querySelectorAll('.ent').forEach(el => el.classList.remove('sel'));
+    document.querySelectorAll('.ent-detail').forEach(el => el.classList.remove('open'));
+    if (window.focusEntity) window.focusEntity(null);
+    return;
+  }
+  selectedEntIdx = idx;
+  document.querySelectorAll('.ent').forEach((el,i) => {
+    el.classList.toggle('sel', i === idx);
+  });
+  document.querySelectorAll('.ent-detail').forEach((el,i) => {
+    el.classList.toggle('open', i === idx);
+  });
+  if (window.focusEntity) window.focusEntity(idx);
+}
+
+ENTITIES.forEach((e, idx) => {
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'flex';
+  wrapper.style.flexDirection = 'column';
+
   const d = document.createElement('div');
   d.className = 'ent' + (e.alert ? ' blink' : '');
-  const badgeBg = e.type==='suspect'?'rgba(214,64,64,.12)':e.type==='vip'?'rgba(200,168,32,.12)':e.type==='drone'?'rgba(61,219,190,.1)':'rgba(61,219,190,.08)';
+  d.onclick = () => selectEnt(idx);
+  const badgeBg = e.type==='suspect'?'rgba(214,64,64,.14)':e.type==='vip'?'rgba(200,168,32,.14)':e.type==='drone'?'rgba(61,219,190,.1)':'rgba(61,219,190,.08)';
   const badgeCol = e.type==='suspect'?'#d64040':e.type==='vip'?'#c8a820':'#3ddbbe';
+  const alertBadge = e.alert ? `<span style="font-size:7.5px;color:var(--red);margin-left:2px">● ALERT</span>` : '';
   d.innerHTML = `
-    <div class="ent-icon" style="background:${e.color}18;border:1px solid ${e.color}28">${e.icon}</div>
+    <div class="ent-icon" style="background:${e.color}18;border:1px solid ${e.color}30">${e.icon}</div>
     <div class="ent-info">
-      <div class="ent-name">${e.name}</div>
+      <div class="ent-name">${e.name}${alertBadge}</div>
       <div class="ent-sub">${e.loc}</div>
     </div>
     <span class="ent-badge" style="background:${badgeBg};color:${badgeCol}">${e.id}</span>`;
-  entityList.appendChild(d);
+
+  // Detail card
+  const hist = ENT_HISTORY[e.id] || [];
+  const detail = document.createElement('div');
+  detail.className = 'ent-detail';
+  detail.innerHTML = `
+    <div class="ed-row"><span class="ed-k">ID</span><span class="ed-v" style="color:${e.color}">${e.id}</span></div>
+    <div class="ed-row"><span class="ed-k">Role</span><span class="ed-v">${e.role}</span></div>
+    <div class="ed-row"><span class="ed-k">Location</span><span class="ed-v">${e.loc}</span></div>
+    <div class="ed-row"><span class="ed-k">Status</span><span class="ed-v" style="color:${e.alert?'var(--red)':'var(--green)'}">${e.alert?'ALERT':'NOMINAL'}</span></div>
+    <div style="font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-top:2px">RECENT EVENTS</div>
+    ${hist.map(h=>`<div style="font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt);padding:1px 0;border-bottom:1px solid rgba(12,30,48,.5)">${h}</div>`).join('')}
+    <div class="ed-btns">
+      <button class="ed-btn" onclick="trackEnt('${e.id}')">TRACK</button>
+      <button class="ed-btn" onclick="entHistory('${e.id}')">HISTORY</button>
+      <button class="ed-btn red-btn" onclick="entAlert('${e.id}')">ALERT</button>
+    </div>`;
+
+  wrapper.appendChild(d);
+  wrapper.appendChild(detail);
+  entityList.appendChild(wrapper);
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -862,11 +1006,74 @@ drawRadar();
   bmsGrp.visible=false;
   scene.add(bmsGrp);
 
+  // ── CAMERA FOV CONES ──
+  const fovGrp=new THREE.Group();
+  const FOV_CAMS=[
+    {x:20,  z:1,   range:10, spread:1.15, dir:Math.PI},
+    {x:-18, z:5,   range:11, spread:1.2,  dir:0.3},
+    {x:2,   z:-8,  range:9,  spread:1.05, dir:Math.PI/2},
+    {x:-22, z:-10, range:8,  spread:1.1,  dir:0.25},
+    {x:22,  z:-10, range:8,  spread:1.1,  dir:Math.PI-0.25},
+    {x:0,   z:12,  range:9,  spread:1.0,  dir:Math.PI*1.5},
+    {x:-25, z:0,   range:8,  spread:0.9,  dir:0},
+    {x:25,  z:0,   range:8,  spread:0.9,  dir:Math.PI},
+    {x:4,   z:-21, range:7,  spread:0.85, dir:Math.PI/2},
+  ];
+  FOV_CAMS.forEach(fc=>{
+    const segs=14, y=FH/2+.05;
+    const ctr=new THREE.Vector3(fc.x,y,fc.z);
+    const pts=[ctr];
+    for(let i=0;i<=segs;i++){
+      const a=fc.dir-fc.spread+fc.spread*2*(i/segs);
+      pts.push(new THREE.Vector3(fc.x+Math.sin(a)*fc.range,y,fc.z+Math.cos(a)*fc.range));
+    }
+    const verts=[];
+    for(let i=1;i<pts.length-1;i++){
+      verts.push(pts[0].x,pts[0].y,pts[0].z,pts[i].x,pts[i].y,pts[i].z,pts[i+1].x,pts[i+1].y,pts[i+1].z);
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+    fovGrp.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x0ab0cc,transparent:true,opacity:.06,side:THREE.DoubleSide,depthWrite:false})));
+    fovGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([ctr,...pts.slice(1),pts[1]]),new THREE.LineBasicMaterial({color:0x0ab0cc,transparent:true,opacity:.2})));
+  });
+  fovGrp.visible=false;
+  scene.add(fovGrp);
+
+  // ── INTERIOR FLOOR PLANS ──
+  const intGrp=new THREE.Group();
+  const INT_WALLS=[
+    // GF — retail wings
+    [-27,0,-27,-10],[-27,-10,-10,-10],[-10,-10,-10,0],
+    [10,0,10,-10],[10,-10,27,-10],[27,-10,27,0],
+    // GF — north lobby
+    [-6,8,-6,14],[6,8,6,14],[-6,14,6,14],
+    // GF — service corridors
+    [-8,-3,-8,-12],[8,-3,8,-12],
+    // GF — central spine
+    [0,0,0,8],
+    // L1 — retail dividers
+    [-22,-5,-22,5],[-22,5,-8,5],[-22,-5,-8,-5],
+    [8,-5,22,-5],[8,5,22,5],[22,-5,22,5],
+    [-5,3,5,3],[-5,-3,5,-3],
+    // L2 — F&B units
+    [-18,-4,-18,4],[-18,4,-5,4],[-5,4,-5,-4],[-5,-4,-18,-4],
+    [5,-4,5,4],[5,4,18,4],[18,4,18,-4],[18,-4,5,-4],
+  ];
+  INT_WALLS.forEach(([x1,z1,x2,z2],wi)=>{
+    const lv=wi<12?0:wi<22?1:2;
+    const col=[0x0ab0cc,0x089ab4,0x3ddbbe][lv];
+    const op=[.28,.22,.18][lv];
+    intGrp.add(mkLine([[x1,lv*FG+FH/2+.12,z1],[x2,lv*FG+FH/2+.12,z2]],col,op));
+  });
+  intGrp.visible=false;
+  scene.add(intGrp);
+
   // ── LAYERS ──
   const LAYER_MAP={
     density:densGrp, predict:predGrp, cameras:camGrp, acs:acsGrp,
     incidents:incGrp, drones:droneGrp, entities:entGrp,
     evac:evacGrp, patrol:patrolGrp, bms:bmsGrp,
+    fov:fovGrp, interior:intGrp,
   };
   window.togL=(n,el2)=>{ el2.classList.toggle('on'); LAYER_MAP[n].visible=el2.classList.contains('on'); };
   window.selFl=(id,btn)=>{
@@ -876,6 +1083,32 @@ drawRadar();
   };
   window.camZ=f=>cam.position.multiplyScalar(f);
   window.camRst=()=>{ cam.position.set(58,48,58); controls.target.set(0,4,0); };
+
+  // Entity selection highlight ring
+  const selRing=new THREE.Mesh(
+    new THREE.RingGeometry(.65,.82,28),
+    new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.55,side:THREE.DoubleSide})
+  );
+  selRing.rotation.x=-Math.PI/2; selRing.visible=false; scene.add(selRing);
+  const selRingOuter=new THREE.Mesh(
+    new THREE.RingGeometry(.88,1.0,28),
+    new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.18,side:THREE.DoubleSide})
+  );
+  selRingOuter.rotation.x=-Math.PI/2; selRingOuter.visible=false; scene.add(selRingOuter);
+
+  window.focusEntity=(idx)=>{
+    if(idx===null){
+      controls.target.set(0,4,0); cam.position.set(58,48,58);
+      selRing.visible=false; selRingOuter.visible=false; return;
+    }
+    const e=ENTITIES[idx]; if(!e) return;
+    controls.target.set(e.pos.x,e.pos.y,e.pos.z);
+    cam.position.set(e.pos.x+14,e.pos.y+10,e.pos.z+14);
+    const col=e.type==='vip'?0xc8a820:e.type==='suspect'?0xd64040:0x3ddbbe;
+    selRing.material.color.setHex(col); selRingOuter.material.color.setHex(col);
+    selRing.position.set(e.pos.x,.04,e.pos.z); selRingOuter.position.set(e.pos.x,.04,e.pos.z);
+    selRing.visible=true; selRingOuter.visible=true;
+  };
 
   // ── ANIMATE ──
   let tick=0, vT=0, dAngle=0;
@@ -906,6 +1139,8 @@ drawRadar();
     patrolMkrs.forEach(pm=>{ pm.t=(pm.t+pm.speed)%1; const p=pm.path.getPoint(pm.t); pm.m.position.copy(p); });
     // BMS sensor gentle pulse
     bmsGrp.children.forEach((s,i)=>{ if(s.material&&s.material.transparent) s.material.opacity=.4+Math.sin(tick*1.1+i*.7)*.3; });
+    // Entity selection ring pulse
+    if(selRing.visible){ selRing.material.opacity=.4+Math.sin(tick*3.5)*.2; selRingOuter.material.opacity=.12+Math.sin(tick*3.5+.8)*.08; selRing.rotation.z+=.018; selRingOuter.rotation.z-=.012; }
     updateLabels();
     renderer.render(scene,cam);
   }
@@ -916,6 +1151,63 @@ drawRadar();
     if(w>0&&h>0){ cam.aspect=w/h; cam.updateProjectionMatrix(); renderer.setSize(w,h); }
   });
 })();
+
+// ═══════════════════════════════════════════════════════════════
+// ACTION HANDLERS
+// ═══════════════════════════════════════════════════════════════
+window.acsCmd=(door,cmd,btn)=>{
+  const grp=btn.closest('.acs-door');
+  grp.querySelectorAll('.acs-btn').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  const st=grp.querySelector('.acs-st');
+  st.textContent={OPEN:'OPEN',LOCK:'LOCKED',HOLD:'HELD'}[cmd]||cmd;
+  st.style.color=cmd==='OPEN'?'rgba(56,217,106,.85)':cmd==='LOCK'?'rgba(214,64,64,.85)':'rgba(200,146,10,.85)';
+};
+
+window.triggerLockdown=(btn)=>{
+  const on=btn.classList.toggle('active-ld');
+  btn.textContent=on?'⬛ LOCKDOWN ACTIVE — CANCEL':'⬛ FACILITY LOCKDOWN';
+  document.body.style.outline=on?'2px solid rgba(214,64,64,.35)':'';
+};
+
+window.triggerEvac=(btn)=>{
+  const on=btn.classList.toggle('active-ev');
+  btn.textContent=on?'↑ EVACUATION ACTIVE — CANCEL':'↑ EVACUATE ZONE C';
+};
+
+window.dispatchGuard=(btn)=>{
+  const orig=btn.textContent;
+  btn.textContent='✓ GUARD DISPATCHED'; btn.style.color='rgba(56,217,106,.85)';
+  setTimeout(()=>{ btn.textContent=orig; btn.style.color=''; },4500);
+};
+
+window.deployDrone=(btn)=>{
+  const orig=btn.textContent;
+  btn.textContent='✓ DSQ-03 DEPLOYED'; btn.style.color='rgba(61,219,190,.85)';
+  setTimeout(()=>{ btn.textContent=orig; btn.style.color=''; },5500);
+};
+
+window.trackEnt=(id)=>{
+  const idx=ENTITIES.findIndex(e=>e.id===id);
+  if(idx>=0&&window.focusEntity) window.focusEntity(idx);
+};
+
+window.entHistory=(id)=>{
+  const hist=ENT_HISTORY[id]||[];
+  const n=document.createElement('div');
+  n.style.cssText='position:fixed;bottom:22px;right:22px;background:rgba(3,7,14,.94);border:1px solid rgba(61,219,190,.28);padding:12px 16px;font-size:9px;font-family:"JetBrains Mono",monospace;color:rgba(175,200,220,.85);z-index:9999;border-radius:3px;max-width:250px;line-height:1.85;box-shadow:0 4px 24px rgba(0,0,0,.5)';
+  n.innerHTML='<div style="color:#3ddbbe;margin-bottom:6px;letter-spacing:.8px;font-size:9.5px">'+id+' · HISTORY</div>'+(hist.map(h=>'<div>'+h+'</div>').join('')||'<div style="color:rgba(150,175,200,.5)">No records</div>');
+  document.body.appendChild(n);
+  setTimeout(()=>n.remove(),5000);
+};
+
+window.entAlert=(id)=>{
+  const n=document.createElement('div');
+  n.style.cssText='position:fixed;bottom:22px;right:22px;background:rgba(3,7,14,.94);border:1px solid rgba(214,64,64,.5);padding:12px 16px;font-size:9px;font-family:"JetBrains Mono",monospace;color:rgba(214,64,64,.9);z-index:9999;border-radius:3px;box-shadow:0 4px 24px rgba(0,0,0,.5)';
+  n.innerHTML='⚠ SECURITY ALERT ISSUED<div style="color:rgba(175,200,220,.7);margin-top:4px">Target: '+id+'</div><div style="color:rgba(140,165,190,.5);font-size:8px;margin-top:2px">All units notified · '+new Date().toTimeString().slice(0,8)+' GST</div>';
+  document.body.appendChild(n);
+  setTimeout(()=>n.remove(),4500);
+};
 
 // ═══════════════════════════════════════════════════════════════
 // CLOCK + LIVE VISITOR
