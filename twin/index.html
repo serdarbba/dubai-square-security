@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dubai Square · Digital Twin | BBA Security Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#030b16;--blue:#00d4ff;--teal:#64ffda;--green:#50fa7b;
+  --red:#ff5555;--yellow:#f1fa8c;--orange:#ffb86c;--purple:#bd93f9;
+  --text:#ccd6f6;--muted:#5a7090;--muted2:#8aa0bc;
+  --card:#0b1929;--border:#162840;--surface:#07111f;--white:#e8f4ff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+#container{position:absolute;left:0;top:52px;right:0;bottom:0}
+
+/* TOPBAR */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:rgba(3,11,22,.98);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:14px;z-index:200;
+}
+.t-logo{font-size:13px;font-weight:800;color:var(--white);display:flex;align-items:center;gap:8px}
+.t-dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);animation:glow 2s ease infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 6px var(--blue)}50%{box-shadow:0 0 18px var(--blue),0 0 30px rgba(0,212,255,.3)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.t-sep{color:var(--border);font-size:20px}
+.t-proj{font-size:11px;color:var(--muted2);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+.t-spacer{flex:1}
+.t-stats{display:flex;gap:18px}
+.t-stat{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted2);display:flex;align-items:center;gap:5px}
+.t-sv{color:var(--white);font-weight:700}
+.t-sd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.live-badge{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--red);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.2);padding:4px 10px;border-radius:4px;letter-spacing:1px;display:flex;align-items:center;gap:5px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:glow 1s ease infinite}
+.t-link{text-decoration:none;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted2);background:var(--card);border:1px solid var(--border);padding:5px 12px;border-radius:5px;transition:all .2s}
+.t-link:hover{color:var(--white);border-color:rgba(0,212,255,.35)}
+
+/* INCIDENT TICKER */
+.inc-ticker{
+  position:fixed;top:52px;left:50%;transform:translateX(-50%);
+  background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);
+  border-top:none;border-radius:0 0 8px 8px;
+  padding:6px 20px;z-index:150;
+  font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--red);
+  display:flex;align-items:center;gap:8px;
+  animation:incpulse 2.5s ease infinite;
+}
+@keyframes incpulse{0%,100%{border-color:rgba(255,85,85,.3)}50%{border-color:rgba(255,85,85,.7)}}
+
+/* FLOOR PANEL */
+.floor-panel{
+  position:fixed;left:14px;top:68px;
+  background:rgba(7,17,31,.93);border:1px solid var(--border);
+  border-radius:10px;padding:12px;z-index:100;backdrop-filter:blur(10px);
+  min-width:175px;
+}
+.panel-title{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.floor-btns{display:flex;flex-direction:column;gap:3px}
+.fbtn{
+  padding:7px 12px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--muted2);font-size:10px;
+  font-family:'JetBrains Mono',monospace;cursor:pointer;
+  transition:all .18s;text-align:left;display:flex;align-items:center;gap:8px;
+}
+.fbtn:hover{border-color:rgba(0,212,255,.3);color:var(--white)}
+.fbtn.active{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.4);color:var(--blue)}
+.fl-bar{width:6px;height:6px;border-radius:2px;flex-shrink:0}
+
+/* LAYER PANEL */
+.layer-panel{
+  position:fixed;right:14px;top:68px;
+  background:rgba(7,17,31,.93);border:1px solid var(--border);
+  border-radius:10px;padding:12px;z-index:100;backdrop-filter:blur(10px);min-width:190px;
+}
+.layer-items{display:flex;flex-direction:column;gap:4px}
+.layer-row{
+  display:flex;align-items:center;gap:9px;padding:7px 10px;
+  border-radius:6px;border:1px solid var(--border);
+  cursor:pointer;transition:all .18s;
+}
+.layer-row:hover{border-color:rgba(0,212,255,.2)}
+.layer-row.on{background:rgba(0,212,255,.04);border-color:rgba(0,212,255,.15)}
+.l-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.l-name{font-size:11px;color:var(--text);flex:1}
+.l-cnt{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.l-tog{width:26px;height:14px;border-radius:7px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);position:relative;transition:all .2s;flex-shrink:0}
+.l-tog::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;background:var(--blue);top:1px;left:1px;transition:all .18s}
+.layer-row.on .l-tog{background:rgba(0,212,255,.25);border-color:rgba(0,212,255,.4)}
+.layer-row.on .l-tog::after{left:13px}
+
+/* INFO PANEL */
+.info-panel{
+  position:fixed;left:14px;bottom:16px;
+  background:rgba(7,17,31,.93);border:1px solid var(--border);
+  border-radius:10px;padding:16px;z-index:100;backdrop-filter:blur(10px);
+  min-width:220px;display:none;animation:fadein .2s ease;
+}
+.info-panel.show{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ip-label{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase}
+.ip-zone{font-size:15px;font-weight:800;color:var(--white);margin-bottom:10px}
+.ip-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;margin-bottom:5px}
+.ip-k{color:var(--muted2);font-family:'JetBrains Mono',monospace}
+.ip-v{color:var(--white);font-weight:600}
+.ip-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:9px;font-family:'JetBrains Mono',monospace;margin-top:8px}
+.ip-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;transition:color .2s}
+.ip-close:hover{color:var(--white)}
+
+/* ZOOM CONTROLS */
+.zoom-ctrl{
+  position:fixed;right:14px;bottom:16px;
+  display:flex;flex-direction:column;gap:4px;z-index:100;
+}
+.zbtn{
+  width:34px;height:34px;border-radius:8px;
+  background:rgba(7,17,31,.93);border:1px solid var(--border);
+  color:var(--muted2);font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;backdrop-filter:blur(8px);
+}
+.zbtn:hover{border-color:rgba(0,212,255,.35);color:var(--white)}
+
+/* HELP HINT */
+.hint{
+  position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);
+  background:rgba(7,17,31,.85);border:1px solid var(--border);
+  border-radius:6px;padding:5px 16px;z-index:100;backdrop-filter:blur(8px);
+  pointer-events:none;
+}
+
+/* TOOLTIP */
+#tip{
+  position:fixed;z-index:500;pointer-events:none;
+  background:rgba(7,17,31,.97);border:1px solid rgba(0,212,255,.35);
+  border-radius:6px;padding:7px 12px;
+  font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--white);
+  display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.6);
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="t-logo"><div class="t-dot"></div><span style="color:var(--blue)">BBA</span>&nbsp;Security Intelligence</div>
+  <span class="t-sep">|</span>
+  <span class="t-proj">DUBAI SQUARE · DIGITAL TWIN · 3D LIVE</span>
+  <div class="t-spacer"></div>
+  <div class="t-stats">
+    <div class="t-stat"><div class="t-sd" style="background:var(--green)"></div>Cameras<span class="t-sv">898/900</span></div>
+    <div class="t-stat"><div class="t-sd" style="background:var(--yellow);animation:blink 1.5s ease infinite"></div>Incidents<span class="t-sv" style="color:var(--yellow)">2 ACTIVE</span></div>
+    <div class="t-stat"><div class="t-sd" style="background:var(--teal)"></div>Drones<span class="t-sv" style="color:var(--teal)">3</span></div>
+    <div class="t-stat"><div class="t-sd" style="background:var(--green)"></div>Visitors<span class="t-sv" id="visCount">94,847</span></div>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+  <a href="../" class="t-link">← Proposal</a>
+  <a href="../demo/" class="t-link">AI Operator</a>
+</div>
+
+<!-- INCIDENT TICKER -->
+<div class="inc-ticker">
+  <div class="live-dot"></div>
+  ⚠ ACTIVE · Zone C West Atrium — Crowd Surge 4.2 p/m² &nbsp;|&nbsp; ◆ Bay 4 ACS Alert · Badge #2847
+</div>
+
+<!-- FLOOR PANEL -->
+<div class="floor-panel">
+  <div class="panel-title">Floor Select</div>
+  <div class="floor-btns">
+    <button class="fbtn active" id="fb-ALL" onclick="selFloor('ALL',this)"><div class="fl-bar" style="background:var(--blue)"></div>ALL FLOORS</button>
+    <button class="fbtn" id="fb-L3" onclick="selFloor('L3',this)"><div class="fl-bar" style="background:var(--purple)"></div>L3 · Entertainment</button>
+    <button class="fbtn" id="fb-L2" onclick="selFloor('L2',this)"><div class="fl-bar" style="background:var(--yellow)"></div>L2 · Retail + F&B</button>
+    <button class="fbtn" id="fb-L1" onclick="selFloor('L1',this)"><div class="fl-bar" style="background:var(--teal)"></div>L1 · Retail</button>
+    <button class="fbtn" id="fb-GF" onclick="selFloor('GF',this)"><div class="fl-bar" style="background:var(--blue)"></div>GF · Main Entrance</button>
+    <button class="fbtn" id="fb-B1" onclick="selFloor('B1',this)"><div class="fl-bar" style="background:var(--muted2)"></div>B1 · Parking</button>
+    <button class="fbtn" id="fb-B2" onclick="selFloor('B2',this)"><div class="fl-bar" style="background:var(--muted)"></div>B2 · Parking</button>
+  </div>
+</div>
+
+<!-- LAYER PANEL -->
+<div class="layer-panel">
+  <div class="panel-title">Live Layers</div>
+  <div class="layer-items">
+    <div class="layer-row on" id="lr-density" onclick="togLayer('density',this)">
+      <div class="l-dot" style="background:var(--orange)"></div>
+      <span class="l-name">Crowd Density</span>
+      <span class="l-cnt">94.8K</span>
+      <div class="l-tog"></div>
+    </div>
+    <div class="layer-row on" id="lr-cameras" onclick="togLayer('cameras',this)">
+      <div class="l-dot" style="background:var(--blue)"></div>
+      <span class="l-name">Cameras</span>
+      <span class="l-cnt">900</span>
+      <div class="l-tog"></div>
+    </div>
+    <div class="layer-row on" id="lr-acs" onclick="togLayer('acs',this)">
+      <div class="l-dot" style="background:var(--teal)"></div>
+      <span class="l-name">Access Control</span>
+      <span class="l-cnt">312</span>
+      <div class="l-tog"></div>
+    </div>
+    <div class="layer-row on" id="lr-incidents" onclick="togLayer('incidents',this)">
+      <div class="l-dot" style="background:var(--red)"></div>
+      <span class="l-name">Incidents</span>
+      <span class="l-cnt" style="color:var(--red)">2 ACTIVE</span>
+      <div class="l-tog"></div>
+    </div>
+    <div class="layer-row on" id="lr-drones" onclick="togLayer('drones',this)">
+      <div class="l-dot" style="background:var(--yellow)"></div>
+      <span class="l-name">Drone Fleet</span>
+      <span class="l-cnt">3 ACTIVE</span>
+      <div class="l-tog"></div>
+    </div>
+    <div class="layer-row on" id="lr-vip" onclick="togLayer('vip',this)">
+      <div class="l-dot" style="background:#ffd700"></div>
+      <span class="l-name">VIP Tracking</span>
+      <span class="l-cnt">1 ACTIVE</span>
+      <div class="l-tog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INFO PANEL -->
+<div class="info-panel" id="infoPanel">
+  <button class="ip-close" onclick="document.getElementById('infoPanel').classList.remove('show')">✕</button>
+  <div class="ip-label">Zone Details</div>
+  <div class="ip-zone" id="ip-zone">—</div>
+  <div class="ip-row"><span class="ip-k">Density</span><span class="ip-v" id="ip-density">—</span></div>
+  <div class="ip-row"><span class="ip-k">Cameras</span><span class="ip-v" id="ip-cams">—</span></div>
+  <div class="ip-row"><span class="ip-k">Access Points</span><span class="ip-v" id="ip-acs">—</span></div>
+  <div class="ip-row"><span class="ip-k">Visitors now</span><span class="ip-v" id="ip-vis">—</span></div>
+  <span class="ip-badge" id="ip-badge">—</span>
+</div>
+
+<!-- ZOOM CONTROLS -->
+<div class="zoom-ctrl">
+  <button class="zbtn" onclick="camZoom(.8)" title="Zoom in">+</button>
+  <button class="zbtn" onclick="camZoom(1.2)" title="Zoom out">−</button>
+  <button class="zbtn" onclick="camReset()" title="Reset view">⟳</button>
+</div>
+
+<!-- HINT -->
+<div class="hint">Drag · Scroll to zoom · Click zones for details</div>
+
+<!-- 3D CANVAS -->
+<div id="container"></div>
+<div id="tip"></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── INIT ──────────────────────────────────────────────────────
+const W = window.innerWidth, H = window.innerHeight - 52;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x030b16);
+scene.fog = new THREE.FogExp2(0x030b16, 0.007);
+
+const camera = new THREE.PerspectiveCamera(50, W/H, 0.1, 800);
+camera.position.set(62, 52, 62);
+camera.lookAt(0, 4, 0);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W, H);
+document.getElementById('container').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.maxPolarAngle = Math.PI / 2.05;
+controls.minDistance = 12;
+controls.maxDistance = 140;
+controls.target.set(0, 4, 0);
+
+// ── LIGHTING ─────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x1a3a5c, 1.5));
+const dir = new THREE.DirectionalLight(0x5ab4d6, 0.6);
+dir.position.set(40, 60, 40);
+scene.add(dir);
+const rim = new THREE.DirectionalLight(0x64ffda, 0.2);
+rim.position.set(-30, 20, -30);
+scene.add(rim);
+
+const ptLight = (x,y,z,col,i,dist) => {
+  const l = new THREE.PointLight(col,i,dist);
+  l.position.set(x,y,z);
+  scene.add(l);
+  return l;
+};
+ptLight(0, 10, 0, 0x00d4ff, 0.4, 40);
+const incLight = ptLight(-18, 6, 6, 0xff5555, 1.2, 25); // Zone C incident glow
+
+// ── BUILDING CONSTANTS ────────────────────────────────────────
+const FW=54, FD=28, FH=0.28, FG=3.6;
+const FLOORS=[
+  {id:'B2',lv:-2,col:0x080f1a,ecol:0x0f2035},
+  {id:'B1',lv:-1,col:0x09121e,ecol:0x142840},
+  {id:'GF',lv:0, col:0x0b1e34,ecol:0x00d4ff},
+  {id:'L1',lv:1, col:0x0a1d32,ecol:0x00c4ee},
+  {id:'L2',lv:2, col:0x091b30,ecol:0x64ffda},
+  {id:'L3',lv:3, col:0x09182d,ecol:0xbd93f9},
+];
+
+// ── FLOOR GROUPS ──────────────────────────────────────────────
+const floorMeshes = {};
+const floorGroups = {};
+
+FLOORS.forEach(fl => {
+  const grp = new THREE.Group();
+  grp.userData.floorId = fl.id;
+  const y = fl.lv * FG;
+
+  // Main slab
+  const geo = new THREE.BoxGeometry(FW, FH, FD);
+  const mat = new THREE.MeshLambertMaterial({color:fl.col, transparent:true, opacity: fl.lv < 0 ? 0.6 : 0.78});
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = y;
+  mesh.userData = {type:'floor', floorId:fl.id};
+  grp.add(mesh);
+  floorMeshes[fl.id] = mesh;
+
+  // Wireframe edges
+  const eMat = new THREE.LineBasicMaterial({color:fl.ecol, transparent:true, opacity: fl.lv < 0 ? 0.12 : 0.3});
+  grp.add(Object.assign(new THREE.LineSegments(new THREE.EdgesGeometry(geo), eMat), {position:{y}}));
+  const ls = new THREE.LineSegments(new THREE.EdgesGeometry(geo), eMat);
+  ls.position.y = y;
+  grp.add(ls);
+
+  // North luxury wing (above ground)
+  if (fl.lv >= 0) {
+    const wg = new THREE.BoxGeometry(20, FH, 13);
+    const wm = new THREE.MeshLambertMaterial({color:fl.col, transparent:true, opacity: fl.lv < 0 ? 0.5 : 0.72});
+    const wMesh = new THREE.Mesh(wg, wm);
+    wMesh.position.set(4, y, -(FD/2+6.5));
+    grp.add(wMesh);
+    const we = new THREE.LineSegments(new THREE.EdgesGeometry(wg), eMat.clone());
+    we.position.set(4, y, -(FD/2+6.5));
+    grp.add(we);
+  }
+
+  scene.add(grp);
+  floorGroups[fl.id] = grp;
+});
+
+// ── ATRIUM GLASS SHAFT ────────────────────────────────────────
+const atrGeo = new THREE.BoxGeometry(14, FG*4, 9);
+const atrMat = new THREE.MeshLambertMaterial({color:0x00d4ff, transparent:true, opacity:0.03, side:THREE.DoubleSide});
+const atr = new THREE.Mesh(atrGeo, atrMat);
+atr.position.set(2, FG*1.5, 3);
+scene.add(atr);
+const atrE = new THREE.LineSegments(new THREE.EdgesGeometry(atrGeo), new THREE.LineBasicMaterial({color:0x00d4ff, transparent:true, opacity:0.18}));
+atrE.position.set(2, FG*1.5, 3);
+scene.add(atrE);
+
+// ── COLUMNS ───────────────────────────────────────────────────
+const colGeo = new THREE.CylinderGeometry(0.22, 0.22, FG*4.2, 8);
+const colMat = new THREE.MeshLambertMaterial({color:0x0d2038, transparent:true, opacity:0.9});
+[[-20,0,-10],[0,0,-10],[20,0,-10],[-20,0,10],[0,0,10],[20,0,10],[-20,0,0],[20,0,0]].forEach(([x,,z])=>{
+  const c = new THREE.Mesh(colGeo, colMat);
+  c.position.set(x, FG*1.5, z);
+  scene.add(c);
+});
+
+// ── ZONE DENSITY OVERLAYS ─────────────────────────────────────
+const ZONES = [
+  {id:'A', name:'Zone A · East Entrance',  x:20,  z:1,    w:9,  d:16, col:0xf1fa8c, op:0.18, density:'2.8 p/m²', status:'ELEVATED', cams:42, acs:18, vis:'8,420'},
+  {id:'B', name:'Zone B · Central Atrium', x:2,   z:4,    w:12, d:9,  col:0x50fa7b, op:0.10, density:'1.9 p/m²', status:'NORMAL',   cams:56, acs:24, vis:'5,230'},
+  {id:'C', name:'Zone C · West Atrium',    x:-18, z:4,    w:13, d:9,  col:0xff5555, op:0.42, density:'4.2 p/m²', status:'CRITICAL', cams:38, acs:12, vis:'12,100'},
+  {id:'D', name:'Zone D · South Retail',   x:4,   z:-9,   w:30, d:7,  col:0x50fa7b, op:0.08, density:'1.5 p/m²', status:'NORMAL',   cams:64, acs:28, vis:'18,640'},
+  {id:'E', name:'Zone E · Food Court (L2)',x:-4,  z:2,    w:18, d:11, col:0xffb86c, op:0.20, density:'3.4 p/m²', status:'HIGH',     cams:48, acs:16, vis:'9,870'},
+  {id:'F', name:'Zone F · Luxury Wing',    x:4,   z:-21,  w:18, d:11, col:0x64ffda, op:0.08, density:'1.1 p/m²', status:'NORMAL',   cams:30, acs:14, vis:'2,810'},
+];
+
+const densityGroup = new THREE.Group();
+const zoneMeshes = {};
+
+ZONES.forEach(z => {
+  const pGeo = new THREE.PlaneGeometry(z.w, z.d);
+  [0,1,2].forEach(lv => {
+    const mat = new THREE.MeshBasicMaterial({color:z.col, transparent:true, opacity:z.op*(1-lv*0.2), side:THREE.DoubleSide});
+    const m = new THREE.Mesh(pGeo, mat);
+    m.rotation.x = -Math.PI/2;
+    m.position.set(z.x, lv*FG + FH/2 + 0.02, z.z);
+    m.userData = {type:'zone', ...z};
+    densityGroup.add(m);
+    if (lv === 0) zoneMeshes[z.id] = m;
+  });
+});
+scene.add(densityGroup);
+
+// ── REFERENCE GRID ────────────────────────────────────────────
+const grid = new THREE.GridHelper(130, 42, 0x0e2035, 0x091828);
+grid.position.y = -2*FG - 0.6;
+scene.add(grid);
+
+// ── CAMERAS LAYER ─────────────────────────────────────────────
+const camGroup = new THREE.Group();
+const cSphGeo = new THREE.SphereGeometry(0.17, 8, 8);
+const cMatOk  = new THREE.MeshBasicMaterial({color:0x00d4ff});
+const cMatOff = new THREE.MeshBasicMaterial({color:0xff5555});
+
+// Seeded pseudo-random for consistent positions
+function srnd(seed){ let s=seed; return ()=>{ s=(s*16807+0)%2147483647; return (s-1)/2147483646; }; }
+
+const camMeshes = [];
+FLOORS.forEach(fl => {
+  const cnt = fl.lv<0?14:fl.lv===0?40:fl.lv===1?30:fl.lv===2?22:18;
+  const rnd = srnd(fl.lv*100+7);
+  for(let i=0;i<cnt;i++){
+    const x=(rnd()-.5)*FW*.92, z=(rnd()-.5)*FD*.92;
+    const offline = fl.lv===0 && (i===6||i===18);
+    const mesh = new THREE.Mesh(cSphGeo, offline?cMatOff.clone():cMatOk.clone());
+    mesh.position.set(x, fl.lv*FG+FH/2+0.32, z);
+    mesh.userData = {type:'camera', id:`CAM-${fl.id}-${String(i+1).padStart(2,'0')}`, offline, floor:fl.id};
+    camGroup.add(mesh);
+    camMeshes.push(mesh);
+  }
+});
+scene.add(camGroup);
+
+// ── ACS DOORS LAYER ───────────────────────────────────────────
+const acsGroup = new THREE.Group();
+const dGeo = new THREE.BoxGeometry(0.28,0.5,0.09);
+const dOk   = new THREE.MeshBasicMaterial({color:0x64ffda});
+const dAlert= new THREE.MeshBasicMaterial({color:0xff5555});
+
+FLOORS.forEach(fl => {
+  const cnt = fl.lv<0?5:12;
+  const rnd = srnd(fl.lv*200+13);
+  for(let i=0;i<cnt;i++){
+    const side=Math.floor(rnd()*4);
+    let x,z;
+    if(side===0){x=(rnd()-.5)*FW; z=-FD/2;}
+    else if(side===1){x=(rnd()-.5)*FW; z=FD/2;}
+    else if(side===2){x=-FW/2; z=(rnd()-.5)*FD;}
+    else{x=FW/2; z=(rnd()-.5)*FD;}
+    const isAlert = fl.lv===0&&i===4;
+    const d = new THREE.Mesh(dGeo, isAlert?dAlert.clone():dOk.clone());
+    d.position.set(x, fl.lv*FG+FH/2+0.25, z);
+    d.userData = {type:'acs', label:isAlert?'Bay 4 — ALERT':(`ACS-${fl.id}-${i+1}`)};
+    acsGroup.add(d);
+  }
+});
+scene.add(acsGroup);
+
+// ── INCIDENTS LAYER ───────────────────────────────────────────
+const incGroup = new THREE.Group();
+
+// Zone C — crowd surge (ground floor)
+const iGeo1 = new THREE.SphereGeometry(0.55,16,16);
+const iMat1 = new THREE.MeshBasicMaterial({color:0xff5555});
+const inc1 = new THREE.Mesh(iGeo1, iMat1);
+inc1.position.set(-18, FH/2+1.5, 4);
+inc1.userData = {type:'incident', label:'⚠ Crowd Surge · Zone C · 4.2 p/m²'};
+incGroup.add(inc1);
+
+// Rings
+const mkRing = (x,y,z,col)=>{
+  const r = new THREE.Mesh(new THREE.RingGeometry(0.8,1.05,32), new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.55,side:THREE.DoubleSide}));
+  r.rotation.x=-Math.PI/2;
+  r.position.set(x,y,z);
+  return r;
+};
+const ring1a=mkRing(-18,FH/2+0.15,4,0xff5555); incGroup.add(ring1a);
+const ring1b=mkRing(-18,FH/2+0.15,4,0xff5555); incGroup.add(ring1b);
+
+// Bay 4 ACS alert
+const iGeo2 = new THREE.SphereGeometry(0.38,16,16);
+const inc2 = new THREE.Mesh(iGeo2, new THREE.MeshBasicMaterial({color:0xf1fa8c}));
+inc2.position.set(FW/2-1, FH/2+1.2, 2);
+inc2.userData = {type:'incident', label:'◆ ACS Alert · Bay 4 · Badge #2847'};
+incGroup.add(inc2);
+
+scene.add(incGroup);
+
+// ── DRONES LAYER ──────────────────────────────────────────────
+const droneGroup = new THREE.Group();
+const drnGeo = new THREE.OctahedronGeometry(0.42, 0);
+
+const DRONES = [
+  {name:'DSQ-01', status:'CHARGING', col:0x5a7090, baseY:-FG+1.5, orbit:0, speed:0,    sx:18, sz:-12},
+  {name:'DSQ-02', status:'PATROL',   col:0x64ffda, baseY:13,       orbit:24, speed:0.28, sx:24, sz:0},
+  {name:'DSQ-03', status:'STANDBY',  col:0xf1fa8c, baseY:9,        orbit:0,  speed:0,    sx:-4, sz:13},
+];
+
+const drnMeshes=[];
+DRONES.forEach((d,i)=>{
+  const m = new THREE.Mesh(drnGeo, new THREE.MeshBasicMaterial({color:d.col}));
+  m.position.set(d.sx, d.baseY, d.sz);
+  m.userData={type:'drone', ...d};
+  droneGroup.add(m);
+  drnMeshes.push({mesh:m, d, angle:i*(Math.PI*2/3)});
+
+  if(d.orbit>0){
+    const trail = new THREE.Mesh(
+      new THREE.TorusGeometry(d.orbit,0.06,8,64),
+      new THREE.MeshBasicMaterial({color:d.col, transparent:true, opacity:0.12})
+    );
+    trail.rotation.x=Math.PI/2;
+    trail.position.y=d.baseY;
+    droneGroup.add(trail);
+  }
+});
+scene.add(droneGroup);
+
+// ── VIP LAYER ─────────────────────────────────────────────────
+const vipGroup = new THREE.Group();
+const vipMesh = new THREE.Mesh(new THREE.SphereGeometry(0.38,16,16), new THREE.MeshBasicMaterial({color:0xffd700}));
+vipMesh.userData={type:'vip', label:'VIP — Gate 3 Active Route'};
+vipGroup.add(vipMesh);
+
+// VIP glow ring
+const vipRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.6,0.75,32),
+  new THREE.MeshBasicMaterial({color:0xffd700, transparent:true, opacity:0.5, side:THREE.DoubleSide})
+);
+vipRing.rotation.x=-Math.PI/2;
+vipGroup.add(vipRing);
+
+// VIP path curve
+const vipPts = [
+  new THREE.Vector3(FW/2-1, FH/2+0.5, 5),
+  new THREE.Vector3(22, FH/2+0.5, 3),
+  new THREE.Vector3(10, FH/2+0.5, 0),
+  new THREE.Vector3(0, FH/2+0.5, -2),
+  new THREE.Vector3(-10, FH/2+0.5, 1),
+  new THREE.Vector3(-20, FH/2+0.5, 3),
+];
+const vipCurve = new THREE.CatmullRomCurve3(vipPts, false);
+const vipLine = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints(vipCurve.getPoints(80)),
+  new THREE.LineBasicMaterial({color:0xffd700, transparent:true, opacity:0.35})
+);
+vipGroup.add(vipLine);
+scene.add(vipGroup);
+
+// ── FLOOR LABELS (sprite) ─────────────────────────────────────
+function mkLabel(text, color='#00d4ff'){
+  const cv=document.createElement('canvas'); cv.width=220; cv.height=52;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='rgba(3,11,22,.85)';
+  ctx.fillRect(0,0,220,52);
+  ctx.strokeStyle=color;
+  ctx.lineWidth=1;
+  ctx.strokeRect(1,1,218,50);
+  ctx.font='600 15px monospace';
+  ctx.fillStyle=color;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText(text,110,26);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv), transparent:true}));
+  sp.scale.set(5.5,1.3,1);
+  return sp;
+}
+
+const labelColors={B2:'#5a7090',B1:'#8aa0bc',GF:'#00d4ff',L1:'#00c4ee',L2:'#64ffda',L3:'#bd93f9'};
+FLOORS.forEach(fl=>{
+  const sp=mkLabel(fl.id+' · '+(fl.id==='B2'?'PARKING B2':fl.id==='B1'?'PARKING B1':fl.id==='GF'?'GROUND FLOOR':fl.id==='L1'?'LEVEL 1 RETAIL':fl.id==='L2'?'LEVEL 2 RETAIL':' LEVEL 3 ENTERTAINMENT'), labelColors[fl.id]);
+  sp.position.set(-FW/2-4.5, fl.lv*FG+0.4, 0);
+  scene.add(sp);
+});
+
+// Zone labels on GF
+[{id:'C',col:'#ff5555'},{id:'A',col:'#f1fa8c'}].forEach(({id,col})=>{
+  const z=ZONES.find(z=>z.id===id);
+  const sp=mkLabel('Zone '+id+' · '+z.status, col);
+  sp.position.set(z.x, FH/2+1.8, z.z);
+  scene.add(sp);
+});
+
+// ── RAYCASTING ────────────────────────────────────────────────
+const raycaster=new THREE.Raycaster();
+const mouse2=new THREE.Vector2();
+const tip=document.getElementById('tip');
+
+renderer.domElement.addEventListener('mousemove',e=>{
+  const r=renderer.domElement.getBoundingClientRect();
+  mouse2.x=((e.clientX-r.left)/r.width)*2-1;
+  mouse2.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouse2,camera);
+
+  const clickables=[...camMeshes, inc1, inc2, ...drnMeshes.map(d=>d.mesh), vipMesh];
+  const hits=raycaster.intersectObjects(clickables);
+  if(hits.length){
+    const ud=hits[0].object.userData;
+    let lbl='';
+    if(ud.type==='camera') lbl=`📹 ${ud.id}${ud.offline?' · OFFLINE':' · Online'}`;
+    else if(ud.type==='incident') lbl=ud.label;
+    else if(ud.type==='drone') lbl=`🚁 ${ud.name} · ${ud.status}`;
+    else if(ud.type==='vip') lbl=ud.label;
+    if(lbl){
+      tip.style.display='block';
+      tip.style.left=(e.clientX+15)+'px';
+      tip.style.top=(e.clientY-6)+'px';
+      tip.textContent=lbl;
+    }
+    renderer.domElement.style.cursor='pointer';
+  } else {
+    tip.style.display='none';
+    renderer.domElement.style.cursor='grab';
+  }
+});
+
+renderer.domElement.addEventListener('click',e=>{
+  const r=renderer.domElement.getBoundingClientRect();
+  mouse2.x=((e.clientX-r.left)/r.width)*2-1;
+  mouse2.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouse2,camera);
+  const hits=raycaster.intersectObjects(Object.values(zoneMeshes));
+  if(hits.length) showZoneInfo(hits[0].object.userData);
+});
+
+function showZoneInfo(z){
+  document.getElementById('ip-zone').textContent=z.name;
+  document.getElementById('ip-density').textContent=z.density;
+  document.getElementById('ip-cams').textContent=`${z.cams} active`;
+  document.getElementById('ip-acs').textContent=`${z.acs} points`;
+  document.getElementById('ip-vis').textContent=`~${z.vis} people`;
+  const bdg=document.getElementById('ip-badge');
+  const C={CRITICAL:['rgba(255,85,85,.12)','#ff5555','rgba(255,85,85,.35)','⚠ CRITICAL — Active Incident'],
+            HIGH:    ['rgba(255,184,108,.12)','#ffb86c','rgba(255,184,108,.35)','▲ HIGH DENSITY'],
+            ELEVATED:['rgba(241,250,140,.12)','#f1fa8c','rgba(241,250,140,.35)','◆ ELEVATED'],
+            NORMAL:  ['rgba(80,250,123,.12)','#50fa7b','rgba(80,250,123,.35)','✓ NORMAL']};
+  const c=C[z.status]||C.NORMAL;
+  bdg.style.cssText=`background:${c[0]};color:${c[1]};border:1px solid ${c[2]}`;
+  bdg.textContent=c[3];
+  document.getElementById('infoPanel').classList.add('show');
+}
+
+// ── LAYER TOGGLES ─────────────────────────────────────────────
+const LAYERS={
+  density:  densityGroup,
+  cameras:  camGroup,
+  acs:      acsGroup,
+  incidents:incGroup,
+  drones:   droneGroup,
+  vip:      vipGroup,
+};
+window.togLayer=(name,el)=>{
+  el.classList.toggle('on');
+  LAYERS[name].visible=el.classList.contains('on');
+};
+
+// ── FLOOR SELECTOR ────────────────────────────────────────────
+window.selFloor=(id,btn)=>{
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  FLOORS.forEach(fl=>{
+    const vis=id==='ALL'||fl.id===id;
+    floorGroups[fl.id].visible=vis;
+  });
+  if(id!=='ALL'){
+    const fl=FLOORS.find(f=>f.id===id);
+    controls.target.set(0, fl.lv*FG, 0);
+  } else {
+    controls.target.set(0,4,0);
+  }
+};
+
+// ── CAMERA CONTROLS ───────────────────────────────────────────
+window.camZoom=f=>{ camera.position.multiplyScalar(f); };
+window.camReset=()=>{
+  camera.position.set(62,52,62);
+  controls.target.set(0,4,0);
+  selFloor('ALL', document.getElementById('fb-ALL'));
+};
+
+// ── ANIMATION LOOP ────────────────────────────────────────────
+let tick=0, vipT=0;
+
+function animate(){
+  requestAnimationFrame(animate);
+  tick += 0.016;
+  controls.update();
+
+  // Incident 1 pulse
+  inc1.scale.setScalar(1+Math.sin(tick*4)*.22);
+  inc2.scale.setScalar(1+Math.sin(tick*3.5+1)*.18);
+
+  // Expanding rings
+  const expand=(ring, phase)=>{
+    const s=1+((tick*.7+phase)%3)*1.6;
+    ring.scale.set(s,s,1);
+    ring.material.opacity=Math.max(0,.55-((tick*.7+phase)%3)*.18);
+  };
+  expand(ring1a,0); expand(ring1b,1.5);
+
+  // Incident light pulse
+  incLight.intensity=0.8+Math.sin(tick*3)*.5;
+
+  // Drone patrol orbit
+  drnMeshes.forEach(d=>{
+    if(d.d.orbit>0){
+      d.angle+=d.d.speed*0.016;
+      d.mesh.position.x=Math.cos(d.angle)*d.d.orbit;
+      d.mesh.position.z=Math.sin(d.angle)*d.d.orbit;
+      d.mesh.position.y=d.d.baseY+Math.sin(tick*1.5)*.4;
+      d.mesh.rotation.y=d.angle+Math.PI/2;
+    } else {
+      d.mesh.position.y=d.d.baseY+Math.sin(tick*2+(d.d.sx||0)*.1)*.2;
+    }
+    d.mesh.rotation.x=Math.sin(tick)*.08;
+  });
+
+  // VIP move along path
+  vipT=(vipT+0.0025)%1;
+  const vp=vipCurve.getPoint(vipT);
+  vipMesh.position.copy(vp);
+  vipRing.position.set(vp.x, FH/2+0.08, vp.z);
+  vipMesh.scale.setScalar(1+Math.sin(tick*3)*.12);
+
+  // Camera pulse
+  camMeshes.forEach((m,i)=>{
+    if(m.userData.offline){
+      m.material.opacity=.2+Math.sin(tick*1.5+i)*.2;
+    } else {
+      m.material.opacity=.55+Math.sin(tick+i*.4)*.42;
+    }
+  });
+
+  // Slow building breathe
+  FLOORS.forEach(fl=>{
+    const m=floorMeshes[fl.id];
+    if(m && fl.lv>=0) m.material.opacity=0.72+Math.sin(tick*.3+fl.lv)*.05;
+  });
+
+  renderer.render(scene,camera);
+}
+animate();
+
+// ── RESIZE ────────────────────────────────────────────────────
+window.addEventListener('resize',()=>{
+  const w=window.innerWidth, h=window.innerHeight-52;
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h);
+});
+
+// ── LIVE VISITOR COUNTER ──────────────────────────────────────
+let vis=94847;
+setInterval(()=>{
+  vis+=Math.floor(Math.random()*5)-1;
+  document.getElementById('visCount').textContent=vis.toLocaleString();
+},2800);
+
+</script>
+</body>
+</html>
