@@ -209,6 +209,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+
+/* Restricted Zone Occupancy Panel */
+.rzones{padding:5px 8px;display:flex;flex-direction:column;gap:3px;flex-shrink:0;overflow-y:auto}
+.rz{padding:7px 9px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5);cursor:pointer;transition:all .15s}
+.rz:hover{border-color:var(--line2);background:rgba(10,176,204,.02)}
+.rz-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.rz-nm{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt)}
+.rz-badge{font-size:7.5px;font-family:'JetBrains Mono',monospace;padding:1px 6px;border-radius:2px;font-weight:600;letter-spacing:.5px}
+.rz-occ{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);min-height:11px;line-height:1.7}
 </style>
 </head>
 <body>
@@ -354,8 +363,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="ph">AI Predictions <span style="color:var(--purple);margin-left:6px;font-size:8px">PALANTIR-STYLE</span></div>
     <div class="pred-list" id="predList"></div>
 
-    <div class="ph" style="margin-top:2px">Zone Status <span style="color:var(--green);margin-left:6px;font-size:8px">LIVE</span></div>
-    <div class="zs-wrap" id="zoneStatus"></div>
+    <div class="ph" style="margin-top:2px">Restricted Zones <span style="color:var(--red);margin-left:6px;font-size:8px">OCCUPANCY</span></div>
+    <div class="rzones" id="rzonesList"></div>
 
     <div class="ph" style="margin-top:2px">Tracked Entities <span style="color:var(--txt2);margin-left:6px;font-size:8px">ONTOLOGY</span></div>
     <div class="entity-list" id="entityList"></div>
@@ -533,22 +542,41 @@ ENTITIES.forEach((e, idx) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ZONE STATUS
+// RESTRICTED ZONE OCCUPANCY MONITOR
 // ═══════════════════════════════════════════════════════════════
-const ZONES_STATUS = [
-  {nm:'Zone A · East Ent.',  val:'2.8 p/m²', st:'NORMAL',   col:'#38d96a'},
-  {nm:'Zone B · Atrium',     val:'1.9 p/m²', st:'ELEVATED', col:'#c8920a'},
-  {nm:'Zone C · West Atr.',  val:'4.2 p/m²', st:'CRITICAL', col:'#d64040'},
-  {nm:'Zone D · Retail',     val:'1.4 p/m²', st:'NORMAL',   col:'#38d96a'},
-  {nm:'Zone E · Food Ct.',   val:'3.4 p/m²', st:'HIGH',     col:'#c8920a'},
-  {nm:'Zone F · VIP Lounge', val:'0.8 p/m²', st:'CLEAR',    col:'#3ddbbe'},
-];
-const zsWrap = document.getElementById('zoneStatus');
-ZONES_STATUS.forEach(z => {
-  const r = document.createElement('div'); r.className='zs-row';
-  r.innerHTML=`<div class="zs-dot" style="background:${z.col}"></div><span class="zs-nm">${z.nm}</span><span class="zs-val">${z.val}</span><span class="zs-st" style="color:${z.col}">${z.st}</span>`;
-  zsWrap.appendChild(r);
-});
+const ROOM_OCC={
+  'D1':{nm:'VIP Lounge',       fl:'L1', x:14,  z:-6,  lv:1,  people:['VIP-002','SEC-031'], auth:true},
+  'D2':{nm:'Security Ops',     fl:'GF', x:-22, z:-10, lv:0,  people:['SEC-047'],           auth:true},
+  'D3':{nm:'Server Room',      fl:'GF', x:20,  z:10,  lv:0,  people:[],                    auth:true},
+  'D6':{nm:'Control Room',     fl:'B1', x:15,  z:-8,  lv:-1, people:['SEC-012'],           auth:true},
+  'B4':{nm:'Bay 4 · Loading',  fl:'GF', x:-8,  z:19,  lv:0,  people:['UNK-B4'],            auth:false},
+  'G3':{nm:'VIP Gate Area',    fl:'GF', x:FW/2,z:-8,  lv:0,  people:['VIP-001'],           auth:true},
+};
+function buildOccupancy(){
+  const list=document.getElementById('rzonesList'); if(!list) return;
+  list.innerHTML='';
+  Object.entries(ROOM_OCC).forEach(([doorId,zone])=>{
+    const unauth=!zone.auth;
+    const cnt=zone.people.length;
+    const bc=unauth?'#d64040':cnt?'#c8920a':'#38d96a';
+    const bbg=unauth?'rgba(214,64,64,.14)':cnt?'rgba(200,146,10,.12)':'rgba(56,217,106,.1)';
+    const btxt=unauth?'⚠ UNAUTH':cnt?cnt+' INSIDE':'CLEAR';
+    const peopleTxt=cnt
+      ? zone.people.map(id=>{
+          const e=ENTITIES.find(x=>x.id===id);
+          return e?`<span style="color:${e.color}">●</span>&thinsp;${e.name.split(' ')[0]}`:`<span>${id}</span>`;
+        }).join('&emsp;')
+      : `<span style="color:rgba(100,150,175,.35)">— vacant</span>`;
+    const d=document.createElement('div');
+    d.className='rz';
+    if(unauth) d.style.borderColor='rgba(214,64,64,.32)';
+    d.onclick=()=>{ if(window.focusZone) window.focusZone(zone); };
+    d.innerHTML=`<div class="rz-head"><span class="rz-nm">${zone.nm}&thinsp;<span style="color:var(--txt2)">${zone.fl}</span></span><span class="rz-badge" style="background:${bbg};color:${bc}">${btxt}</span></div><div class="rz-occ">${peopleTxt}</div>`;
+    list.appendChild(d);
+  });
+}
+buildOccupancy();
+setInterval(buildOccupancy, 12000);
 
 // ═══════════════════════════════════════════════════════════════
 // ANPR LIVE FEED
@@ -1121,39 +1149,74 @@ try {
   });
   parkGrp.visible=true; scene.add(parkGrp);
 
-  // ── DOOR / GATE SYSTEM ──
+  // ── DOOR / GATE SYSTEM — animated swing leaves ──
   const doorGrp=new THREE.Group();
   const doorMeshes=[];
+  const doorLeafMap={};
   const GATE_DATA=[
-    {id:'G1', nm:'Gate 1 · East Main',  x:FW/2,   z:2,    lv:0,  state:'OPEN'},
-    {id:'G2', nm:'Gate 2 · West Entry', x:-FW/2,  z:0,    lv:0,  state:'OPEN'},
-    {id:'G3', nm:'Gate 3 · VIP Access', x:FW/2,   z:-8,   lv:0,  state:'LOCKED'},
-    {id:'G4', nm:'Gate 4 · South',      x:4,      z:FD/2, lv:0,  state:'OPEN'},
-    {id:'G5', nm:'Gate 5 · Service',    x:-8,     z:FD/2, lv:0,  state:'HELD'},
-    {id:'G6', nm:'Gate 6 · Emergency',  x:0,      z:-FD/2,lv:0,  state:'LOCKED'},
-    {id:'G7', nm:'B1 Parking Entry',    x:FW/2-4, z:FD/2-2,lv:-1,state:'OPEN'},
-    {id:'G8', nm:'B2 Parking Entry',    x:FW/2-4, z:FD/2-2,lv:-2,state:'OPEN'},
-    {id:'D1', nm:'VIP Lounge · L1',     x:14,     z:-6,   lv:1,  state:'LOCKED'},
-    {id:'D2', nm:'Security Ops Room',   x:-22,    z:-10,  lv:0,  state:'LOCKED'},
-    {id:'D3', nm:'Server Room',         x:20,     z:10,   lv:0,  state:'LOCKED'},
-    {id:'D4', nm:'Staff Entry',         x:-10,    z:FD/2, lv:0,  state:'OPEN'},
-    {id:'D5', nm:'Retail Staff L2',     x:-18,    z:8,    lv:2,  state:'OPEN'},
-    {id:'D6', nm:'Control Room B1',     x:15,     z:-8,   lv:-1, state:'LOCKED'},
+    {id:'G1', nm:'Gate 1 · East Main',  x:FW/2,   z:2,      lv:0,  state:'OPEN'},
+    {id:'G2', nm:'Gate 2 · West Entry', x:-FW/2,  z:0,      lv:0,  state:'OPEN'},
+    {id:'G3', nm:'Gate 3 · VIP Access', x:FW/2,   z:-8,     lv:0,  state:'LOCKED'},
+    {id:'G4', nm:'Gate 4 · South',      x:4,      z:FD/2,   lv:0,  state:'OPEN'},
+    {id:'G5', nm:'Gate 5 · Service',    x:-8,     z:FD/2,   lv:0,  state:'HELD'},
+    {id:'G6', nm:'Gate 6 · Emergency',  x:0,      z:-FD/2,  lv:0,  state:'LOCKED'},
+    {id:'G7', nm:'B1 Parking Entry',    x:FW/2-4, z:FD/2-2, lv:-1, state:'OPEN'},
+    {id:'G8', nm:'B2 Parking Entry',    x:FW/2-4, z:FD/2-2, lv:-2, state:'OPEN'},
+    {id:'D1', nm:'VIP Lounge · L1',     x:14,     z:-6,     lv:1,  state:'LOCKED'},
+    {id:'D2', nm:'Security Ops Room',   x:-22,    z:-10,    lv:0,  state:'LOCKED'},
+    {id:'D3', nm:'Server Room',         x:20,     z:10,     lv:0,  state:'LOCKED'},
+    {id:'D4', nm:'Staff Entry',         x:-10,    z:FD/2,   lv:0,  state:'OPEN'},
+    {id:'D5', nm:'Retail Staff L2',     x:-18,    z:8,      lv:2,  state:'OPEN'},
+    {id:'D6', nm:'Control Room B1',     x:15,     z:-8,     lv:-1, state:'LOCKED'},
+    {id:'B4', nm:'Bay 4 · Service',     x:-8,     z:FD/2+5, lv:0,  state:'HELD'},
   ];
   const DC={OPEN:0x38d96a,LOCKED:0xd64040,HELD:0xc8920a};
   GATE_DATA.forEach(g=>{
-    const gy=g.lv*FG+FH/2+.18, col=DC[g.state];
-    // Door frame (tall thin box)
-    const frame=new THREE.Mesh(new THREE.BoxGeometry(.12,.72,.12),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.75}));
-    frame.position.set(g.x,gy+.36,g.z); frame.userData={type:'door',...g}; doorGrp.add(frame); doorMeshes.push(frame);
-    // Floor ring
-    const ring=new THREE.Mesh(new THREE.RingGeometry(.18,.26,16),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5,side:THREE.DoubleSide}));
-    ring.rotation.x=-Math.PI/2; ring.position.set(g.x,gy+.01,g.z); ring.userData={type:'door',...g}; doorGrp.add(ring); doorMeshes.push(ring);
-    // Fill circle (open only)
-    if(g.state==='OPEN'){
-      const fill=new THREE.Mesh(new THREE.CircleGeometry(.18,16),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.07,side:THREE.DoubleSide}));
-      fill.rotation.x=-Math.PI/2; fill.position.set(g.x,gy,g.z); doorGrp.add(fill);
-    }
+    const gy=g.lv*FG+FH/2, col=DC[g.state];
+    const isGate=g.id.startsWith('G');
+    const leafW=isGate?1.5:.95, leafH=.78, leafThk=.07;
+    const y0=gy+leafH/2;
+
+    // Hinge pivot group — rotating this swings the door
+    const hingeGrp=new THREE.Group();
+    hingeGrp.position.set(g.x,y0,g.z); doorGrp.add(hingeGrp);
+
+    // Door leaf panel — offset +X so hinge is at left edge
+    const panel=new THREE.Mesh(
+      new THREE.BoxGeometry(leafW,leafH,leafThk),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.72})
+    );
+    panel.position.x=leafW/2;
+    panel.userData={type:'door',...g};
+    hingeGrp.add(panel); doorMeshes.push(panel);
+
+    // Static door frame post at hinge side
+    const postL=new THREE.Mesh(
+      new THREE.BoxGeometry(.06,leafH+.1,.06),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5})
+    );
+    postL.position.set(g.x,y0,g.z); doorGrp.add(postL);
+
+    // Top lintel (static)
+    const lintel=new THREE.Mesh(
+      new THREE.BoxGeometry(leafW+.1,.06,leafThk+.04),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.38})
+    );
+    lintel.position.set(g.x+leafW/2,gy+leafH+.04,g.z); doorGrp.add(lintel);
+
+    // Floor ring status indicator
+    const ring=new THREE.Mesh(
+      new THREE.RingGeometry(.22,.32,16),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.45,side:THREE.DoubleSide})
+    );
+    ring.rotation.x=-Math.PI/2;
+    ring.position.set(g.x+leafW/2,gy+.02,g.z);
+    ring.userData={type:'door',...g}; doorGrp.add(ring); doorMeshes.push(ring);
+
+    // Initial angle: OPEN=−90°, HELD=−45°, LOCKED=0° (closed)
+    const initAngle=g.state==='OPEN'?-Math.PI/2:g.state==='HELD'?-Math.PI/4:0;
+    hingeGrp.rotation.y=initAngle;
+    doorLeafMap[g.id]={grp:hingeGrp,panel,ring,target:initAngle,current:initAngle};
   });
   doorGrp.visible=true; scene.add(doorGrp);
 
@@ -1457,6 +1520,25 @@ try {
     selRing.visible=true; selRingOuter.visible=true;
   };
 
+  // Door animation: swing open (-90°), hold (-45°), lock (0°=closed)
+  window.animDoor=(id,state)=>{
+    const d=doorLeafMap[id]; if(!d) return;
+    const angMap={OPEN:-Math.PI/2, LOCK:0, HOLD:-Math.PI/4};
+    const hexMap={OPEN:DC.OPEN, LOCK:DC.LOCKED, HOLD:DC.HELD};
+    d.target=angMap[state]??0;
+    const hex=hexMap[state]??DC.LOCKED;
+    d.panel.material.color.setHex(hex);
+    d.panel.userData.state={OPEN:'OPEN',LOCK:'LOCKED',HOLD:'HELD'}[state]||'LOCKED';
+    d.ring.material.color.setHex(hex);
+  };
+
+  // Focus camera on a restricted zone
+  window.focusZone=(g)=>{
+    const ty=g.lv*FG+1;
+    controls.target.set(g.x,ty,g.z);
+    cam.position.set(g.x+14,ty+12,g.z+14);
+  };
+
   // ── ANIMATE ──
   let tick=0, vT=0, dAngle=0;
   function animate(){
@@ -1499,8 +1581,10 @@ try {
         if(c.siren) c.siren.material.opacity=.45+Math.sin(tick*7+ci*2.1)*.45;
       });
     }
-    // Door pulse animation (locked doors pulse red)
+    // Door pulse animation (locked/held doors glow)
     doorGrp.children.forEach((m,i)=>{ if(m.userData.state==='LOCKED'&&m.material&&m.material.transparent) m.material.opacity=.45+Math.sin(tick*2.2+i*.4)*.3; else if(m.userData.state==='HELD'&&m.material&&m.material.transparent) m.material.opacity=.5+Math.sin(tick*1.5+i*.3)*.25; });
+    // Door leaf smooth swing animation
+    Object.values(doorLeafMap).forEach(d=>{ if(Math.abs(d.target-d.current)>.002){ d.current+=(d.target-d.current)*.1; d.grp.rotation.y=d.current; } });
     // Creek shimmer
     if(extGrp.visible&&extGrp.children[2]) extGrp.children[2].material.opacity=.07+Math.sin(tick*.6)*.04;
     updateLabels();
@@ -1529,6 +1613,8 @@ window.acsCmd=(door,cmd,btn)=>{
   const st=grp.querySelector('.acs-st');
   st.textContent={OPEN:'OPEN',LOCK:'LOCKED',HOLD:'HELD'}[cmd]||cmd;
   st.style.color=cmd==='OPEN'?'rgba(56,217,106,.85)':cmd==='LOCK'?'rgba(214,64,64,.85)':'rgba(200,146,10,.85)';
+  // Trigger 3D door leaf animation
+  if(window.animDoor) window.animDoor(door, cmd);
 };
 
 window.triggerLockdown=(btn)=>{
