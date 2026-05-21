@@ -1619,6 +1619,14 @@ try {
     selRing.visible=true; selRingOuter.visible=true;
   };
 
+  // Focus camera on a door/gate by ID
+  window.focusDoor=(id)=>{
+    const d=doorLeafMap[id]; if(!d) return;
+    const p=d.grp.position;
+    controls.target.set(p.x,p.y,p.z);
+    cam.position.set(p.x+10,p.y+8,p.z+10);
+  };
+
   // Door animation: swing open (-90°), hold (-45°), lock (0°=closed)
   window.animDoor=(id,state)=>{
     const d=doorLeafMap[id]; if(!d) return;
@@ -1705,6 +1713,13 @@ try {
 // ═══════════════════════════════════════════════════════════════
 // ACTION HANDLERS
 // ═══════════════════════════════════════════════════════════════
+// Wire ACS door header clicks → 3D camera zoom
+document.querySelectorAll('.acs-door').forEach(el=>{
+  const id=el.id.replace('acs-','');
+  const top=el.querySelector('.acs-top');
+  if(top){ top.style.cursor='pointer'; top.addEventListener('click',()=>{ if(window.focusDoor) window.focusDoor(id); }); }
+});
+
 window.acsCmd=(door,cmd,btn)=>{
   const grp=btn.closest('.acs-door');
   grp.querySelectorAll('.acs-btn').forEach(b=>b.classList.remove('act'));
