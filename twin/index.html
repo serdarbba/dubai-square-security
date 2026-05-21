@@ -63,7 +63,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .lb.on .lb-sw::after{left:11px;background:var(--blue)}
 
 /* ACS Control */
-.acs-ctrl{padding:6px;display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.acs-ctrl{padding:6px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;max-height:270px;overflow-y:auto}
 .acs-door{padding:7px 9px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5)}
 .acs-door.alert{border-color:rgba(214,64,64,.28)}
 .acs-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
@@ -303,6 +303,105 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
           <button class="acs-btn grn" onclick="acsCmd('G3','OPEN',this)">OPEN</button>
           <button class="acs-btn red act" onclick="acsCmd('G3','LOCK',this)">LOCK</button>
           <button class="acs-btn yel" onclick="acsCmd('G3','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-G2">
+        <div class="acs-top">
+          <span class="acs-nm">Gate 2 · West</span>
+          <span class="acs-st" style="color:var(--green)">OPEN</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn act" onclick="acsCmd('G2','OPEN',this)">OPEN</button>
+          <button class="acs-btn red" onclick="acsCmd('G2','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('G2','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-G4">
+        <div class="acs-top">
+          <span class="acs-nm">Gate 4 · South</span>
+          <span class="acs-st" style="color:var(--green)">OPEN</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn act" onclick="acsCmd('G4','OPEN',this)">OPEN</button>
+          <button class="acs-btn red" onclick="acsCmd('G4','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('G4','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-G5">
+        <div class="acs-top">
+          <span class="acs-nm">Gate 5 · Service</span>
+          <span class="acs-st" style="color:var(--amber)">HELD</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('G5','OPEN',this)">OPEN</button>
+          <button class="acs-btn red" onclick="acsCmd('G5','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel act" onclick="acsCmd('G5','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-G6">
+        <div class="acs-top">
+          <span class="acs-nm">Gate 6 · Emergency</span>
+          <span class="acs-st" style="color:var(--red)">LOCKED</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('G6','OPEN',this)">OPEN</button>
+          <button class="acs-btn red act" onclick="acsCmd('G6','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('G6','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-G7">
+        <div class="acs-top">
+          <span class="acs-nm">B1 Parking Entry</span>
+          <span class="acs-st" style="color:var(--green)">OPEN</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn act" onclick="acsCmd('G7','OPEN',this)">OPEN</button>
+          <button class="acs-btn red" onclick="acsCmd('G7','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('G7','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-D1">
+        <div class="acs-top">
+          <span class="acs-nm">VIP Lounge · L1</span>
+          <span class="acs-st" style="color:var(--gold)">LOCKED</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('D1','OPEN',this)">OPEN</button>
+          <button class="acs-btn red act" onclick="acsCmd('D1','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('D1','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-D2">
+        <div class="acs-top">
+          <span class="acs-nm">Security Ops Room</span>
+          <span class="acs-st" style="color:var(--red)">LOCKED</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('D2','OPEN',this)">OPEN</button>
+          <button class="acs-btn red act" onclick="acsCmd('D2','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('D2','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-D3">
+        <div class="acs-top">
+          <span class="acs-nm">Server Room · GF</span>
+          <span class="acs-st" style="color:var(--red)">LOCKED</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('D3','OPEN',this)">OPEN</button>
+          <button class="acs-btn red act" onclick="acsCmd('D3','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('D3','HOLD',this)">HOLD</button>
+        </div>
+      </div>
+      <div class="acs-door" id="acs-D6">
+        <div class="acs-top">
+          <span class="acs-nm">Control Room · B1</span>
+          <span class="acs-st" style="color:var(--red)">LOCKED</span>
+        </div>
+        <div class="acs-btns">
+          <button class="acs-btn grn" onclick="acsCmd('D6','OPEN',this)">OPEN</button>
+          <button class="acs-btn red act" onclick="acsCmd('D6','LOCK',this)">LOCK</button>
+          <button class="acs-btn yel" onclick="acsCmd('D6','HOLD',this)">HOLD</button>
         </div>
       </div>
       <div class="acs-door alert" id="acs-B4">
