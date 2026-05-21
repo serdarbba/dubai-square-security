@@ -981,14 +981,14 @@ try {
   const entMeshes=[];
   ENTITIES.forEach(e=>{
     const col=e.type==='vip'?0xc8a820:e.type==='suspect'?0xd64040:e.type==='drone'?0x3ddbbe:0x3ddbbe;
-    const sz=e.type==='drone'?.3:.28;
-    const geo=e.type==='drone'?new THREE.OctahedronGeometry(sz,0):new THREE.SphereGeometry(sz,10,10);
+    const sz=e.type==='drone'?.14:.11;
+    const geo=e.type==='drone'?new THREE.OctahedronGeometry(sz,0):new THREE.SphereGeometry(sz,8,8);
     const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:col}));
     m.position.set(e.pos.x,e.pos.y,e.pos.z);
     m.userData={type:'entity',...e};
     entGrp.add(m); entMeshes.push(m);
     // Glow ring
-    const ring=new THREE.Mesh(new THREE.RingGeometry(.45,.58,20),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.4,side:THREE.DoubleSide}));
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.18,.26,14),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.45,side:THREE.DoubleSide}));
     ring.rotation.x=-Math.PI/2; ring.position.set(e.pos.x,.02,e.pos.z); entGrp.add(ring);
   });
   // Correlation arc: VIP-001 ↔ SEC-047 (escort relation)
@@ -1010,12 +1010,12 @@ try {
 
   // ── VIP PATH ──
   const vipGrp=new THREE.Group();
-  const vipM=new THREE.Mesh(new THREE.SphereGeometry(.34,14,14),new THREE.MeshBasicMaterial({color:0xc8a820}));
+  const vipM=new THREE.Mesh(new THREE.SphereGeometry(.14,8,8),new THREE.MeshBasicMaterial({color:0xc8a820}));
   const vipPath=[new THREE.Vector3(FW/2-1,FH/2+.5,5),new THREE.Vector3(22,FH/2+.5,3),new THREE.Vector3(10,FH/2+.5,0),new THREE.Vector3(0,FH/2+.5,-1),new THREE.Vector3(-10,FH/2+.5,1),new THREE.Vector3(-20,FH/2+.5,3)];
   const vCurve=new THREE.CatmullRomCurve3(vipPath,false);
   vipGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(vCurve.getPoints(80)),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.32})));
   vipGrp.add(vipM);
-  const vRing=new THREE.Mesh(new THREE.RingGeometry(.55,.68,28),new THREE.MeshBasicMaterial({color:0xc8a820,transparent:true,opacity:.4,side:THREE.DoubleSide}));
+  const vRing=new THREE.Mesh(new THREE.RingGeometry(.22,.30,16),new THREE.MeshBasicMaterial({color:0xc8a820,transparent:true,opacity:.4,side:THREE.DoubleSide}));
   vRing.rotation.x=-Math.PI/2; vipGrp.add(vRing);
   scene.add(vipGrp);
 
@@ -1224,16 +1224,13 @@ try {
         if(rndP()<occ){
           const cr=rndP();
           const carCol=cr<.22?0x040c18:cr<.42?0x06111f:cr<.58?0x050810:cr<.72?0x020608:cr<.84?0x0b0f14:cr<.92?0x080b10:0x030608;
-          const carW=cw*.52, carH=.22, carL=cd*.74;
+          const carW=cw*.28, carH=.09, carL=cd*.40;
           // Car body
           const car=new THREE.Mesh(new THREE.BoxGeometry(carW,carH,carL),new THREE.MeshBasicMaterial({color:carCol}));
-          car.position.set(bx,py+.11,bz); parkGrp.add(car);
+          car.position.set(bx,py+.05,bz); parkGrp.add(car);
           // Windshield glint
-          const ws=new THREE.Mesh(new THREE.BoxGeometry(carW*.7,.025,carL*.2),new THREE.MeshBasicMaterial({color:0x0c2e4a,transparent:true,opacity:.55}));
-          ws.position.set(bx,py+.23,bz-carL*.15); parkGrp.add(ws);
-          // Rear glass
-          const rg=new THREE.Mesh(new THREE.BoxGeometry(carW*.6,.025,carL*.16),new THREE.MeshBasicMaterial({color:0x0a2840,transparent:true,opacity:.38}));
-          rg.position.set(bx,py+.22,bz+carL*.18); parkGrp.add(rg);
+          const ws=new THREE.Mesh(new THREE.BoxGeometry(carW*.65,.015,carL*.22),new THREE.MeshBasicMaterial({color:0x0c2e4a,transparent:true,opacity:.5}));
+          ws.position.set(bx,py+.10,bz-carL*.12); parkGrp.add(ws);
         }
       }
     }
@@ -1374,37 +1371,37 @@ try {
     cab.position.set(0,bH+cH/2,cOff); g.add(cab);
     // Headlights (front = +Z)
     [-bW*.3,bW*.3].forEach(x=>{
-      const hl=new THREE.Mesh(new THREE.SphereGeometry(.075,6,5),new THREE.MeshBasicMaterial({color:hlCol,transparent:true,opacity:.95}));
-      hl.position.set(x,bH*.55,bL/2+.06); g.add(hl);
+      const hl=new THREE.Mesh(new THREE.SphereGeometry(.036,5,4),new THREE.MeshBasicMaterial({color:hlCol,transparent:true,opacity:.95}));
+      hl.position.set(x,bH*.55,bL/2+.03); g.add(hl);
     });
     // Taillights (rear = -Z)
     [-bW*.28,bW*.28].forEach(x=>{
-      const tl=new THREE.Mesh(new THREE.SphereGeometry(.065,6,5),new THREE.MeshBasicMaterial({color:tlCol,transparent:true,opacity:.9}));
-      tl.position.set(x,bH*.52,-bL/2-.05); g.add(tl);
+      const tl=new THREE.Mesh(new THREE.SphereGeometry(.030,5,4),new THREE.MeshBasicMaterial({color:tlCol,transparent:true,opacity:.9}));
+      tl.position.set(x,bH*.52,-bL/2-.03); g.add(tl);
     });
     // Wheels (4 dark discs at corners)
     [[-bW*.52,bH*.18,bL*.3],[bW*.52,bH*.18,bL*.3],[-bW*.52,bH*.18,-bL*.3],[bW*.52,bH*.18,-bL*.3]].forEach(([wx,wy,wz])=>{
-      const w=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.12,8),new THREE.MeshBasicMaterial({color:0x010306}));
+      const w=new THREE.Mesh(new THREE.CylinderGeometry(.088,.088,.06,7),new THREE.MeshBasicMaterial({color:0x010306}));
       w.rotation.z=Math.PI/2; w.position.set(wx,wy,wz); g.add(w);
     });
     return g;
   }
 
   // VIP sedan (gold/dark)
-  const vipG=mkCarGrp(2.0,.42,4.0, 1.58,.5,1.95,-.18, 0x7a5c02,0x0e0c04, 0xf0e8c8,0xc84040);
+  const vipG=mkCarGrp(1.0,.20,2.1, .82,.26,1.05,-.10, 0x7a5c02,0x0e0c04, 0xf0e8c8,0xc84040);
   vehicleGrp.add(vipG);
   // Patrol car 1 (deep navy)
-  const pat1G=mkCarGrp(1.82,.4,3.7, 1.46,.45,1.82,-.14, 0x050e1a,0x06101c, 0xe8f0ff,0xc84040);
-  const sir1=new THREE.Mesh(new THREE.BoxGeometry(.28,.1,.14),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.9}));
-  sir1.position.set(0,.44+.05,0); pat1G.add(sir1);
+  const pat1G=mkCarGrp(.92,.19,1.95, .74,.24,.98,-.08, 0x050e1a,0x06101c, 0xe8f0ff,0xc84040);
+  const sir1=new THREE.Mesh(new THREE.BoxGeometry(.14,.05,.07),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.9}));
+  sir1.position.set(0,.24,0); pat1G.add(sir1);
   vehicleGrp.add(pat1G);
   // Patrol car 2
-  const pat2G=mkCarGrp(1.82,.4,3.7, 1.46,.45,1.82,-.14, 0x040c18,0x050e1a, 0xe8f0ff,0xc84040);
-  const sir2=new THREE.Mesh(new THREE.BoxGeometry(.28,.1,.14),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.9}));
-  sir2.position.set(0,.44+.05,0); pat2G.add(sir2);
+  const pat2G=mkCarGrp(.92,.19,1.95, .74,.24,.98,-.08, 0x040c18,0x050e1a, 0xe8f0ff,0xc84040);
+  const sir2=new THREE.Mesh(new THREE.BoxGeometry(.14,.05,.07),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.9}));
+  sir2.position.set(0,.24,0); pat2G.add(sir2);
   vehicleGrp.add(pat2G);
   // Service van (wider, taller cabin)
-  const svcG=mkCarGrp(2.1,.5,5.0, 2.0,.85,4.1,.18, 0x060b12,0x050910, 0xe0eaf8,0xc84040);
+  const svcG=mkCarGrp(1.05,.24,2.6, .98,.42,2.1,.10, 0x060b12,0x050910, 0xe0eaf8,0xc84040);
   vehicleGrp.add(svcG);
 
   // Cars array for animate loop — each vehicle owns its own curve
