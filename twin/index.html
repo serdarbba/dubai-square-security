@@ -1206,45 +1206,58 @@ try {
   canopyE.position.set(FW/2+2,FH*.4+.1,2); extGrp.add(canopyE);
   extGrp.visible=true; scene.add(extGrp);
 
-  // ── PARKING LAYOUT (B1 / B2) ──
+  // ── PARKING LAYOUT (B1 / B2) — 303,000 m² mall scale ──
   const parkGrp=new THREE.Group();
   [-1,-2].forEach(lv=>{
     const py=lv*FG+FH/2+.06;
     const rndP=srnd(lv*444+77);
-    const cols=6, rows=4, cw=(FW-6)/cols, cd=(FD-4)/rows;
+    const cols=16, rows=10;
+    const cw=(FW-3)/cols, cd=(FD-2)/rows; // tighter spacing = denser lot
+    const occ=lv===-1?.91:.85; // B1 fuller (closer to entrance), B2 slightly less
     for(let c=0;c<cols;c++){
       for(let r=0;r<rows;r++){
-        const bx=-FW/2+3+cw*(c+.5), bz=-FD/2+2+cd*(r+.5);
-        // Bay line frame
-        parkGrp.add(mkLine([[bx-cw*.45,py,bz-cd*.45],[bx+cw*.45,py,bz-cd*.45],[bx+cw*.45,py,bz+cd*.45],[bx-cw*.45,py,bz+cd*.45],[bx-cw*.45,py,bz-cd*.45]],0x0a2030,.32));
-        // Parked car (78% occupancy)
-        if(rndP()<.78){
-          const carCol=rndP()<.4?0x050e1a:rndP()<.6?0x03080f:0x080a10;
-          const car=new THREE.Mesh(new THREE.BoxGeometry(cw*.35,.28,cd*.62),new THREE.MeshBasicMaterial({color:carCol}));
-          car.position.set(bx,py+.14,bz); parkGrp.add(car);
-          // Windshield reflection
-          const ws=new THREE.Mesh(new THREE.BoxGeometry(cw*.28,.04,cd*.18),new THREE.MeshBasicMaterial({color:0x0a3050,transparent:true,opacity:.4}));
-          ws.position.set(bx,py+.29,bz-cd*.1); parkGrp.add(ws);
+        const bx=-FW/2+1.5+cw*(c+.5), bz=-FD/2+1+cd*(r+.5);
+        // Bay outline
+        const bayCol=c<2&&r<2?0xc8a820:0x0c2234; // gold = VIP bays near entrance
+        const bayOp=c<2&&r<2?.5:.28;
+        parkGrp.add(mkLine([[bx-cw*.47,py,bz-cd*.47],[bx+cw*.47,py,bz-cd*.47],[bx+cw*.47,py,bz+cd*.47],[bx-cw*.47,py,bz+cd*.47],[bx-cw*.47,py,bz-cd*.47]],bayCol,bayOp));
+        if(rndP()<occ){
+          const cr=rndP();
+          const carCol=cr<.22?0x040c18:cr<.42?0x06111f:cr<.58?0x050810:cr<.72?0x020608:cr<.84?0x0b0f14:cr<.92?0x080b10:0x030608;
+          const carW=cw*.52, carH=.22, carL=cd*.74;
+          // Car body
+          const car=new THREE.Mesh(new THREE.BoxGeometry(carW,carH,carL),new THREE.MeshBasicMaterial({color:carCol}));
+          car.position.set(bx,py+.11,bz); parkGrp.add(car);
+          // Windshield glint
+          const ws=new THREE.Mesh(new THREE.BoxGeometry(carW*.7,.025,carL*.2),new THREE.MeshBasicMaterial({color:0x0c2e4a,transparent:true,opacity:.55}));
+          ws.position.set(bx,py+.23,bz-carL*.15); parkGrp.add(ws);
+          // Rear glass
+          const rg=new THREE.Mesh(new THREE.BoxGeometry(carW*.6,.025,carL*.16),new THREE.MeshBasicMaterial({color:0x0a2840,transparent:true,opacity:.38}));
+          rg.position.set(bx,py+.22,bz+carL*.18); parkGrp.add(rg);
         }
       }
     }
-    // Driving lane lines (between column groups)
-    for(let c=1;c<cols;c++){
-      const lx=-FW/2+3+cw*c;
-      if(c%2===0) parkGrp.add(mkLine([[lx,py+.02,-FD/2+1],[lx,py+.02,FD/2-1]],0x0c1e2e,.4));
+    // Driving aisles — every 4 columns
+    for(let c=4;c<cols;c+=4){
+      const lx=-FW/2+1.5+cw*c;
+      parkGrp.add(mkLine([[lx,py+.02,-FD/2+.8],[lx,py+.02,FD/2-.8]],0x0a1c2c,.42));
     }
-    // Level label area + exit signage
+    // Cross aisle (mid-depth)
+    parkGrp.add(mkLine([[-FW/2+1,py+.02,0],[FW/2-1,py+.02,0]],0x0a1c2c,.28));
+    // Level signage
     const sign=new THREE.Mesh(new THREE.BoxGeometry(2,.5,.08),new THREE.MeshBasicMaterial({color:lv===-1?0x0a2038:0x061428}));
     sign.position.set(-FW/2+1,py+.5,0); parkGrp.add(sign);
-    // Ramp opening marker
+    // Ramp opening
     const ramp=new THREE.Mesh(new THREE.PlaneGeometry(5,4),new THREE.MeshBasicMaterial({color:0x0a1e2e,transparent:true,opacity:.6,side:THREE.DoubleSide}));
     ramp.rotation.x=-Math.PI/2; ramp.position.set(FW/2-4,py,FD/2-3); parkGrp.add(ramp);
     parkGrp.add(mkLine([[FW/2-6.5,py,FD/2-1],[FW/2-1.5,py,FD/2-1],[FW/2-1.5,py,FD/2-5],[FW/2-6.5,py,FD/2-5],[FW/2-6.5,py,FD/2-1]],0x3ddbbe,.35));
-    // Pillar markers at B parking
-    [[- 20,0,-10],[0,0,-10],[20,0,-10],[-20,0,10],[0,0,10],[20,0,10]].forEach(([x,,z])=>{
-      const pillar=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.4,5),new THREE.MeshBasicMaterial({color:0x06101e}));
-      pillar.position.set(x,py+.2,z); parkGrp.add(pillar);
-    });
+    // Support pillars (denser grid)
+    for(let px=-20;px<=20;px+=10){
+      [-10,0,10].forEach(pz=>{
+        const pillar=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.36,5),new THREE.MeshBasicMaterial({color:0x06101e}));
+        pillar.position.set(px,py+.18,pz); parkGrp.add(pillar);
+      });
+    }
   });
   parkGrp.visible=true; scene.add(parkGrp);
 
