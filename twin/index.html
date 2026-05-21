@@ -1160,14 +1160,30 @@ try {
   // ── VEHICLE TRACKING ──
   const vehicleGrp=new THREE.Group();
   const VEH_Y=EXT_Y+.28;
-  // Smooth 12-point road loop — rounded corners, no sharp 90° turns
-  const vehRoadPts=[
-    [RX,    RZ*.45],[RX,    0],[RX,   -RZ*.45],
-    [RX*.7, -RZ],   [0,    -RZ],[-RX*.7,-RZ],
-    [-RX,  -RZ*.45],[-RX,   0],[-RX,   RZ*.45],
-    [-RX*.7, RZ],   [0,     RZ],[RX*.7,  RZ],
-  ].map(([x,z])=>new THREE.Vector3(x,VEH_Y,z));
-  const vehCurve=new THREE.CatmullRomCurve3(vehRoadPts,true,'catmullrom',.5);
+  // ── Purposeful traffic paths (each vehicle has a distinct role) ──
+  // VIP circuit: east entrance approach → VIP gate → exit loop (east side only)
+  const vipCurve=new THREE.CatmullRomCurve3([
+    [RX+22,-6],[RX+16,-8],[RX+8,-8],[FW/2+3,-8],  // approach from east
+    [FW/2+3,-4],[FW/2+5,0],[FW/2+3,4],             // VIP gate loop
+    [RX+8,6],[RX+16,5],[RX+22,3],[RX+22,-3],        // exit east
+  ].map(([x,z])=>new THREE.Vector3(x,VEH_Y,z)),true,'catmullrom',.5);
+  // Patrol route 1: tight perimeter sweep just outside building footprint
+  const pat1Curve=new THREE.CatmullRomCurve3([
+    [FW/2+9,0],[FW/2+7,-FD/2-6],[0,-FD/2-8],
+    [-FW/2-7,-FD/2-6],[-FW/2-9,0],[-FW/2-7,FD/2+6],
+    [0,FD/2+8],[FW/2+7,FD/2+6],
+  ].map(([x,z])=>new THREE.Vector3(x,VEH_Y,z)),true,'catmullrom',.5);
+  // Patrol route 2: outer boundary road
+  const pat2Curve=new THREE.CatmullRomCurve3([
+    [RX,RZ*.4],[RX,0],[RX,-RZ*.4],[RX*.7,-RZ],
+    [0,-RZ],[-RX*.7,-RZ],[-RX,-RZ*.4],[-RX,0],
+    [-RX,RZ*.4],[-RX*.7,RZ],[0,RZ],[RX*.7,RZ],
+  ].map(([x,z])=>new THREE.Vector3(x,VEH_Y,z)),true,'catmullrom',.5);
+  // Service van: loading dock north side back-and-forth (closed loop)
+  const svcCurve=new THREE.CatmullRomCurve3([
+    [0,FD/2+4],[-8,FD/2+4],[-18,FD/2+5],[-22,FD/2+9],
+    [-22,FD/2+16],[0,FD/2+16],[10,FD/2+14],[10,FD/2+6],
+  ].map(([x,z])=>new THREE.Vector3(x,VEH_Y,z)),true,'catmullrom',.5);
 
   // Factory: build a realistic car Group (forward = +Z)
   function mkCarGrp(bW,bH,bL,cW,cH,cL,cOff,bCol,cCol,hlCol,tlCol){
@@ -1216,12 +1232,12 @@ try {
   const svcG=mkCarGrp(2.1,.5,5.0, 2.0,.85,4.1,.18, 0x060b12,0x050910, 0xe0eaf8,0xc84040);
   vehicleGrp.add(svcG);
 
-  // Cars array for animate loop
+  // Cars array for animate loop — each vehicle owns its own curve
   const cars=[
-    {g:vipG,  t:0,   spd:.00052, siren:null},
-    {g:pat1G, t:.26, spd:.00068, siren:sir1},
-    {g:pat2G, t:.62, spd:.00062, siren:sir2},
-    {g:svcG,  t:.5,  spd:.00038, siren:null},
+    {g:vipG,  t:0,   spd:.00052, curve:vipCurve,  siren:null},
+    {g:pat1G, t:.26, spd:.00068, curve:pat1Curve,  siren:sir1},
+    {g:pat2G, t:.62, spd:.00062, curve:pat2Curve,  siren:sir2},
+    {g:svcG,  t:.5,  spd:.00038, curve:svcCurve,   siren:null},
   ];
   vehicleGrp.visible=true; scene.add(vehicleGrp);
 
@@ -1289,42 +1305,112 @@ try {
 
   // ── EXTERNAL CONNECTIONS (per IFC spec 17.5.4.3 & 17.5.4.4) ──
   const connGrp=new THREE.Group();
-  // Hotel / Metro Link Bridge — Level 3 (First Floor), east side
-  // Spec: "dedicated passage in Level 3 (First Floor)"
-  const hotelBY=3*FG+FH/2+.15;
-  const hotelBridgePts=[new THREE.Vector3(FW/2,hotelBY,0),new THREE.Vector3(FW/2+18,hotelBY,0),new THREE.Vector3(FW/2+18,hotelBY,-4),new THREE.Vector3(FW/2+28,hotelBY,-4)];
-  connGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(hotelBridgePts),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.65})));
-  // Bridge deck (flat box)
-  const hBridge=new THREE.Mesh(new THREE.BoxGeometry(18,FH,3.5),new THREE.MeshBasicMaterial({color:0xb89018,transparent:true,opacity:.18}));
-  hBridge.position.set(FW/2+9,hotelBY,-.5); connGrp.add(hBridge);
-  const hBridgeE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(18,FH,3.5)),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.5}));
-  hBridgeE.position.set(FW/2+9,hotelBY,-.5); connGrp.add(hBridgeE);
-  // Hotel tower stub (connected building mass)
-  const hotelTower=new THREE.Mesh(new THREE.BoxGeometry(12,FG*6,14),new THREE.MeshBasicMaterial({color:0x0e2235,transparent:true,opacity:.45}));
-  hotelTower.position.set(FW/2+34,FG*2.5,-4); connGrp.add(hotelTower);
-  const hotelTowerE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(12,FG*6,14)),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.35}));
-  hotelTowerE.position.set(FW/2+34,FG*2.5,-4); connGrp.add(hotelTowerE);
-  // Hotel label marker
-  const hotelTop=new THREE.Mesh(new THREE.SphereGeometry(.3,8,8),new THREE.MeshBasicMaterial({color:0xc8a820}));
-  hotelTop.position.set(FW/2+34,FG*6+1,-4); connGrp.add(hotelTop);
-  // Icon Tower Connection — Level 1 / B1 (Parking 2), east side
-  // Spec: "dedicated passage in Level 1 (Parking 2)"
-  const iconTY=-1*FG+FH/2+.15;
-  const iconTunnelPts=[new THREE.Vector3(FW/2,iconTY,8),new THREE.Vector3(FW/2+20,iconTY,8),new THREE.Vector3(FW/2+30,iconTY,14)];
-  connGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(iconTunnelPts),new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.6})));
-  // Tunnel box
-  const iconTunnel=new THREE.Mesh(new THREE.BoxGeometry(22,FH*.8,2.8),new THREE.MeshBasicMaterial({color:0x0a2030,transparent:true,opacity:.35}));
-  iconTunnel.position.set(FW/2+11,iconTY,8); connGrp.add(iconTunnel);
-  const iconTunnelE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(22,FH*.8,2.8)),new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.45}));
-  iconTunnelE.position.set(FW/2+11,iconTY,8); connGrp.add(iconTunnelE);
-  // Icon Tower mass (taller landmark tower)
-  const iconTower=new THREE.Mesh(new THREE.BoxGeometry(10,FG*14,10),new THREE.MeshBasicMaterial({color:0x0c1c2e,transparent:true,opacity:.55}));
-  iconTower.position.set(FW/2+38,FG*6,14); connGrp.add(iconTower);
-  const iconTowerE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(10,FG*14,10)),new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.4}));
-  iconTowerE.position.set(FW/2+38,FG*6,14); connGrp.add(iconTowerE);
-  // Icon Tower top marker
-  const iconTop=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),new THREE.MeshBasicMaterial({color:0x3ddbbe}));
-  iconTop.position.set(FW/2+38,FG*14+1.5,14); connGrp.add(iconTop);
+
+  // ─────────────────────────────────────────────────────────────
+  // HOTEL / METRO LINK BRIDGE — Level 3 (east face, IFC §17.5.4.3)
+  // ─────────────────────────────────────────────────────────────
+  const hotelBY=3*FG+FH/2+.4;
+  const bLen=22, bW=3.8, bThk=.26;
+  const bCx=FW/2+bLen/2, bCz=-.5;
+
+  // Glass deck — translucent blue-white
+  const hDeck=new THREE.Mesh(new THREE.BoxGeometry(bLen,bThk,bW),
+    new THREE.MeshBasicMaterial({color:0xb0d8f4,transparent:true,opacity:.2}));
+  hDeck.position.set(bCx,hotelBY,bCz); connGrp.add(hDeck);
+  const hDeckE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(bLen,bThk,bW)),
+    new THREE.LineBasicMaterial({color:0xd4a820,transparent:true,opacity:.7}));
+  hDeckE.position.set(bCx,hotelBY,bCz); connGrp.add(hDeckE);
+
+  // Railings — two horizontal bars each side + vertical struts
+  [bCz-bW/2, bCz+bW/2].forEach(zR=>{
+    [hotelBY+.38, hotelBY+.72].forEach(yR=>{
+      const rail=new THREE.Mesh(new THREE.BoxGeometry(bLen,.05,.04),
+        new THREE.MeshBasicMaterial({color:0xd4b030,transparent:true,opacity:.75}));
+      rail.position.set(bCx,yR,zR); connGrp.add(rail);
+    });
+    for(let si=0;si<=bLen;si+=3){
+      const strut=new THREE.Mesh(new THREE.BoxGeometry(.06,.74,.04),
+        new THREE.MeshBasicMaterial({color:0xc8a020,transparent:true,opacity:.5}));
+      strut.position.set(FW/2+si,hotelBY+.37,zR); connGrp.add(strut);
+    }
+  });
+
+  // Structural support columns below bridge (2 piers)
+  [FW/2+7, FW/2+16].forEach(px=>{
+    const pier=new THREE.Mesh(new THREE.BoxGeometry(.35,hotelBY,.35),
+      new THREE.MeshBasicMaterial({color:0x907010,transparent:true,opacity:.6}));
+    pier.position.set(px,hotelBY/2,bCz); connGrp.add(pier);
+    const pierE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(.35,hotelBY,.35)),
+      new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.38}));
+    pierE.position.set(px,hotelBY/2,bCz); connGrp.add(pierE);
+  });
+
+  // Hotel tower — boutique hotel (wider than tall-ish, warm gold edges)
+  const hTW=16, hTD=14, hTH=FG*9;
+  const hTX=FW/2+bLen+8, hTZ=-4;
+  const hotelTower=new THREE.Mesh(new THREE.BoxGeometry(hTW,hTH,hTD),
+    new THREE.MeshBasicMaterial({color:0x0d1e30,transparent:true,opacity:.5}));
+  hotelTower.position.set(hTX,hTH/2,hTZ); connGrp.add(hotelTower);
+  const hotelTowerE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(hTW,hTH,hTD)),
+    new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.48}));
+  hotelTowerE.position.set(hTX,hTH/2,hTZ); connGrp.add(hotelTowerE);
+  // Hotel floor bands (every 2 floors for scale)
+  for(let hf=1;hf<5;hf++){
+    const band=new THREE.Mesh(new THREE.BoxGeometry(hTW+.1,.07,hTD+.1),
+      new THREE.MeshBasicMaterial({color:0xb89018,transparent:true,opacity:.22}));
+    band.position.set(hTX,hf*(FG*2),hTZ); connGrp.add(band);
+  }
+  // Hotel rooftop orb beacon
+  const hotelOrb=new THREE.Mesh(new THREE.SphereGeometry(.38,10,10),
+    new THREE.MeshBasicMaterial({color:0xc8a820}));
+  hotelOrb.position.set(hTX,hTH+.7,hTZ); connGrp.add(hotelOrb);
+
+  // ─────────────────────────────────────────────────────────────
+  // ICON TOWER TUNNEL — B1 / Parking 2 (east face, IFC §17.5.4.4)
+  // ─────────────────────────────────────────────────────────────
+  const iconTY=-1*FG+FH/2+.22;
+  const tLen=24, tW=2.6;
+  const tCx=FW/2+tLen/2, tCz=8;
+
+  // Underground tunnel shell
+  const iTunnel=new THREE.Mesh(new THREE.BoxGeometry(tLen,FH*.7,tW),
+    new THREE.MeshBasicMaterial({color:0x051018,transparent:true,opacity:.6}));
+  iTunnel.position.set(tCx,iconTY,tCz); connGrp.add(iTunnel);
+  const iTunnelE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(tLen,FH*.7,tW)),
+    new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.55}));
+  iTunnelE.position.set(tCx,iconTY,tCz); connGrp.add(iTunnelE);
+
+  // Icon Tower — slender landmark skyscraper
+  const iTW=8, iTD=8, iTH=FG*24;
+  const iTX=FW/2+tLen+8, iTZ=14;
+  const iconTower=new THREE.Mesh(new THREE.BoxGeometry(iTW,iTH,iTD),
+    new THREE.MeshBasicMaterial({color:0x071525,transparent:true,opacity:.6}));
+  iconTower.position.set(iTX,iTH/2,iTZ); connGrp.add(iconTower);
+  const iconTowerE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(iTW,iTH,iTD)),
+    new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.5}));
+  iconTowerE.position.set(iTX,iTH/2,iTZ); connGrp.add(iconTowerE);
+
+  // Icon Tower — tapered glass spire crown
+  const iSpire=new THREE.Mesh(new THREE.CylinderGeometry(.02,iTW/2,FG*5,8),
+    new THREE.MeshBasicMaterial({color:0x0a2438,transparent:true,opacity:.65}));
+  iSpire.position.set(iTX,iTH+FG*2.5,iTZ); connGrp.add(iSpire);
+  const iSpireE=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(.02,iTW/2,FG*5,8)),
+    new THREE.LineBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.45}));
+  iSpireE.position.set(iTX,iTH+FG*2.5,iTZ); connGrp.add(iSpireE);
+
+  // Icon Tower — floor setback bands (every ~4 floors for scale)
+  for(let if2=1;if2<7;if2++){
+    const fy=if2*(FG*4); if(fy>=iTH) break;
+    const iband=new THREE.Mesh(new THREE.BoxGeometry(iTW+.1,.08,iTD+.1),
+      new THREE.MeshBasicMaterial({color:0x1a5565,transparent:true,opacity:.25}));
+    iband.position.set(iTX,fy,iTZ); connGrp.add(iband);
+  }
+
+  // Icon Tower — top beacon
+  const iconBeacon=new THREE.Mesh(new THREE.SphereGeometry(.3,10,10),
+    new THREE.MeshBasicMaterial({color:0x3ddbbe}));
+  iconBeacon.position.set(iTX,iTH+FG*5.2,iTZ); connGrp.add(iconBeacon);
+
   connGrp.visible=true; scene.add(connGrp);
 
   // ── LAYERS ──
@@ -1402,12 +1488,12 @@ try {
     bmsGrp.children.forEach((s,i)=>{ if(s.material&&s.material.transparent) s.material.opacity=.4+Math.sin(tick*1.1+i*.7)*.3; });
     // Entity selection ring pulse
     if(selRing.visible){ selRing.material.opacity=.4+Math.sin(tick*3.5)*.2; selRingOuter.material.opacity=.12+Math.sin(tick*3.5+.8)*.08; selRing.rotation.z+=.018; selRingOuter.rotation.z-=.012; }
-    // Vehicle movement — Group based, smooth curve
+    // Vehicle movement — each car follows its own dedicated route
     if(vehicleGrp.visible){
       cars.forEach((c,ci)=>{
         c.t=(c.t+c.spd)%1;
-        const pos=vehCurve.getPoint(c.t);
-        const tan=vehCurve.getTangent(c.t);
+        const pos=c.curve.getPoint(c.t);
+        const tan=c.curve.getTangent(c.t);
         c.g.position.copy(pos);
         c.g.rotation.y=Math.atan2(tan.x,tan.z);
         if(c.siren) c.siren.material.opacity=.45+Math.sin(tick*7+ci*2.1)*.45;
