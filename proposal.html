@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBA Digital Operations Platform — Dubai Square</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   VARIABLES
+══════════════════════════════════════════ */
+:root{
+  --bg:#030b16;--surface:#07111f;--card:#0b1929;--card2:#0e1f33;
+  --border:#162840;--border2:#1e3555;
+  --blue:#00d4ff;--blue-dim:rgba(0,212,255,0.12);
+  --teal:#64ffda;--purple:#bd93f9;--orange:#ffb86c;--green:#50fa7b;
+  --text:#dce8f8;--muted:#8aaac8;--muted2:#b8d0e8;--white:#f0f8ff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:#0098c7;border-radius:2px}
+
+/* ══════════════════════════════════════════
+   NAV
+══════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:60px;
+  background:rgba(3,11,22,0.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(22,40,64,0.8);
+  display:flex;align-items:center;justify-content:space-between;padding:0 56px;
+}
+.logo{font-size:13px;font-weight:800;color:var(--white);display:flex;align-items:center;gap:10px}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue);border:1px solid rgba(0,212,255,0.25);padding:4px 12px;border-radius:4px;background:rgba(0,212,255,0.05);letter-spacing:.5px}
+.nav-chip2{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);padding:4px 8px;letter-spacing:.5px}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  padding:0 56px 80px;position:relative;overflow:hidden;
+  background:linear-gradient(160deg, #030b16 0%, #040d1e 60%, #030b16 100%);
+}
+#hero-canvas{position:absolute;inset:0;opacity:.45;pointer-events:none}
+.hero-grid-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px),
+             linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px);
+  background-size:72px 72px;
+}
+.hero-glow{
+  position:absolute;top:-20%;right:-10%;width:60vw;height:60vw;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,255,0.07) 0%,transparent 65%);
+  pointer-events:none;
+}
+.hero-content{position:relative;z-index:2;max-width:960px}
+.hero-label{
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:32px;
+  display:flex;align-items:center;gap:14px;
+}
+.hero-label::before{content:'';width:32px;height:1px;background:var(--blue)}
+.hero h1{
+  font-size:clamp(3rem,6vw,5.5rem);font-weight:900;line-height:1.0;
+  color:var(--white);margin-bottom:32px;letter-spacing:-2px;
+}
+.hero h1 .hl{
+  background:linear-gradient(120deg,var(--blue) 0%,var(--teal) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-desc{
+  font-size:1.2rem;color:var(--muted2);max-width:620px;line-height:1.85;
+  margin-bottom:64px;font-weight:400;
+}
+.hero-desc strong{color:var(--white);font-weight:600}
+
+/* STAT STRIP */
+.stat-strip{
+  display:flex;gap:0;flex-wrap:wrap;
+  border:1px solid var(--border2);border-radius:14px;
+  background:rgba(11,25,41,0.8);
+  backdrop-filter:blur(8px);
+  overflow:hidden;max-width:780px;
+}
+.stat{
+  flex:1;min-width:160px;padding:28px 32px;
+  border-right:1px solid var(--border2);
+  position:relative;
+}
+.stat:last-child{border-right:none}
+.stat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--blue),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.stat:hover::before{opacity:1}
+.stat-val{
+  font-size:2.4rem;font-weight:900;color:var(--white);
+  font-variant-numeric:tabular-nums;line-height:1;margin-bottom:6px;
+}
+.stat-val sup{font-size:1rem;color:var(--blue);font-weight:700;vertical-align:super;margin-left:2px}
+.stat-label{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-weight:500}
+
+.scroll-cue{
+  position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.35;
+}
+.scroll-cue span{font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
+.scroll-line{width:1px;height:36px;background:linear-gradient(var(--blue),transparent);animation:sd 1.6s infinite}
+@keyframes sd{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* ══════════════════════════════════════════
+   SECTION BOILERPLATE
+══════════════════════════════════════════ */
+.sec{padding:110px 56px}
+.sec-alt{background:var(--surface)}
+.sec-label{
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue);
+  letter-spacing:2.5px;text-transform:uppercase;margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.sec-label::before{content:'';width:20px;height:1px;background:var(--blue)}
+.sec-title{font-size:2.4rem;font-weight:800;color:var(--white);margin-bottom:14px;line-height:1.15;letter-spacing:-.5px}
+.sec-title .hl{color:var(--blue)}
+.sec-sub{font-size:15px;color:var(--muted2);max-width:680px;line-height:1.8;margin-bottom:52px}
+
+/* ══════════════════════════════════════════
+   WHY SECTION — FLOW + CARDS
+══════════════════════════════════════════ */
+.flow-wrap{
+  background:var(--card);border:1px solid var(--border2);border-radius:16px;
+  padding:40px 48px;margin-bottom:48px;display:flex;align-items:center;
+  justify-content:center;gap:0;flex-wrap:wrap;overflow:hidden;position:relative;
+}
+.flow-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(0,212,255,0.04) 0%,transparent 70%);
+}
+.fnode{
+  background:rgba(255,255,255,0.03);border:1px solid var(--border2);
+  border-radius:12px;padding:20px 24px;text-align:center;
+  min-width:150px;position:relative;z-index:1;
+}
+.fnode.src{border-color:rgba(0,212,255,0.35);background:rgba(0,212,255,0.05)}
+.fnode-icon{font-size:26px;margin-bottom:8px}
+.fnode-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px}
+.fnode-sub{font-size:11px;color:var(--muted)}
+.farrow{
+  display:flex;flex-direction:column;align-items:center;
+  padding:0 8px;z-index:1;
+}
+.farrow-pipe{
+  width:56px;height:2px;
+  background:linear-gradient(90deg,rgba(0,212,255,.2),var(--blue),rgba(0,212,255,.2));
+  position:relative;overflow:hidden;
+}
+.farrow-pipe::after{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,#fff,transparent);
+  animation:flow 2s infinite;
+}
+@keyframes flow{0%{left:-100%}100%{left:100%}}
+.farrow-tip{color:var(--blue);font-size:11px;margin-left:-2px}
+.farrow-lbl{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px}
+.fout{display:flex;flex-direction:column;gap:10px;z-index:1}
+
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.why-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:32px 28px;display:flex;flex-direction:column;gap:16px;
+  transition:border-color .3s,transform .3s;
+}
+.why-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-4px)}
+.why-card-top{display:flex;align-items:center;gap:14px}
+.why-icon{
+  width:46px;height:46px;border-radius:12px;flex-shrink:0;
+  background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.why-title{font-size:15px;font-weight:700;color:var(--white)}
+.why-text{font-size:13.5px;color:var(--muted);line-height:1.7}
+
+/* ══════════════════════════════════════════
+   EMAAR COMMITMENTS
+══════════════════════════════════════════ */
+.commit-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.commit-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:32px 28px;display:flex;align-items:flex-start;gap:22px;
+  transition:border-color .3s,transform .25s;page-break-inside:avoid;
+}
+.commit-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-3px)}
+.commit-left{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:52px}
+.commit-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue);letter-spacing:1px}
+.commit-ico{font-size:34px}
+.commit-body{}
+.commit-title{font-size:16px;font-weight:700;color:var(--white);line-height:1.4;margin-bottom:10px}
+.commit-quote{
+  font-size:12px;color:var(--muted);font-style:italic;line-height:1.65;
+  border-left:2px solid rgba(0,212,255,.25);padding-left:12px;margin-bottom:12px;
+}
+.ctag{
+  display:inline-block;font-size:10px;font-weight:600;padding:3px 10px;border-radius:4px;
+}
+.ct-v{color:var(--teal);background:rgba(100,255,218,.08);border:1px solid rgba(100,255,218,.2)}
+.ct-r{color:var(--orange);background:rgba(255,184,108,.08);border:1px solid rgba(255,184,108,.2)}
+.ct-m{color:var(--purple);background:rgba(189,147,249,.08);border:1px solid rgba(189,147,249,.2)}
+.ct-o{color:var(--blue);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2)}
+
+/* ══════════════════════════════════════════
+   PRODUCTS
+══════════════════════════════════════════ */
+.ptabs{display:flex;gap:8px;margin-bottom:40px;flex-wrap:wrap}
+.ptab{
+  font-size:12.5px;font-weight:600;padding:10px 22px;border-radius:40px;
+  border:1px solid var(--border2);color:var(--muted);cursor:pointer;
+  background:transparent;transition:all .25s;font-family:'Inter',sans-serif;
+}
+.ptab.active,.ptab:hover{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.4);color:var(--blue)}
+
+.ppanel{display:none;animation:fi .4s ease}
+.ppanel.active{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+@keyframes fi{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+.p-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+.p-name{font-size:2rem;font-weight:800;color:var(--white);margin-bottom:18px;line-height:1.15}
+.p-pitch{font-size:14.5px;color:var(--muted2);line-height:1.85;margin-bottom:28px}
+.p-emaar{background:rgba(0,212,255,.04);border-left:3px solid rgba(0,212,255,.4);padding:16px 20px;border-radius:0 10px 10px 0}
+.p-emaar-lbl{font-size:9px;font-weight:700;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.p-emaar-txt{font-size:13px;color:var(--muted2);font-style:italic;line-height:1.7}
+
+.p-cards{display:flex;flex-direction:column;gap:14px}
+.p-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:22px 26px}
+.p-card-title{
+  font-size:10px;font-weight:700;color:var(--blue);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.p-card-title::before{content:'';width:14px;height:1px;background:var(--blue)}
+.p-items{display:flex;flex-direction:column;gap:7px}
+.p-item{font-size:13px;color:var(--muted2);padding-left:16px;position:relative;line-height:1.5}
+.p-item::before{content:'›';position:absolute;left:0;color:var(--blue)}
+.strow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(22,40,64,.7)}
+.strow:last-child{border-bottom:none}
+.stk{font-size:12.5px;color:var(--muted)}
+.stv{font-size:11.5px;color:var(--teal);font-family:'JetBrains Mono',monospace}
+
+/* ══════════════════════════════════════════
+   TIMELINE
+══════════════════════════════════════════ */
+.tl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;position:relative}
+.tl-grid::before{
+  content:'';position:absolute;top:20px;left:calc(16.67% + 8px);right:calc(16.67% + 8px);
+  height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.3) 20%,rgba(0,212,255,.3) 80%,transparent);
+}
+.tl-card{
+  background:var(--card);border:1px solid var(--border2);border-radius:14px;
+  padding:32px 28px;transition:border-color .3s;page-break-inside:avoid;
+}
+.tl-card:hover{border-color:rgba(0,212,255,.4)}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);margin-bottom:22px;position:relative}
+.tl-dot::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:1px solid rgba(0,212,255,.25)}
+.tl-phase{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.tl-name{font-size:17px;font-weight:800;color:var(--white);margin-bottom:10px;line-height:1.2}
+.tl-dur{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--teal);margin-bottom:10px;font-weight:600}
+.tl-note{font-size:12.5px;color:var(--muted);line-height:1.6}
+
+/* ══════════════════════════════════════════
+   CLOSING
+══════════════════════════════════════════ */
+.closing{
+  padding:120px 56px;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,var(--surface) 0%,#040d1e 100%);
+}
+.closing-glow{
+  position:absolute;bottom:-20%;left:50%;transform:translateX(-50%);
+  width:80vw;height:50vw;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,255,.08) 0%,transparent 60%);
+  pointer-events:none;
+}
+.closing-content{position:relative;z-index:1}
+.closing-title{
+  font-size:clamp(2.4rem,4.5vw,4rem);font-weight:900;color:var(--white);
+  line-height:1.1;margin-bottom:22px;letter-spacing:-1px;
+}
+.closing-title .hl{
+  background:linear-gradient(120deg,var(--blue),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.closing-sub{font-size:15px;color:var(--muted2);max-width:560px;margin:0 auto 64px;line-height:1.85}
+
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:880px;margin:0 auto}
+.step{
+  background:var(--card);border:1px solid var(--border2);border-radius:12px;
+  padding:28px 22px;text-align:left;transition:border-color .3s;
+}
+.step:hover{border-color:rgba(0,212,255,.3)}
+.step-n{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:rgba(0,212,255,.18);margin-bottom:14px}
+.step-title{font-size:13.5px;font-weight:700;color:var(--white);margin-bottom:6px;line-height:1.3}
+.step-who{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:4px}
+.step-when{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+footer{
+  padding:28px 56px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg);
+}
+.fl{font-size:12px;color:var(--muted)}
+.fr{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* ══════════════════════════════════════════
+   REVEAL ANIMATION
+══════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}.d4{transition-delay:.4s}
+
+/* ══════════════════════════════════════════
+   PRINT / PDF
+══════════════════════════════════════════ */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  nav,.scroll-cue,#hero-canvas,.hero-glow,.hero-grid-bg,
+  .closing-glow,.farrow-pipe::after,.logo-dot{display:none!important}
+  body{background:#030b16!important;color:#dce8f8!important}
+  .hero{min-height:auto;padding-top:60px;padding-bottom:60px;page-break-after:always}
+  .sec,.closing{padding:60px 48px}
+  .sec-alt{background:#07111f!important}
+  .commit-card,.tl-card,.why-card,.p-card,.step{page-break-inside:avoid}
+  .reveal{opacity:1!important;transform:none!important}
+  .ppanel{display:none!important}
+  .ppanel.active{display:grid!important}
+  .ptabs{display:none}
+  #p0,.p-all{display:grid!important}
+  h1{font-size:3.2rem!important}
+  .stat-val{font-size:2rem!important}
+  .tl-grid::before{display:none}
+  footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #162840;background:#030b16!important}
+}
+
+@media(max-width:900px){
+  nav,.hero,.sec,.closing,footer{padding-left:24px;padding-right:24px}
+  .hero{padding-top:80px;min-height:auto;padding-bottom:60px}
+  .hero h1{font-size:2.4rem;letter-spacing:-1px}
+  .why-grid,.commit-grid,.tl-grid,.steps,.ppanel.active{grid-template-columns:1fr!important}
+  .flow-wrap{padding:24px}
+  .stat-strip{flex-direction:column}
+  .stat{border-right:none;border-bottom:1px solid var(--border2)}
+  .stat:last-child{border-bottom:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav>
+  <div class="logo"><div class="logo-dot"></div>BBA Technology</div>
+  <div class="nav-right">
+    <span class="nav-chip2">Confidential</span>
+    <span class="nav-chip">DUBAI SQUARE</span>
+  </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<div class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-label">BBA Technology · Dubai Square · May 2026</div>
+    <h1>Beyond<br><span class="hl">Security.</span></h1>
+    <p class="hero-desc">
+      EMAAR has publicly committed to making Dubai Square
+      <strong>the world's most advanced mall.</strong>
+      BBA has the technology to deliver every part of that vision —
+      not just security.
+    </p>
+    <div class="stat-strip">
+      <div class="stat">
+        <div class="stat-val" data-target="2600000">—</div>
+        <div class="stat-label">m² Smart Indoor City</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" data-target="900">—</div>
+        <div class="stat-label">AI Camera Network</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">3</div>
+        <div class="stat-label">New Platforms Proposed</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">8</div>
+        <div class="stat-label">EMAAR Commitments Covered</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<!-- ══ WHY ══ -->
+<div class="sec sec-alt">
+  <div class="sec-label reveal">The Case</div>
+  <h2 class="sec-title reveal">Why BBA is the <span class="hl">only choice</span></h2>
+  <p class="sec-sub reveal">One platform generates the data. Three new products consume it. No other vendor can offer this without starting from zero.</p>
+
+  <div class="flow-wrap reveal">
+    <div class="fnode src">
+      <div class="fnode-icon">🔒</div>
+      <div class="fnode-name">BBA Security Platform</div>
+      <div class="fnode-sub">900+ cameras · AI analytics</div>
+    </div>
+    <div class="farrow">
+      <div style="display:flex;align-items:center">
+        <div class="farrow-pipe"></div>
+        <div class="farrow-tip">▶</div>
+      </div>
+      <div class="farrow-lbl">live data</div>
+    </div>
+    <div class="fout">
+      <div class="fnode"><div class="fnode-icon" style="font-size:18px">🗺️</div><div class="fnode-name" style="font-size:12px">Visitor App</div></div>
+      <div class="fnode"><div class="fnode-icon" style="font-size:18px">📊</div><div class="fnode-name" style="font-size:12px">Retail Intelligence</div></div>
+      <div class="fnode"><div class="fnode-icon" style="font-size:18px">🚗</div><div class="fnode-name" style="font-size:12px">Smart Mobility</div></div>
+    </div>
+  </div>
+
+  <div class="why-grid">
+    <div class="why-card reveal d1">
+      <div class="why-card-top">
+        <div class="why-icon">⚡</div>
+        <div class="why-title">Data Already Being Generated</div>
+      </div>
+      <div class="why-text">The footfall, crowd density and movement data that every smart-mall product needs comes directly from BBA's camera AI. Any competing vendor would need to build a parallel infrastructure from scratch.</div>
+    </div>
+    <div class="why-card reveal d2">
+      <div class="why-card-top">
+        <div class="why-icon">🔗</div>
+        <div class="why-title">Single Integration Point</div>
+      </div>
+      <div class="why-text">Security, visitor experience, retail analytics and mobility all share one data model. One API, one partner, one support escalation path — dramatically less complexity for EMAAR's IT team.</div>
+    </div>
+    <div class="why-card reveal d3">
+      <div class="why-card-top">
+        <div class="why-icon">💡</div>
+        <div class="why-title">No Duplicate Infrastructure</div>
+      </div>
+      <div class="why-text">The security platform's backend — AI engine, databases, API layer — is the exact foundation these three products need. Marginal additional cost, full additional capability.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMMITMENTS ══ -->
+<div class="sec">
+  <div class="sec-label reveal">What Was Promised</div>
+  <h2 class="sec-title reveal">EMAAR's 8 public commitments.<br><span class="hl">BBA has the answer for all.</span></h2>
+  <p class="sec-sub reveal">Statements made by Mohamed Alabbar and EMAAR / Dubai Holding in official press releases.</p>
+  <div class="commit-grid">
+
+    <div class="commit-card reveal d1">
+      <div class="commit-left"><div class="commit-n">01</div><div class="commit-ico">🗺️</div></div>
+      <div class="commit-body">
+        <div class="commit-title">AI-assisted visitor navigation across 2.6M m²</div>
+        <div class="commit-quote">"AI-assisted navigation will help visitors efficiently explore the vast 2.6 million square meter space."</div>
+        <span class="ctag ct-v">Visitor Experience</span>
+      </div>
+    </div>
+
+    <div class="commit-card reveal d1">
+      <div class="commit-left"><div class="commit-n">02</div><div class="commit-ico">📱</div></div>
+      <div class="commit-body">
+        <div class="commit-title">Custom mobile app — quick checkout, barcode scan, click-and-collect</div>
+        <div class="commit-quote">"Custom-designed mobile apps, quick checkout solutions, search and barcode scanning applications."</div>
+        <span class="ctag ct-v">Visitor Experience</span>
+      </div>
+    </div>
+
+    <div class="commit-card reveal d2">
+      <div class="commit-left"><div class="commit-n">03</div><div class="commit-ico">📊</div></div>
+      <div class="commit-body">
+        <div class="commit-title">Predictive analytics to help retailers stock the right products</div>
+        <div class="commit-quote">"Predictive analytics that help retailers stock the right products." — Mohamed Alabbar</div>
+        <span class="ctag ct-r">Retail Intelligence</span>
+      </div>
+    </div>
+
+    <div class="commit-card reveal d2">
+      <div class="commit-left"><div class="commit-n">04</div><div class="commit-ico">🏪</div></div>
+      <div class="commit-body">
+        <div class="commit-title">Omnichannel retail — online and in-store fully integrated</div>
+        <div class="commit-quote">"With its omnichannel offering, it not only drives in-store retail but also the online engagement of brands."</div>
+        <span class="ctag ct-r">Retail Intelligence</span>
+      </div>
+    </div>
+
+    <div class="commit-card reveal d3">
+      <div class="commit-left"><div class="commit-n">05</div><div class="commit-ico">🅿️</div></div>
+      <div class="commit-body">
+        <div class="commit-title">Smart parking solutions — real-time occupancy and guidance</div>
+        <div class="commit-quote">"From smart parking solutions to predictive analytics, technology permeates every aspect of the Dubai Square experience."</div>
+        <span class="ctag ct-m">Smart Mobility</span>
+      </div>
+    </div>
+
+    <div class="commit-card reveal d3">
+      <div class="commit-left"><div class="commit-n">06</div><div class="commit-ico">⚡</div></div>
+      <div class="commit-body">
+        <div class="commit-title">EV charging — world's first drive-through mall</div>
+        <div class="commit-quote">"Dubai Square introduces the world's first drive-through mall concept... reflecting Dubai's push to accelerate EV adoption."</div>
+        <span class="ctag ct-m">Smart Mobility</span>
+      </div>
+    </div>
+
+    <div class="commit-card reveal d4">
+      <div class="commit-left"><div class="commit-n">07</div><div class="commit-ico">📡</div></div>
+      <div class="commit-body">
+        <div class="commit-title">RFID technology integrated into retail operations</div>
+        <div class="commit-quote">"Radio-frequency identification technology, mobile payments and click-and-collect services."</div>
+        <span class="ctag ct-r">Retail Intelligence</span>
+      </div>
+    </div>
+
+    <div class="commit-card reveal d4">
+      <div class="commit-left"><div class="commit-n">08</div><div class="commit-ico">🏙️</div></div>
+      <div class="commit-body">
+        <div class="commit-title">"Smart indoor city" — unified operational management</div>
+        <div class="commit-quote">"Dubai Square is designed as a smart indoor city." — EMAAR / Dubai Holding</div>
+        <span class="ctag ct-o">Operations</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ PRODUCTS ══ -->
+<div class="sec sec-alt">
+  <div class="sec-label reveal">The Solution</div>
+  <h2 class="sec-title reveal">Three platforms.<br><span class="hl">Every commitment covered.</span></h2>
+  <div class="ptabs reveal">
+    <button class="ptab active" onclick="showP(0)">🗺️&nbsp; Visitor App</button>
+    <button class="ptab" onclick="showP(1)">📊&nbsp; Retail Intelligence</button>
+    <button class="ptab" onclick="showP(2)">🚗&nbsp; Smart Mobility</button>
+  </div>
+
+  <!-- P1 -->
+  <div class="ppanel active" id="p0">
+    <div>
+      <div class="p-badge">Product 01 — Visitor Experience</div>
+      <div class="p-name">Dubai Square<br>Visitor App</div>
+      <p class="p-pitch">Nobody gets lost in 2.6 million m². AI-powered routing, live crowd-density maps, smart parking and a personalised shopping experience — all driven by BBA's AI analytics layer feeding live data into the navigation engine.</p>
+      <div class="p-emaar">
+        <div class="p-emaar-lbl">EMAAR's commitment</div>
+        <div class="p-emaar-txt">"AI-assisted navigation will help visitors efficiently explore the vast 2.6 million square meter space."</div>
+      </div>
+    </div>
+    <div class="p-cards">
+      <div class="p-card">
+        <div class="p-card-title">Navigation</div>
+        <div class="p-items">
+          <div class="p-item">Real-time indoor map — stores, exits, EV chargers, lifts</div>
+          <div class="p-item">AI routing updated live from crowd density data</div>
+          <div class="p-item">Avoid-crowded-areas mode — Arabic and English voice guidance</div>
+        </div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Parking Assistant</div>
+        <div class="p-items">
+          <div class="p-item">B1/B2 live occupancy before you arrive</div>
+          <div class="p-item">EV charger availability and reservation</div>
+          <div class="p-item">Click-and-collect order tracking + find your car on exit</div>
+        </div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Tech Stack</div>
+        <div class="strow"><span class="stk">Indoor positioning</span><span class="stv">BLE Beacon + Wi-Fi</span></div>
+        <div class="strow"><span class="stk">Crowd data feed</span><span class="stv">BBA Security AI</span></div>
+        <div class="strow"><span class="stk">Mobile</span><span class="stv">React Native — iOS + Android</span></div>
+        <div class="strow"><span class="stk">Backend</span><span class="stv">.NET 8 + PostgreSQL</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P2 -->
+  <div class="ppanel" id="p1">
+    <div>
+      <div class="p-badge">Product 02 — Retail Intelligence</div>
+      <div class="p-name">Retail<br>Intelligence Platform</div>
+      <p class="p-pitch">EMAAR's retail team and every tenant store get live footfall analytics and predictive demand forecasts — generated by BBA's camera AI analytics engine, anonymised, and delivered through a dedicated retail portal.</p>
+      <div class="p-emaar">
+        <div class="p-emaar-lbl">EMAAR's commitment</div>
+        <div class="p-emaar-txt">"Predictive analytics that help retailers stock the right products... AI systems to analyse and predict the needs of retailers and visitors." — Mohamed Alabbar</div>
+      </div>
+    </div>
+    <div class="p-cards">
+      <div class="p-card">
+        <div class="p-card-title">EMAAR Dashboard</div>
+        <div class="p-items">
+          <div class="p-item">Mall-wide footfall — daily, weekly, monthly reports</div>
+          <div class="p-item">Zone heatmap by hour — dwell time analysis</div>
+          <div class="p-item">Event impact analysis — before vs. after comparison</div>
+        </div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Tenant Portal</div>
+        <div class="p-items">
+          <div class="p-item">Store pass-by traffic and entry conversion rate</div>
+          <div class="p-item">Seasonal demand forecast — Ramadan, holidays, weekends</div>
+          <div class="p-item">Weekly PDF report — automated email delivery</div>
+        </div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Tech Stack</div>
+        <div class="strow"><span class="stk">Data source</span><span class="stv">BBA Security AI output</span></div>
+        <div class="strow"><span class="stk">Analytics engine</span><span class="stv">TimescaleDB + Python</span></div>
+        <div class="strow"><span class="stk">Forecasting</span><span class="stv">Prophet / scikit-learn</span></div>
+        <div class="strow"><span class="stk">Dashboard</span><span class="stv">React web application</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P3 -->
+  <div class="ppanel" id="p2">
+    <div>
+      <div class="p-badge">Product 03 — Smart Mobility</div>
+      <div class="p-name">Smart<br>Mobility Platform</div>
+      <p class="p-pitch">The operational layer behind the world's first drive-through mall. Vehicle flow management, EV charging and smart parking — built on BBA's ANPR and vehicle analytics platform already embedded in the security infrastructure.</p>
+      <div class="p-emaar">
+        <div class="p-emaar-lbl">EMAAR's commitment</div>
+        <div class="p-emaar-txt">"World's first drive-through mall... EV facilities reflecting Dubai's sustainability goals... smart parking solutions."</div>
+      </div>
+    </div>
+    <div class="p-cards">
+      <div class="p-card">
+        <div class="p-card-title">EV Charging</div>
+        <div class="p-items">
+          <div class="p-item">Charger availability and reservation via app</div>
+          <div class="p-item">Remote start/stop and automated billing (OCPP 2.0)</div>
+          <div class="p-item">Overstay notification and penalty management</div>
+        </div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Parking & Vehicle Flow</div>
+        <div class="p-items">
+          <div class="p-item">Real-time occupancy map — zone and level reservation</div>
+          <div class="p-item">Internal road congestion detection and rerouting</div>
+          <div class="p-item">BOH delivery slot and route management</div>
+        </div>
+      </div>
+      <div class="p-card">
+        <div class="p-card-title">Tech Stack</div>
+        <div class="strow"><span class="stk">Vehicle detection</span><span class="stv">BBA ANPR + AI</span></div>
+        <div class="strow"><span class="stk">EV protocol</span><span class="stv">OCPP 2.0</span></div>
+        <div class="strow"><span class="stk">Visitor interface</span><span class="stv">Visitor App + web portal</span></div>
+        <div class="strow"><span class="stk">Ops interface</span><span class="stv">BBA SCR screen</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TIMELINE ══ -->
+<div class="sec">
+  <div class="sec-label reveal">Delivery</div>
+  <h2 class="sec-title reveal">Parallel development.<br><span class="hl">No added hardware.</span></h2>
+  <p class="sec-sub reveal">All three platforms are developed in parallel with the security platform on the same server infrastructure.</p>
+  <div class="tl-grid">
+    <div class="tl-card reveal d1">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">Phase A</div>
+      <div class="tl-name">Retail Intelligence Platform</div>
+      <div class="tl-dur">4 – 6 months</div>
+      <div class="tl-note">Runs in parallel with security platform development</div>
+    </div>
+    <div class="tl-card reveal d2">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">Phase B</div>
+      <div class="tl-name">Smart Mobility Platform</div>
+      <div class="tl-dur">5 – 7 months</div>
+      <div class="tl-note">Runs in parallel with security platform development</div>
+    </div>
+    <div class="tl-card reveal d3">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">Phase C</div>
+      <div class="tl-name">Dubai Square Visitor App</div>
+      <div class="tl-dur">5 – 8 months</div>
+      <div class="tl-note">Runs in parallel with security platform development</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CLOSING ══ -->
+<div class="closing">
+  <div class="closing-glow"></div>
+  <div class="closing-content">
+    <div class="sec-label reveal" style="justify-content:center;margin-bottom:20px">Next Steps</div>
+    <h2 class="closing-title reveal">One vendor.<br><span class="hl">Every promise EMAAR made.</span></h2>
+    <p class="closing-sub reveal">BBA's security and AI platform generates the data backbone that powers all three products — turning EMAAR's public promises into delivered reality.</p>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-title">Present to EMAAR Project Management</div>
+        <div class="step-who">Aerosmart</div>
+        <div class="step-when">June 2026</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-title">Technical Evaluation Meeting</div>
+        <div class="step-who">BBA + Aerosmart + EMAAR IT</div>
+        <div class="step-when">June 2026</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-title">Pilot Product Selection</div>
+        <div class="step-who">EMAAR + BBA</div>
+        <div class="step-when">July 2026</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-title">Development Contract Signed</div>
+        <div class="step-who">Aerosmart + EMAAR</div>
+        <div class="step-when">July 2026</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="fl">BBA Technology — Confidential · For Aerosmart / EMAAR Dubai Square</div>
+  <div class="fr">BBA-DSQ-DOP-001 · May 2026 · v1.0</div>
+</footer>
+
+<script>
+/* HERO CANVAS */
+const cv=document.getElementById('hero-canvas'),cx=cv.getContext('2d');
+let W,H,pts=[];
+function rsz(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight}
+rsz();window.addEventListener('resize',rsz);
+class P{constructor(){this.reset()}reset(){this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-.5)*.35;this.vy=(Math.random()-.5)*.35;this.a=Math.random()*.45+.05;this.r=Math.random()*1.6+.5}update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>W||this.y<0||this.y>H)this.reset()}draw(){cx.beginPath();cx.arc(this.x,this.y,this.r,0,Math.PI*2);cx.fillStyle=`rgba(0,212,255,${this.a})`;cx.fill()}}
+for(let i=0;i<110;i++)pts.push(new P());
+function frame(){cx.clearRect(0,0,W,H);pts.forEach(p=>{p.update();p.draw()});for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<90){cx.beginPath();cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);cx.strokeStyle=`rgba(0,212,255,${.07*(1-d/90)})`;cx.lineWidth=.5;cx.stroke()}}requestAnimationFrame(frame)}
+frame();
+
+/* COUNTER ANIMATION */
+function fmt(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K+':n+'+';}
+document.querySelectorAll('[data-target]').forEach(el=>{
+  const target=+el.dataset.target,dur=2000,step=16;
+  let current=0;
+  const io=new IntersectionObserver(entries=>{
+    if(!entries[0].isIntersecting)return;
+    io.disconnect();
+    const inc=target/(dur/step);
+    const t=setInterval(()=>{
+      current=Math.min(current+inc,target);
+      el.textContent=fmt(Math.round(current));
+      if(current>=target){el.textContent=fmt(target);clearInterval(t)}
+    },step);
+  },{threshold:.5});
+  io.observe(el);
+});
+
+/* PRODUCT TABS */
+function showP(i){
+  document.querySelectorAll('.ppanel').forEach((p,j)=>p.classList.toggle('active',j===i));
+  document.querySelectorAll('.ptab').forEach((t,j)=>t.classList.toggle('active',j===i));
+}
+
+/* SCROLL REVEAL */
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
