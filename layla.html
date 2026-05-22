@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>LAYLA — Dubai Square AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#020810;--card:#060f1e;--border:#0e2035;
+  --cyan:#00d4ff;--cyan2:#0098cc;--teal:#64ffda;
+  --text:#cbd5e1;--muted:#475569;--white:#f0f8ff;
+  --skin:#e8c9a0;--skin2:#c9996a;--skin3:#f5dfc0;
+  --hair:#1e1b2e;--hair2:#2d2650;--lips:#e07b8a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);overflow:hidden}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:50;height:52px;
+  background:rgba(2,8,16,0.97);border-bottom:1px solid rgba(0,212,255,0.08);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+}
+.logo{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--white)}
+.ndot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.nstatus{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);display:flex;align-items:center;gap:6px}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--teal);animation:pulse 1.4s infinite}
+
+/* LAYOUT */
+.app{
+  position:fixed;inset:0;top:52px;
+  display:grid;grid-template-columns:1fr 400px;
+}
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .chat-panel{height:48vh;border-left:none;border-top:1px solid rgba(0,212,255,0.08)}
+  .stage{height:52vh}
+}
+
+/* STAGE */
+.stage{
+  position:relative;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;overflow:hidden;
+}
+#bgc{position:absolute;inset:0}
+.stage-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+
+/* LAYLA FIGURE */
+.figure-wrap{position:relative;width:280px;height:420px}
+.holo-glow{
+  position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);
+  width:220px;height:300px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,212,255,0.1) 0%,transparent 65%);
+  animation:glow 4s ease-in-out infinite;pointer-events:none;
+}
+@keyframes glow{0%,100%{opacity:.7;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
+.scanline{
+  position:absolute;left:5%;right:5%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.5),transparent);
+  animation:scan 3.5s linear infinite;
+  pointer-events:none;z-index:10;
+}
+@keyframes scan{0%{top:5%;opacity:0}10%{opacity:1}90%{opacity:.5}100%{top:95%;opacity:0}}
+.base-glow{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:160px;height:16px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,212,255,0.3),transparent 70%);
+  filter:blur(4px);animation:glow 4s ease-in-out infinite;
+}
+
+/* SPEAKING ANIMATION */
+.speaking-ring{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:260px;height:260px;border-radius:50%;
+  border:1px solid rgba(0,212,255,0);
+  transition:border-color .3s;pointer-events:none;
+  animation:none;z-index:15;
+}
+.speaking .speaking-ring{
+  border-color:rgba(0,212,255,0.3);
+  animation:speakring 1s ease-in-out infinite;
+}
+@keyframes speakring{
+  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.5}
+  50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+}
+
+/* DATA FLOATS */
+.dfloat{
+  position:absolute;font-family:'JetBrains Mono',monospace;font-size:8.5px;
+  color:rgba(0,212,255,0.25);line-height:1.9;letter-spacing:.5px;
+  animation:fdrift 10s linear infinite;pointer-events:none;
+}
+.df1{left:12px;top:15%;animation-delay:0s}
+.df2{right:12px;top:25%;animation-delay:-4s}
+@keyframes fdrift{0%{opacity:0;transform:translateY(0)}15%{opacity:.5}80%{opacity:.3}100%{opacity:0;transform:translateY(40px)}}
+
+/* NAME BLOCK */
+.name-block{text-align:center;margin-top:16px;margin-bottom:24px}
+.layla-name{
+  font-size:2.6rem;font-weight:700;letter-spacing:8px;
+  background:linear-gradient(135deg,var(--cyan),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.layla-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+
+/* VOICE BUTTON */
+.voice-btn{
+  width:64px;height:64px;border-radius:50%;
+  background:rgba(0,212,255,0.08);
+  border:1.5px solid rgba(0,212,255,0.3);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .25s;font-size:24px;
+  position:relative;
+}
+.voice-btn:hover{background:rgba(0,212,255,0.15);border-color:rgba(0,212,255,0.6)}
+.voice-btn.listening{
+  background:rgba(255,50,50,0.12);border-color:rgba(255,100,100,0.6);
+  animation:vring 1s infinite;
+}
+@keyframes vring{0%,100%{box-shadow:0 0 0 0 rgba(255,100,100,0.3)}50%{box-shadow:0 0 0 12px rgba(255,100,100,0)}}
+.voice-btn.speaking{
+  background:rgba(0,212,255,0.15);border-color:var(--cyan);
+  animation:vring2 1s infinite;
+}
+@keyframes vring2{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.3)}50%{box-shadow:0 0 0 14px rgba(0,212,255,0)}}
+.voice-hint{font-size:10px;color:var(--muted);margin-top:10px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono',monospace}
+
+/* CHAT PANEL */
+.chat-panel{
+  display:flex;flex-direction:column;
+  background:rgba(4,10,22,0.98);
+  border-left:1px solid rgba(0,212,255,0.07);
+  overflow:hidden;
+}
+.chat-top{
+  padding:16px 20px;border-bottom:1px solid rgba(0,212,255,0.07);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.chat-av{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(100,255,218,0.1));
+  border:1px solid rgba(0,212,255,0.25);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.chat-tname{font-size:14px;font-weight:600;color:var(--white)}
+.chat-tsub{font-size:10px;color:var(--teal);font-family:'JetBrains Mono',monospace}
+
+.messages{
+  flex:1;overflow-y:auto;padding:20px 16px;
+  display:flex;flex-direction:column;gap:14px;
+  scroll-behavior:smooth;
+}
+.messages::-webkit-scrollbar{width:2px}
+.messages::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.15);border-radius:2px}
+
+.msg{display:flex;flex-direction:column;gap:4px;animation:mi .3s ease}
+@keyframes mi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.l{align-items:flex-start}
+.msg.u{align-items:flex-end}
+.bubble{max-width:88%;padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.65}
+.msg.l .bubble{
+  background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);
+  color:var(--text);border-radius:3px 14px 14px 14px;
+}
+.msg.u .bubble{
+  background:rgba(0,212,255,0.11);border:1px solid rgba(0,212,255,0.22);
+  color:var(--white);border-radius:14px 3px 14px 14px;
+}
+.mname{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.msg.l .mname{color:var(--cyan)}
+.typing-bub{display:flex;gap:4px;padding:13px 16px;align-items:center}
+.typing-bub span{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:tb 1.2s infinite}
+.typing-bub span:nth-child(2){animation-delay:.2s}
+.typing-bub span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+
+.input-area{padding:14px 16px;border-top:1px solid rgba(0,212,255,0.07);flex-shrink:0}
+.input-row{display:flex;gap:8px;align-items:center}
+.inp{
+  flex:1;background:rgba(0,212,255,0.04);
+  border:1px solid rgba(0,212,255,0.12);border-radius:22px;
+  padding:11px 16px;font-size:13px;color:var(--white);
+  font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;
+}
+.inp::placeholder{color:var(--muted)}
+.inp:focus{border-color:rgba(0,212,255,0.35)}
+.sbtn{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  border:none;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;
+}
+.sbtn:hover{transform:scale(1.08);box-shadow:0 0 14px rgba(0,212,255,0.35)}
+.chips-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{
+  font-size:11px;color:rgba(0,212,255,0.7);
+  border:1px solid rgba(0,212,255,0.15);padding:5px 10px;
+  border-radius:16px;background:transparent;cursor:pointer;
+  transition:all .2s;
+}
+.chip:hover{background:rgba(0,212,255,0.08);color:var(--cyan)}
+
+/* PHOTO PORTRAIT */
+.figure-wrap{position:relative;width:300px;height:440px}
+.photo-frame{position:relative;width:100%;height:100%;border-radius:6px;overflow:hidden}
+.layla-photo{
+  width:100%;height:100%;object-fit:cover;object-position:center 8%;
+  display:block;transition:filter .4s;
+}
+.speaking .layla-photo{
+  filter:brightness(1.06) saturate(1.12);
+}
+.holo-lines{
+  position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,transparent,transparent 3px,
+    rgba(0,212,255,0.018) 3px,rgba(0,212,255,0.018) 4px
+  );
+  mix-blend-mode:screen;
+}
+.photo-edge{
+  position:absolute;inset:0;pointer-events:none;border-radius:6px;
+  box-shadow:inset 0 0 32px rgba(0,212,255,0.12),inset 0 0 1px rgba(0,212,255,0.35);
+  transition:box-shadow .4s;
+}
+.speaking .photo-edge{
+  box-shadow:inset 0 0 50px rgba(0,212,255,0.28),inset 0 0 2px rgba(0,212,255,0.7);
+  animation:edgepulse 1s ease-in-out infinite;
+}
+@keyframes edgepulse{
+  0%,100%{box-shadow:inset 0 0 35px rgba(0,212,255,0.22),inset 0 0 1px rgba(0,212,255,0.55)}
+  50%{box-shadow:inset 0 0 60px rgba(0,212,255,0.4),inset 0 0 2px rgba(0,212,255,0.9)}
+}
+.photo-corner{
+  position:absolute;width:14px;height:14px;pointer-events:none;
+  border-color:rgba(0,212,255,0.5);border-style:solid;
+}
+.pc-tl{top:10px;left:10px;border-width:1.5px 0 0 1.5px}
+.pc-tr{top:10px;right:10px;border-width:1.5px 1.5px 0 0}
+.pc-bl{bottom:10px;left:10px;border-width:0 0 1.5px 1.5px}
+.pc-br{bottom:10px;right:10px;border-width:0 1.5px 1.5px 0}
+.photo-base{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:180px;height:12px;
+  background:radial-gradient(ellipse,rgba(0,212,255,0.22),transparent 70%);
+  filter:blur(4px);animation:glow 4s ease-in-out infinite;
+}
+@media(max-width:768px){.figure-wrap{width:220px;height:320px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><div class="ndot"></div>Dubai Square</div>
+  <div class="nstatus"><div class="sdot"></div>LAYLA ONLINE</div>
+</nav>
+
+<div class="app">
+
+  <!-- STAGE -->
+  <div class="stage" id="stage">
+    <canvas id="bgc"></canvas>
+
+    <div class="dfloat df1">
+      CROWD: 2.1p/m²<br>
+      EV BAY 07: ACTIVE<br>
+      PICKUP: 3 READY<br>
+      TEMP: 38°C OUT
+    </div>
+    <div class="dfloat df2">
+      CAMERAS: 912<br>
+      LATENCY: 11ms<br>
+      B1: 67% FULL<br>
+      ZONE A: CLEAR
+    </div>
+
+    <div class="stage-inner">
+      <div class="figure-wrap" id="figure">
+        <div class="holo-glow"></div>
+        <div class="scanline"></div>
+        <div class="speaking-ring" id="sring"></div>
+
+        <!-- ═══ LAYLA PHOTO PORTRAIT ═══ -->
+        <div class="photo-frame">
+          <img src="layla-portrait.png" class="layla-photo" alt="Layla">
+          <div class="holo-lines"></div>
+          <div class="photo-edge"></div>
+          <div class="photo-corner pc-tl"></div>
+          <div class="photo-corner pc-tr"></div>
+          <div class="photo-corner pc-bl"></div>
+          <div class="photo-corner pc-br"></div>
+        </div>
+        <div class="photo-base"></div>
+
+        <div class="base-glow"></div>
+      </div>
+
+      <div class="name-block">
+        <div class="layla-name">LAYLA</div>
+        <div class="layla-sub">Dubai Square · AI Concierge</div>
+      </div>
+
+      <div class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="Hold to speak">
+        🎙️
+      </div>
+      <div class="voice-hint" id="voiceHint">tap to speak</div>
+    </div>
+  </div>
+
+  <!-- CHAT PANEL -->
+  <div class="chat-panel">
+    <div class="chat-top">
+      <div class="chat-av">✦</div>
+      <div>
+        <div class="chat-tname">Layla</div>
+        <div class="chat-tsub">Your Dubai Square companion</div>
+      </div>
+    </div>
+
+    <div class="messages" id="msgs">
+      <div class="msg l">
+        <div class="mname">Layla</div>
+        <div class="bubble">Welcome to Dubai Square. I'm Layla, your personal AI concierge.<br><br>I see everything across the mall in real time — parking, crowd levels, your EV charge, pickup orders, and more.<br><br>How can I help you today?</div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <input class="inp" id="inp" placeholder="Ask Layla anything…" autocomplete="off" onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="sbtn" onclick="sendMsg()">➤</button>
+      </div>
+      <div class="chips-row">
+        <div class="chip" onclick="quick('Parking availability')">🅿️ Parking</div>
+        <div class="chip" onclick="quick('EV charging')">⚡ EV Charge</div>
+        <div class="chip" onclick="quick('Help me navigate')">🗺️ Navigate</div>
+        <div class="chip" onclick="quick('Restaurant recommendations')">🍽️ Dining</div>
+        <div class="chip" onclick="quick('Drive-through route')">🚗 Drive-through</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── BACKGROUND CANVAS ── */
+const cv=document.getElementById('bgc'),cx=cv.getContext('2d');
+const stage=document.getElementById('stage');
+function rsz(){cv.width=stage.offsetWidth;cv.height=stage.offsetHeight}
+rsz();window.addEventListener('resize',rsz);
+const pts=[];
+class Pt{constructor(){this.reset()}reset(){this.x=Math.random()*cv.width;this.y=Math.random()*cv.height;this.vx=(Math.random()-.5)*.18;this.vy=(Math.random()-.5)*.18;this.a=Math.random()*.28+.03;this.r=Math.random()*1.1+.3}update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>cv.width||this.y<0||this.y>cv.height)this.reset()}draw(){cx.beginPath();cx.arc(this.x,this.y,this.r,0,Math.PI*2);cx.fillStyle=`rgba(0,212,255,${this.a})`;cx.fill()}}
+for(let i=0;i<70;i++)pts.push(new Pt());
+(function frame(){cx.clearRect(0,0,cv.width,cv.height);pts.forEach(p=>{p.update();p.draw()});for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<75){cx.beginPath();cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);cx.strokeStyle=`rgba(0,212,255,${.05*(1-d/75)})`;cx.lineWidth=.4;cx.stroke()}}requestAnimationFrame(frame)})();
+
+/* ── VOICE SYNTHESIS ── */
+let synth=window.speechSynthesis,voices=[],selVoice=null;
+function loadVoices(){
+  voices=synth.getVoices();
+  // Prefer female English voice
+  selVoice=voices.find(v=>/female|woman/i.test(v.name)&&/en/i.test(v.lang))
+    ||voices.find(v=>/en-US/i.test(v.lang)&&/samantha|victoria|karen|moira|tessa|alice|fiona|ava|zoe/i.test(v.name))
+    ||voices.find(v=>/en/i.test(v.lang)&&v.name.includes('Female'))
+    ||voices.find(v=>/en-US/i.test(v.lang))
+    ||voices[0];
+}
+loadVoices();
+if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=loadVoices;
+
+const figure=document.getElementById('figure');
+const sring=document.getElementById('sring');
+function speak(text){
+  synth.cancel();
+  const clean=text.replace(/<br>/g,' ').replace(/[🅿️🗺️⚡🍽️🚗📦🟢🟡🔴✦]/g,'');
+  const u=new SpeechSynthesisUtterance(clean);
+  if(selVoice)u.voice=selVoice;
+  u.rate=0.92;u.pitch=1.05;u.volume=1;
+  u.onstart=()=>{
+    figure.classList.add('speaking');
+    sring.classList.add('speaking');
+    document.getElementById('voiceBtn').className='voice-btn speaking';
+    document.getElementById('voiceHint').textContent='speaking…';
+  };
+  u.onend=()=>{
+    figure.classList.remove('speaking');
+    sring.classList.remove('speaking');
+    document.getElementById('voiceBtn').className='voice-btn';
+    document.getElementById('voiceHint').textContent='tap to speak';
+  };
+  synth.speak(u);
+}
+
+/* ── SPEECH RECOGNITION ── */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,listening=false;
+if(SR){
+  rec=new SR();
+  rec.continuous=false;rec.interimResults=false;rec.lang='en-US';
+  rec.onresult=e=>{
+    const txt=e.results[0][0].transcript;
+    document.getElementById('inp').value=txt;
+    sendMsg();
+  };
+  rec.onerror=()=>{stopListening()};
+  rec.onend=()=>{stopListening()};
+}
+
+function toggleVoice(){
+  if(!rec){alert('Voice recognition not supported in this browser. Use Chrome.');return}
+  if(listening)stopListening();else startListening();
+}
+function startListening(){
+  if(listening)return;
+  synth.cancel();
+  listening=true;
+  document.getElementById('voiceBtn').className='voice-btn listening';
+  document.getElementById('voiceHint').textContent='listening…';
+  try{rec.start()}catch(e){}
+}
+function stopListening(){
+  listening=false;
+  try{rec.stop()}catch(e){}
+  document.getElementById('voiceBtn').className='voice-btn';
+  document.getElementById('voiceHint').textContent='tap to speak';
+}
+
+/* ── RESPONSES ── */
+const R=[
+  {k:['park','otopark','car','vehicle','b1','b2'],a:`Right now B1 is at 67% capacity and B2 has plenty of space. I'd recommend Level B2 East, near Gate 7. I can guide you there turn by turn. Shall I start navigation?`},
+  {k:['ev','charg','electric','plug','şarj'],a:`Your nearest available EV bay is Bay 07 on Level B1, just 2 minutes away. Based on a typical 50-minute charge session, I've prepared a route through the fashion district and food hall that brings you back just as your car finishes. Want me to send it?`},
+  {k:['navigat','lost','find','where','how.*get','direction'],a:`Of course. Where would you like to go? I can see live crowd levels across all zones. The east atrium is quiet right now if you'd prefer a more relaxed route. Just tell me your destination.`},
+  {k:['food','eat','restaur','dinner','hungry','lunch','cafe','coffee','dining'],a:`Great timing. The rooftop terrace has just a 10-minute wait right now, unusually low for this hour. Based on crowd data, I'd suggest heading there in the next 20 minutes before the evening peak. Shall I reserve a table?`},
+  {k:['drive','drive.through','through','car.*shop'],a:`The drive-through circuit is currently clear. Average travel time for the full loop is 12 minutes. If you have a pickup order ready, I can add your collection point to the route so you don't stop anywhere unexpected. Want me to set that up?`},
+  {k:['pickup','order','collect','ready','package'],a:`I can see 3 orders registered under your session. One at Zara on Level 2 Bay P4 is ready now. The other two will be ready in approximately 18 minutes. Shall I route you to Zara first and schedule the others on the return loop?`},
+  {k:['crowd','busy','quiet','full','how many'],a:`Current crowd levels across the mall: West Wing is calm at 1.4 persons per square meter. The Food Hall is moderate. The Central Atrium is busy at 4.8, above the comfort threshold. The west wing is your best bet right now. Want me to route you there?`},
+  {k:['safe','secur','emergency','help','danger'],a:`Dubai Square's security team is always close by, and I have eyes across the entire mall in real time. If you need immediate assistance, tell me your location and I'll connect you with the nearest security personnel within seconds.`},
+  {k:['hello','hi','hey','merhaba','selam','good morning','good evening'],a:`Hello! Great to have you at Dubai Square. I'm Layla — I can see everything happening across the mall right now. Whether it's parking, navigation, your EV charge, or planning your evening — just ask.`},
+  {k:['who are you','what are you','layla','tell me about'],a:`I'm Layla, Dubai Square's AI concierge. I'm connected to the entire mall in real time — cameras, every parking bay, every EV charger, pickup bays, crowd levels. When you ask me something, I'm looking at what's actually happening right now, not a database from this morning. What would you like to know?`},
+  {k:['weather','hot','outside','temperature'],a:`It's 38 degrees outside right now. Every zone inside Dubai Square is climate-controlled at 22 degrees. And if you came by EV, your drive-through exit is fully covered, so you won't step into the heat until you're back in your car.`},
+  {k:['event','show','concert','performance','tonight'],a:`There's a live performance at the Central Plaza at 8 PM tonight, and a pop-up art installation in the West Atrium running until 10. Current crowd forecast shows the plaza will be busy from 7:30. I'd recommend arriving by 7:15 for a good position.`},
+];
+
+function match(t){
+  const low=t.toLowerCase();
+  for(const r of R)if(r.k.some(k=>new RegExp(k,'i').test(low)))return r.a;
+  return`I'm checking the live systems for that right now. While I look into it, feel free to ask about parking, navigation, EV charging, your pickup orders, or crowd levels — I have real-time data on all of it.`;
+}
+
+function addMsg(txt,who){
+  const c=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className=`msg ${who}`;
+  d.innerHTML=`<div class="mname">${who==='l'?'Layla':'You'}</div><div class="bubble">${txt.replace(/\n/g,'<br>')}</div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function showTyping(){
+  const c=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='msg l';d.id='typ';
+  d.innerHTML=`<div class="mname">Layla</div><div class="bubble typing-bub"><span></span><span></span><span></span></div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function sendMsg(){
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();if(!txt)return;
+  addMsg(txt,'u');inp.value='';
+  showTyping();
+  const reply=match(txt);
+  setTimeout(()=>{
+    document.getElementById('typ')?.remove();
+    addMsg(reply,'l');
+    speak(reply);
+  },800+Math.random()*500);
+}
+function quick(t){document.getElementById('inp').value=t;sendMsg()}
+
+/* Auto-speak welcome */
+setTimeout(()=>speak('Welcome to Dubai Square. I am Layla, your personal AI concierge. How can I help you today?'),1200);
+</script>
+</body>
+</html>
