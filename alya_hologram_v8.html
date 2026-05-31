@@ -847,52 +847,20 @@ function didRestoreIdle(){
 // ── Ana konuşma fonksiyonu ────────────────────────────────────────
 function hgInit(){
   if(model) model.visible=false;
-  hgSetStatus('● BAĞLANIYOR…', true);
-  // HTTPS'te WebRTC dene, localhost'ta doğrudan Talks API'ye geç
-  didInitStream()
-    .catch(e => {
-      console.info('WebRTC yok, Talks API aktif:', e.message);
-      didRtcReady = false;
-      didPendingStream = null;
-      // Idle video'yu geri yükle — WebRTC srcObject'i bırakmış olabilir
-      const vid = document.getElementById('hg-video');
-      vid.srcObject = null;
-      vid.loop = true; vid.muted = true;
-      vid.src = DID_IDLE_SRC; vid.load(); vid.play().catch(()=>{});
-      hgSetStatus('● ALYA HAZIR');
-    });
+  hgSetStatus('● ALYA HAZIR');
+  // Idle video zaten HTML'de autoplay ile başlıyor — dokunma
 }
 
 async function hgSpeak(text){
   if(didTalking) return;
   didTalking = true;
-  const vid = document.getElementById('hg-video');
   try {
-    if(didRtcReady){
-      // WebRTC: gerçek zamanlı lip sync
-      hgSetStatus('● KONUŞUYOR', false);
-      vid.muted = false;
-      vid.play().catch(()=>{});
-      await didStreamSpeak(text);
-      // D-ID konuşma süresi kadar bekle (yaklaşık)
-      const words = text.split(' ').length;
-      await new Promise(r => setTimeout(r, Math.max(2000, words * 380)));
-      hgSetStatus('● ALYA HAZIR');
-    } else {
-      // Talks API: async video üretimi
-      try {
-        await didTalksSpeak(text);
-      } catch(e2){
-        console.warn('Talks API:', e2.message);
-        speakSafe(text); // kesin fallback
-      }
-      didRestoreIdle();
-    }
+    await didTalksSpeak(text);
   } catch(e){
-    console.warn('D-ID hata:', e.message);
+    console.warn('D-ID Talks hatası:', e.message);
     speakSafe(text);
-    didRestoreIdle();
   } finally {
+    didRestoreIdle();
     didTalking = false;
   }
 }
@@ -1722,9 +1690,8 @@ function closeMap(){
 function greet(){
   const msg = WELCOME[LANG] || WELCOME.en;
   addMsg(msg,'l',[]);
-  // Greet: kullanıcı hareketi yok, sadece chat'e yaz + TTS dene
-  // D-ID lip sync kullanıcı ilk mesaj gönderince başlar
-  speakSafe(msg);
+  // Karşılama sadece chat'e yazılır; ses/lip sync ilk mesajda başlar
+  // (browser autoplay policy: kullanıcı hareketi olmadan ses bloke edilir)
 }
 </script>
 
