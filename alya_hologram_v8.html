@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALYA — AI Concierge · Dubai Square</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'JetBrains Mono',monospace}
+canvas#c{position:fixed;top:0;left:0;bottom:0;width:calc(100% - 340px);height:100%}
+body.embed canvas#c{width:100%}
+body.embed #chat,body.embed .modes,body.embed #animPanel,body.embed #fps,body.embed #stateBar,body.embed #loading{display:none!important}
+body.embed .hc.htr{right:20px}
+body.embed .hc.hbr{right:20px}
+
+/* ── HUD ── */
+.hud{position:fixed;inset:0;pointer-events:none}
+.hc{position:absolute;width:22px;height:22px;border-color:rgba(0,212,255,.5);border-style:solid}
+.htl{top:20px;left:20px;border-width:2px 0 0 2px}
+.htr{top:20px;right:370px;border-width:2px 2px 0 0}
+.hbl{bottom:20px;left:20px;border-width:0 0 2px 2px}
+.hbr{bottom:20px;right:370px;border-width:0 2px 2px 0}
+.hl{position:absolute;font-size:9px;color:rgba(0,212,255,.45);letter-spacing:2px}
+.hl-tl{top:14px;left:48px}
+.hl-bl{bottom:14px;left:48px}
+.scan{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.011) 2px,rgba(0,212,255,.011) 3px);
+  animation:flk 9s infinite}
+@keyframes flk{0%,100%{opacity:1}93%{opacity:.65}95%{opacity:1}}
+
+/* ── YÜKLEME ── */
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:#000;z-index:99;transition:opacity 1s}
+#loading.fade{opacity:0;pointer-events:none}
+.ld-ring{width:52px;height:52px;border:2px solid rgba(0,212,255,.15);
+  border-top-color:#00d4ff;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ldtxt{font-size:10px;color:rgba(0,212,255,.6);letter-spacing:3px;text-align:center;line-height:2}
+#ldbar{width:220px;height:2px;background:rgba(0,212,255,.1);margin-top:18px;border-radius:2px}
+#ldbarInner{width:0%;height:100%;background:#00d4ff;border-radius:2px;transition:width .4s}
+
+/* ── MOD BUTONLARI ── */
+.modes{position:fixed;top:20px;left:50%;transform:translateX(-135px);display:flex;gap:8px;z-index:10}
+.mb{padding:6px 14px;border-radius:14px;border:1px solid rgba(0,212,255,.22);
+  background:rgba(0,212,255,.05);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1.5px;cursor:pointer;transition:all .2s}
+.mb.on{background:rgba(0,212,255,.2);border-color:#00d4ff;color:#fff;text-shadow:0 0 10px #00d4ff}
+.mb:hover{background:rgba(0,212,255,.12);color:#00d4ff}
+
+/* ── SOL ANİMASYON PANELİ ── */
+.anims{position:fixed;left:24px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:7px;z-index:10}
+.aLabel{font-size:8px;color:rgba(0,212,255,.28);letter-spacing:1.5px;margin-bottom:2px}
+.ab{padding:7px 16px;border:1px solid rgba(0,212,255,.2);border-radius:12px;
+  background:rgba(0,212,255,.04);color:rgba(0,212,255,.45);font-size:10px;
+  letter-spacing:1px;cursor:pointer;transition:all .25s;text-align:left;
+  min-width:148px;display:flex;align-items:center;gap:8px}
+.ab .ic{font-size:13px}
+.ab:hover{background:rgba(0,212,255,.1);color:#00d4ff;border-color:rgba(0,212,255,.4)}
+.ab.idle-btn{border-color:rgba(100,255,218,.3);color:rgba(100,255,218,.6);background:rgba(100,255,218,.05)}
+.ab.idle-btn.on{border-color:#64ffda;color:#64ffda;background:rgba(100,255,218,.12);box-shadow:0 0 12px rgba(100,255,218,.2)}
+.ab.on{background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.5);color:#ffb400}
+.ab.speaking-anim{background:rgba(0,212,255,.15);border-color:#00d4ff;color:#00d4ff;
+  animation:abPulse .8s ease-in-out infinite}
+@keyframes abPulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* ── HEYGEN CANLI VİDEO ── */
+#hg-wrap{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
+#hg-video{width:auto;height:100%;max-width:100%;object-fit:contain;
+  filter:brightness(.95) contrast(1.05);
+  display:block;opacity:1;transition:opacity 1.2s}
+#hg-scanlines{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
+  background:repeating-linear-gradient(0deg,rgba(0,212,255,.055) 0,rgba(0,212,255,.055) 1px,transparent 1px,transparent 4px);
+  pointer-events:none;z-index:5}
+#hg-status{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  font-size:9px;letter-spacing:2px;color:rgba(0,212,255,.45);z-index:10;
+  font-family:'JetBrains Mono',monospace;pointer-events:none;transition:color .3s}
+#hg-status.busy{color:rgba(0,212,255,.8);animation:statusPulse 1.2s ease-in-out infinite}
+@keyframes statusPulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* API key modal */
+#hg-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
+  z-index:200;display:flex;align-items:center;justify-content:center}
+#hg-modal.hidden{display:none}
+.hg-box{background:#020c1e;border:1px solid rgba(0,212,255,.3);border-radius:12px;
+  padding:28px 32px;width:400px;font-family:'JetBrains Mono',monospace}
+.hg-box h3{font-size:10px;letter-spacing:2px;color:#00d4ff;margin-bottom:8px}
+.hg-box p{font-size:10px;color:rgba(0,212,255,.5);line-height:1.7;margin-bottom:16px}
+.hg-inp{width:100%;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.25);
+  border-radius:6px;padding:9px 12px;color:#fff;font-size:11px;
+  font-family:'JetBrains Mono',monospace;outline:none;margin-bottom:14px}
+.hg-btns{display:flex;gap:8px}
+.hg-ok{flex:1;padding:9px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.4);
+  border-radius:6px;color:#00d4ff;font-family:'JetBrains Mono',monospace;
+  font-size:11px;cursor:pointer;letter-spacing:1px}
+.hg-ok:hover{background:rgba(0,212,255,.2)}
+.hg-skip{padding:9px 14px;background:none;border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;color:rgba(255,255,255,.3);font-family:'JetBrains Mono',monospace;
+  font-size:11px;cursor:pointer}
+
+/* ── SAĞ SOHBET PANELİ ── */
+#chat{position:fixed;right:0;top:0;bottom:0;width:340px;
+  background:rgba(2,6,18,.88);border-left:1px solid rgba(0,212,255,.12);
+  display:flex;flex-direction:column;z-index:20;backdrop-filter:blur(8px)}
+#chatHead{padding:18px 18px 14px;border-bottom:1px solid rgba(0,212,255,.08)}
+#chatHead .name{font-size:14px;letter-spacing:3px;color:#64ffda}
+#chatHead .sub{font-size:9px;color:rgba(0,212,255,.35);letter-spacing:2px;margin-top:3px}
+.langs{display:flex;gap:6px;margin-top:10px}
+.lb{padding:3px 10px;border:1px solid rgba(0,212,255,.2);border-radius:8px;
+  font-size:8px;letter-spacing:1px;cursor:pointer;color:rgba(0,212,255,.45);background:none;
+  transition:all .2s}
+.lb.active{border-color:#64ffda;color:#64ffda;background:rgba(100,255,218,.08)}
+#msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;
+  scrollbar-width:thin;scrollbar-color:rgba(0,212,255,.15) transparent}
+#msgs::-webkit-scrollbar{width:3px}
+#msgs::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);border-radius:2px}
+.msg{display:flex;flex-direction:column}
+.msg.u{align-items:flex-end}
+.msg.l{align-items:flex-start}
+.bubble{max-width:88%;padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.65;letter-spacing:.2px}
+.msg.u .bubble{background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.2);color:rgba(255,255,255,.85);border-radius:12px 12px 2px 12px}
+.msg.l .bubble{background:rgba(100,255,218,.07);border:1px solid rgba(100,255,218,.15);color:rgba(200,255,250,.9);border-radius:12px 12px 12px 2px}
+#typ{opacity:.5}
+.dot-anim span{display:inline-block;animation:dot 1.2s infinite}
+.dot-anim span:nth-child(2){animation-delay:.2s}
+.dot-anim span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+/* Hızlı sorular */
+.quicks{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.q{padding:5px 11px;border:1px solid rgba(0,212,255,.18);border-radius:8px;font-size:10px;
+  color:rgba(0,212,255,.55);cursor:pointer;letter-spacing:.5px;background:none;transition:all .18s}
+.q:hover{border-color:#00d4ff;color:#00d4ff;background:rgba(0,212,255,.06)}
+/* Alt input */
+#inputRow{padding:12px;border-top:1px solid rgba(0,212,255,.08);display:flex;gap:8px;align-items:center}
+#inp{flex:1;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.18);border-radius:8px;
+  color:#fff;font-size:12px;padding:9px 12px;outline:none;letter-spacing:.3px}
+#inp::placeholder{color:rgba(0,212,255,.3)}
+#inp:focus{border-color:rgba(0,212,255,.5)}
+#sendBtn{width:36px;height:36px;border:1px solid rgba(0,212,255,.3);border-radius:8px;
+  background:rgba(0,212,255,.08);color:#00d4ff;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#sendBtn:hover{background:rgba(0,212,255,.2)}
+#micBtn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(100,255,218,.3);
+  background:rgba(100,255,218,.06);color:#64ffda;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#micBtn:hover{background:rgba(100,255,218,.15)}
+#micBtn.listening{background:rgba(255,80,80,.15);border-color:rgba(255,80,80,.5);color:#ff5050;
+  animation:micPulse .7s ease-in-out infinite}
+#micBtn.speaking{background:rgba(0,212,255,.15);border-color:#00d4ff;color:#00d4ff}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,80,80,.4)}50%{box-shadow:0 0 0 8px rgba(255,80,80,0)}}
+
+/* ── FPS + durum ── */
+#fps{position:fixed;top:14px;right:376px;font-size:9px;color:rgba(0,212,255,.35);letter-spacing:1px}
+#stateBar{position:fixed;bottom:24px;left:200px;font-size:9px;letter-spacing:2px;
+  color:rgba(100,255,218,.35);pointer-events:none}
+
+/* ── Aksiyon kartları ── */
+.actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.act-btn{padding:5px 11px;border:1px solid rgba(0,212,255,.28);border-radius:8px;
+  font-size:9px;letter-spacing:.6px;cursor:pointer;color:#00d4ff;
+  background:rgba(0,212,255,.06);transition:all .18s;font-family:inherit}
+.act-btn:hover{background:rgba(0,212,255,.16);border-color:#00d4ff}
+
+/* ── Modal overlay ── */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;
+  align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#overlay.show{display:flex}
+.modal{background:rgba(2,8,24,.96);border:1px solid rgba(0,212,255,.25);border-radius:16px;
+  padding:28px;width:300px;color:#fff;font-family:inherit}
+.modal h3{font-size:11px;letter-spacing:3px;color:#64ffda;margin-bottom:18px}
+.mrow{margin-bottom:12px}
+.mrow label{display:block;font-size:8px;letter-spacing:1.5px;color:rgba(0,212,255,.5);margin-bottom:4px}
+.mrow input,.mrow select{width:100%;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);
+  border-radius:6px;color:#fff;font-size:10px;padding:7px 10px;outline:none;font-family:inherit}
+.mrow select option{background:#020818}
+.mbtns{display:flex;gap:8px;margin-top:18px}
+.mbtns button{flex:1;padding:9px;border-radius:8px;font-size:9px;letter-spacing:1px;cursor:pointer;font-family:inherit}
+.mbtn-cancel{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5)}
+.mbtn-ok{background:rgba(0,212,255,.15);border:1px solid #00d4ff;color:#00d4ff}
+.mbtn-ok:hover{background:rgba(0,212,255,.28)}
+.confirmed{text-align:center;padding:20px 0}
+.confirmed .ck{font-size:32px;margin-bottom:12px}
+.confirmed p{font-size:10px;color:rgba(100,255,218,.8);letter-spacing:.5px;line-height:1.8}
+.confirmed .ref{font-size:9px;color:rgba(0,212,255,.5);margin-top:8px;letter-spacing:1.5px}
+
+/* ── Interactive Map Overlay ── */
+#mapOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.90);z-index:100;
+  align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:10px}
+#mapOverlay.show{display:flex}
+.mapBox{background:#030c18;border:1px solid rgba(0,212,255,.22);border-radius:16px;
+  padding:20px;width:700px;max-width:calc(100vw - 350px);font-family:inherit;color:#fff}
+.mapHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mapHeader h3{font-size:10px;letter-spacing:3px;color:#64ffda;margin:0}
+.mapClose{background:none;border:1px solid rgba(0,212,255,.2);border-radius:6px;
+  color:rgba(0,212,255,.5);font-size:10px;cursor:pointer;padding:4px 12px;font-family:inherit;transition:all .2s}
+.mapClose:hover{border-color:#00d4ff;color:#00d4ff}
+.lvlTabs{display:flex;gap:4px;margin-bottom:10px}
+.lvlTab{flex:1;padding:8px 4px;text-align:center;font-size:9px;letter-spacing:1px;
+  border:1px solid rgba(0,212,255,.15);border-radius:6px;cursor:pointer;
+  color:rgba(0,212,255,.4);background:none;font-family:inherit;transition:all .18s}
+.lvlTab.on{border-color:#00d4ff;color:#fff;background:rgba(0,212,255,.14);text-shadow:0 0 8px #00d4ff}
+.lvlTab:hover:not(.on){border-color:rgba(0,212,255,.35);color:rgba(0,212,255,.7)}
+/* Image map wrap */
+.mapImgWrap{position:relative;background:#010810;border:1px solid rgba(0,212,255,.12);
+  border-radius:8px;overflow:hidden;line-height:0}
+.mapImgWrap img{display:block;width:100%;height:420px;object-fit:cover;object-position:center;
+  filter:brightness(.88) saturate(.9)}
+/* Nav SVG overlay */
+#navSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+/* Store pins */
+.mpin{position:absolute;transform:translate(-50%,-100%);z-index:4;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;transition:transform .2s}
+.mpin:hover{transform:translate(-50%,-100%) scale(1.15)}
+.mpin .pdot{width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px currentColor}
+.mpin .plbl{font-size:8px;letter-spacing:.5px;white-space:nowrap;padding:2px 6px;
+  border-radius:4px;background:rgba(2,8,24,.88);border:1px solid currentColor;
+  margin-bottom:3px;font-family:'JetBrains Mono',monospace;color:inherit}
+.mpin.active .pdot{animation:pinPulse .8s ease-in-out infinite}
+@keyframes pinPulse{0%,100%{box-shadow:0 0 4px currentColor}50%{box-shadow:0 0 14px currentColor,0 0 4px #fff}}
+/* You-are-here pin */
+.pin-you{position:absolute;transform:translate(-50%,-50%);z-index:5;pointer-events:none}
+.pin-you-dot{width:14px;height:14px;border-radius:50%;background:#00d4ff;border:2px solid #fff;
+  box-shadow:0 0 0 4px rgba(0,212,255,.25);animation:youPulse 1.2s ease-in-out infinite}
+@keyframes youPulse{0%,100%{box-shadow:0 0 0 4px rgba(0,212,255,.25)}50%{box-shadow:0 0 0 10px rgba(0,212,255,.05)}}
+/* Parking view */
+.parkView{padding:16px;background:#020810}
+.parkStat{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.pstat{flex:1;min-width:120px;padding:10px 14px;border:1px solid rgba(0,212,255,.15);border-radius:8px;text-align:center}
+.pstat .pn{font-size:20px;color:#00d4ff;font-weight:700}
+.pstat .pl{font-size:8px;color:rgba(0,212,255,.5);letter-spacing:1px;margin-top:2px}
+.park-bar{height:6px;background:#04101e;border-radius:3px;margin:8px 0}
+.park-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.park-grid{display:grid;grid-template-columns:repeat(20,1fr);gap:2px;padding:8px 0}
+.pspace{height:12px;border-radius:1px;border:1px solid rgba(0,100,160,.2)}
+.pspace.occ{background:#1a0808}
+.pspace.free{background:#040f1a}
+.pspace.ev{border-color:rgba(0,220,80,.35)}
+.pspace.ev.free{background:#001a08}
+.pspace.mycar{background:#003366!important;border-color:#00d4ff!important;border-width:2px;animation:carPulse 1.2s ease-in-out infinite}
+@keyframes carPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,.4)}50%{box-shadow:0 0 0 3px rgba(0,212,255,.1)}}
+.carFinder{margin-top:12px;padding:12px;border:1px solid rgba(0,212,255,.18);border-radius:8px;background:#010c18}
+.carFinder h4{font-size:9px;letter-spacing:2px;color:rgba(0,212,255,.5);margin-bottom:10px}
+.carLoc{padding:10px 14px;border:1px solid #00d4ff;border-radius:6px;background:rgba(0,212,255,.06);margin-bottom:8px}
+.carLoc .space-num{font-size:22px;color:#00d4ff;font-weight:700;letter-spacing:1px}
+.carLoc .space-dir{font-size:8px;color:rgba(100,255,218,.7);letter-spacing:.5px;margin-top:3px;line-height:1.6}
+.carBtns{display:flex;gap:6px}
+.carBtn{flex:1;padding:6px;border:1px solid rgba(0,212,255,.2);border-radius:5px;font-size:8px;letter-spacing:1px;
+  color:rgba(0,212,255,.6);background:none;font-family:inherit;cursor:pointer;transition:all .18s}
+.carBtn:hover{border-color:#00d4ff;color:#00d4ff;background:rgba(0,212,255,.08)}
+.carBtn.danger{border-color:rgba(255,80,80,.2);color:rgba(255,100,100,.5)}
+.carBtn.danger:hover{border-color:#ff5050;color:#ff5050;background:rgba(255,50,50,.06)}
+.mapInfo{margin-top:8px;font-size:9px;color:rgba(0,212,255,.4);letter-spacing:.5px;
+  min-height:14px;text-align:center}
+@keyframes mapDash{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
+@keyframes mapPulse{0%,100%{opacity:.7}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="ld-ring"></div>
+  <div id="ldtxt">LOADING ALYA...</div>
+  <div id="ldbar"><div id="ldbarInner"></div></div>
+</div>
+
+<canvas id="c"></canvas>
+
+<!-- D-ID Avatar Video — idle loop -->
+<div id="hg-wrap">
+  <video id="hg-video" autoplay playsinline loop muted
+    src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z">
+  </video>
+</div>
+<div id="hg-scanlines"></div>
+<div id="hg-status">● ALYA HAZIR</div>
+
+<!-- D-ID API Key Modal -->
+<div id="hg-modal" class="hidden">
+  <div class="hg-box">
+    <h3>ALYA · D-ID STREAMING</h3>
+    <p>D-ID Dashboard → Sağ üst → API Keys → key'ini yapıştır.<br>
+       Tarayıcında saklanır, tekrar sorulmaz.</p>
+    <input class="hg-inp" id="hg-key-inp" type="password" placeholder="Basic xxxx… veya sadece key">
+    <div class="hg-btns">
+      <button class="hg-ok" id="hg-ok-btn">BAĞLAN</button>
+      <button class="hg-skip" id="hg-skip-btn">Geç (TTS)</button>
+    </div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hc htl"></div><div class="hc htr"></div>
+  <div class="hc hbl"></div><div class="hc hbr"></div>
+  <div class="hl hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hl hl-bl">STATUS: <span style="color:#64ffda" id="statusLbl">LOADING</span></div>
+</div>
+<div class="scan"></div>
+<div id="fps">-- FPS</div>
+<div id="stateBar">STANDBY</div>
+
+<!-- Mod butonları -->
+<div class="modes">
+  <button class="mb on" onclick="setMode(0,this)">HOLOGRAM</button>
+  <button class="mb"    onclick="setMode(1,this)">GOLD</button>
+  <button class="mb"    onclick="setMode(2,this)">XRAY</button>
+  <button class="mb"    onclick="setMode(3,this)">REAL</button>
+</div>
+
+<!-- Sol animasyon paneli -->
+<div class="anims" id="animPanel">
+  <div class="aLabel">MOTION</div>
+</div>
+
+<!-- Sağ sohbet paneli -->
+<div id="chat">
+  <div id="chatHead">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="name">ALYA</div>
+        <div class="sub">DUBAI SQUARE AI CONCIERGE</div>
+      </div>
+      <button onclick="hgReset()" title="API Key değiştir"
+        style="padding:4px 10px;border:1px solid rgba(0,212,255,.2);border-radius:6px;background:none;
+        color:rgba(0,212,255,.4);font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;
+        letter-spacing:1px" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='rgba(0,212,255,.4)'">
+        🔑 KEY
+      </button>
+    </div>
+    <div class="langs">
+      <button class="lb active" id="lbEN" onclick="setLang('en')">EN</button>
+      <button class="lb"        id="lbTR" onclick="setLang('tr')">TR</button>
+      <button class="lb"        id="lbAR" onclick="setLang('ar')">AR</button>
+    </div>
+  </div>
+  <div id="msgs">
+    <div class="msg l">
+      <div class="bubble" id="welcomeBubble">Welcome to Dubai Square. I'm Alya, your personal AI concierge. How can I help you today?</div>
+    </div>
+    <div class="quicks">
+      <button class="q" onclick="quick('Restaurants')">Restaurants</button>
+      <button class="q" onclick="quick('Parking')">Parking</button>
+      <button class="q" onclick="quick('Luxury shops')">Luxury Shops</button>
+      <button class="q" onclick="quick('Waterfront')">Waterfront</button>
+    </div>
+  </div>
+  <div id="inputRow">
+    <button id="micBtn" onclick="toggleVoice()" title="Voice input">🎙</button>
+    <input id="inp" type="text" placeholder="Ask Alya anything…" onkeydown="if(event.key==='Enter')sendMsg()">
+    <button id="sendBtn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<!-- Rezervasyon Modal -->
+<div id="overlay">
+  <div class="modal" id="resModal">
+    <h3>TABLE RESERVATION</h3>
+    <div id="resForm">
+      <div class="mrow"><label>RESTAURANT</label><input id="resVenue" readonly></div>
+      <div class="mrow"><label>DATE</label><input id="resDate" type="date"></div>
+      <div class="mrow"><label>TIME</label>
+        <select id="resTime">
+          <option>12:00</option><option>12:30</option><option>13:00</option><option>13:30</option>
+          <option>19:00</option><option>19:30</option><option selected>20:00</option>
+          <option>20:30</option><option>21:00</option><option>21:30</option><option>22:00</option>
+        </select>
+      </div>
+      <div class="mrow"><label>GUESTS</label>
+        <select id="resGuests">
+          <option>1</option><option selected>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+      </div>
+      <div class="mrow"><label>YOUR NAME</label><input id="resName" placeholder="Full name"></div>
+      <div class="mbtns">
+        <button class="mbtns mbtn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="mbtns mbtn-ok" onclick="confirmRes()">Confirm</button>
+      </div>
+    </div>
+    <div class="confirmed" id="resConfirmed" style="display:none">
+      <div class="ck">✓</div>
+      <p id="resConfMsg"></p>
+      <div class="ref" id="resRef"></div>
+      <div class="mbtns" style="margin-top:16px">
+        <button class="mbtns mbtn-ok" onclick="closeModal()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Kat Haritası Overlay -->
+<div id="mapOverlay">
+  <div class="mapBox">
+    <div class="mapHeader">
+      <h3>DUBAI SQUARE — INTERACTIVE FLOOR MAP</h3>
+      <button class="mapClose" onclick="closeMap()">✕ CLOSE</button>
+    </div>
+    <div class="lvlTabs" id="lvlTabs"></div>
+    <div id="mapContent"></div>
+    <div class="mapInfo" id="mapInfo">Tap a store pin to get directions</div>
+  </div>
+</div>
+
+<!-- D-ID Streams API kullanılıyor — widget gerekmiyor -->
+
+<!-- Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/FBXLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+/* ─── EMBED MODE ─── */
+const EMBED = new URLSearchParams(location.search).has('embed');
+if(EMBED) document.body.classList.add('embed');
+
+/* ─── RENDERER ─── */
+const W = () => EMBED ? window.innerWidth : window.innerWidth - 340, H = () => window.innerHeight;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 1);
+renderer.outputEncoding = THREE.sRGBEncoding;
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, W()/H(), 0.01, 60);
+camera.position.set(0, 1.4, 4.5);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .07;
+controls.minDistance = .6;     controls.maxDistance  = 16;
+controls.target.set(0, 1.0, 0);
+
+/* ─── IŞIKLAR ─── */
+scene.add(new THREE.AmbientLight(0x334466, 0.6));
+const plFace = new THREE.PointLight(0xaaccff, 0.7, 7); plFace.position.set(0, 2.0, 3.0); scene.add(plFace);
+const pl1 = new THREE.PointLight(0x00d4ff, 1.0, 12); pl1.position.set(1.5,3,4); scene.add(pl1);
+const pl2 = new THREE.PointLight(0x64ffda, 0.6, 7);  pl2.position.set(-2,2,2);  scene.add(pl2);
+
+/* ─── DEKOR ─── */
+function ring(r, t, op){
+  const m = new THREE.Mesh(
+    new THREE.TorusGeometry(r,t,8,90),
+    new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:op})
+  );
+  m.rotation.x = Math.PI/2; scene.add(m); return m;
+}
+const r1 = ring(.72,.013,.55), r2 = ring(1.12,.008,.22); ring(1.65,.004,.08);
+const cone = new THREE.Mesh(
+  new THREE.CylinderGeometry(.01,.82,2.4,32,1,true),
+  new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:.026,side:THREE.DoubleSide})
+);
+cone.position.y = -1.2; scene.add(cone);
+const PC = 600, pGeo = new THREE.BufferGeometry(), pPos = new Float32Array(PC*3), pPh = [];
+for(let i=0;i<PC;i++){
+  const rad=1.2+Math.random()*2.4, a=Math.random()*Math.PI*2, phi=(Math.random()-.5)*Math.PI;
+  pPos[i*3]=Math.cos(phi)*Math.cos(a)*rad; pPos[i*3+1]=Math.sin(phi)*rad+1.2; pPos[i*3+2]=Math.cos(phi)*Math.sin(a)*rad;
+  pPh.push(Math.random()*Math.PI*2);
+}
+pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos,3));
+const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({color:0x00d4ff,size:.022,transparent:true,opacity:.36,depthWrite:false}));
+scene.add(particles);
+
+/* ─── HOLOGRAM SHADER ─── */
+const MODE_COLORS = [0x00d4ff, 0xffcc44, 0x64ffda, 0xffffff];
+
+function makeHologramMat(origMat, mode) {
+  if(mode === 3) return origMat || new THREE.MeshStandardMaterial();
+  const col = new THREE.Color(MODE_COLORS[mode]);
+  const m   = origMat ? origMat.clone() : new THREE.MeshStandardMaterial();
+
+  m.skinning    = true;
+  m.transparent = true;
+  m.depthWrite  = false;
+  m.side        = THREE.FrontSide;
+  m.blending    = THREE.NormalBlending;
+  m.opacity     = 1.0;
+  m.needsUpdate = true;
+
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = {value:0};
+    shader.uniforms.uMode = {value:mode};
+    shader.uniforms.uCol  = {value:col.clone()};
+    shader.vertexShader = 'varying float vWY;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace('#include <skinning_vertex>',
+      `#include <skinning_vertex>\n vWY=(modelMatrix*vec4(transformed,1.0)).y;`);
+    shader.fragmentShader = 'uniform float uTime;\nuniform float uMode;\nuniform vec3 uCol;\nvarying float vWY;\n' + shader.fragmentShader;
+
+    shader.fragmentShader = shader.fragmentShader.replace('#include <tonemapping_fragment>',
+      `/* ── HOLOGRAM SHADER ── */
+       float fr   = pow(1.-abs(dot(normalize(vNormal),normalize(vViewPosition))),2.2);
+       float scan = sin(vWY*18.-uTime*2.5)*.5+.5;
+       float line = step(.990,sin(vWY*30.-uTime*1.6));
+       float sweep= step(.993,sin(vWY*2.8-uTime*.5))*.6;
+       float glch = step(.992,fract(sin(floor(uTime*6.)+floor(vWY*10.))*43758.5))*.3;
+
+       if(uMode<.5){
+         /* Orijinal yüz rengini %45 koru + cyan tint %55 */
+         float lum  = dot(gl_FragColor.rgb, vec3(.299,.587,.114));
+         vec3  holo = mix(gl_FragColor.rgb * vec3(.25,.75,.95), uCol * (lum*.6+.15), .55);
+         holo += fr  * uCol * 1.1;          /* kenar parlaması */
+         holo += line  * uCol * .22;        /* ince scan çizgisi */
+         holo += sweep * uCol * .18;
+         holo += glch  * uCol * .14;
+         holo += scan  * uCol * .04;
+         gl_FragColor.rgb = clamp(holo, 0., 1.8);
+         /* Yüz merkezi opak, kenarlara doğru glow */
+         gl_FragColor.a = clamp(lum*.65 + .30 + fr*.50 + line*.08, 0., 1.);
+
+       } else if(uMode<1.5){
+         float lum=dot(gl_FragColor.rgb,vec3(.299,.587,.114));
+         vec3 gold=mix(gl_FragColor.rgb,vec3(lum*.9+.08,lum*.72,lum*.06),.60);
+         gold+=fr*vec3(1.,.95,.5)*.65+line*vec3(1.,.9,.4)*.25+lum*vec3(.4,.3,.0)*.5;
+         gl_FragColor.rgb=gold;
+         gl_FragColor.a=clamp(lum*.70+.20+fr*.45+line*.08,0.,1.);
+       } else {
+         gl_FragColor.rgb=uCol*(fr*.90+scan*.12+line*.35+sweep*.12+glch*.18);
+         gl_FragColor.a=clamp(fr*.95+scan*.06+line*.20+sweep*.08,0.,1.);
+       }
+       #include <tonemapping_fragment>`);
+    m._shader = shader;
+  };
+  return m;
+}
+
+/* ─── MODEL & ANİMASYON ─── */
+let model=null, mixer=null, idleAction=null, idleBtn=null, curAction=null, talkAction=null, curMode=0;
+const origMats=new Map(), allShaders=[];
+const LABELS=['HOLOGRAM','GOLD','XRAY','REAL'];
+
+function setState(txt){ document.getElementById('stateBar').textContent = txt; }
+
+function applyHoloMode(m){
+  curMode=m; document.getElementById('mLbl') && (document.getElementById('mLbl').textContent=LABELS[m]);
+  if(!model) return;
+  allShaders.length=0;
+  model.traverse(o=>{
+    if(!o.isMesh && !o.isSkinnedMesh) return;
+    if(!origMats.has(o.uuid)) origMats.set(o.uuid, o.material);
+    const mat = makeHologramMat(origMats.get(o.uuid), m);
+    o.material = mat;
+    if(m<3) allShaders.push(mat);
+  });
+}
+
+function returnToIdle(){
+  if(!idleAction) return;
+  idleAction.reset();
+  idleAction.setEffectiveWeight(1);
+  idleAction.setEffectiveTimeScale(1);
+  idleAction.setLoop(THREE.LoopRepeat, Infinity);
+  if(curAction && curAction !== idleAction){
+    curAction.crossFadeTo(idleAction, 0.5, false);
+  }
+  idleAction.play();
+  curAction = idleAction;
+  document.querySelectorAll('.ab').forEach(b=>b.classList.remove('on','speaking-anim'));
+  if(idleBtn) idleBtn.classList.add('on');
+  setState('STANDBY');
+}
+
+function playOnce(act, btn, label){
+  if(!act || !mixer) return;
+  act.setLoop(THREE.LoopOnce,1); act.clampWhenFinished=true; act.reset();
+  if(curAction && curAction!==act) curAction.crossFadeTo(act,.35,false); else act.play();
+  curAction=act;
+  document.querySelectorAll('.ab').forEach(b=>b.classList.remove('on','speaking-anim'));
+  btn.classList.add('on'); setState('▶  '+label);
+  mixer.addEventListener('finished', function onF(e){ if(e.action!==act)return; mixer.removeEventListener('finished',onF); returnToIdle(); });
+}
+
+/* Konuşma sırasında döngülü oynat */
+function playTalking(){
+  if(!talkAction || !mixer) return;
+  talkAction.setLoop(THREE.LoopRepeat, Infinity); talkAction.reset();
+  if(curAction && curAction!==talkAction) curAction.crossFadeTo(talkAction,.3,false); else talkAction.play();
+  curAction=talkAction;
+  document.querySelectorAll('.ab').forEach(b=>b.classList.remove('on','speaking-anim'));
+  const tBtn = [...document.querySelectorAll('.ab')].find(b=>b.textContent.includes('TALKING'));
+  if(tBtn) tBtn.classList.add('speaking-anim');
+  setState('💬 SPEAKING');
+}
+
+/* ─── ANA MODEL ─── */
+function loadProgress(pct,txt){ document.getElementById('ldbarInner').style.width=pct+'%'; if(txt) document.getElementById('ldtxt').textContent=txt; }
+
+function setupModel(group){
+  if(model) scene.remove(model);
+  origMats.clear(); model=group;
+  const box=new THREE.Box3().setFromObject(model), sz=box.getSize(new THREE.Vector3());
+  model.scale.setScalar(2.2/Math.max(sz.x,sz.y,sz.z));
+  const b2=new THREE.Box3().setFromObject(model); model.position.y=-b2.min.y;
+  scene.add(model);
+  const b3=new THREE.Box3().setFromObject(model), cen=b3.getCenter(new THREE.Vector3()), h=b3.max.y-b3.min.y;
+  const dist=(h*.65)/Math.tan((camera.fov*Math.PI/180)*.5);
+  controls.target.set(0,cen.y,0); camera.position.set(0,cen.y,Math.max(dist,2.2)); controls.update();
+  applyHoloMode(curMode);
+
+  const panel=document.getElementById('animPanel');
+  panel.querySelectorAll('.ab').forEach(b=>b.remove());
+  if(group.animations?.length){
+    mixer=new THREE.AnimationMixer(model);
+    idleAction=mixer.clipAction(group.animations[0]);
+    idleAction.setLoop(THREE.LoopRepeat,Infinity); idleAction.play(); curAction=idleAction;
+    idleBtn=document.createElement('button');
+    idleBtn.className='ab idle-btn on';
+    idleBtn.innerHTML='<span class="ic">●</span> IDLE';
+    idleBtn.onclick=()=>returnToIdle();
+    panel.appendChild(idleBtn);
+  }
+  document.getElementById('statusLbl').textContent='ONLINE';
+  setState('STANDBY');
+  loadProgress(100,'READY');
+  setTimeout(()=>{ document.getElementById('loading').classList.add('fade'); greet(); },800);
+}
+
+const ANIM_LIST=[
+  {file:'Waving.fbx',           label:'WAVING',    icon:'👋'},
+  {file:'Talking.fbx',          label:'TALKING',   icon:'💬'},
+  {file:'Pointing Forward.fbx', label:'POINTING',  icon:'👉'},
+  {file:'Head Nod Yes.fbx',     label:'NODDING',   icon:'✓'},
+  {file:'Arm Stretching.fbx',   label:'STRETCH',   icon:'🤸'},
+];
+
+function loadAnimBg(info){
+  const panel=document.getElementById('animPanel');
+  const btn=document.createElement('button');
+  btn.className='ab'; btn.style.opacity='.4'; btn.style.pointerEvents='none';
+  btn.innerHTML=`<span class="ic">${info.icon}</span> ${info.label}`;
+  panel.appendChild(btn);
+  new THREE.FBXLoader().load('models/'+info.file, (g)=>{
+    if(!mixer||!g.animations?.length) return;
+    const clip=g.animations[0]; clip.name=info.label;
+    const act=mixer.clipAction(clip, model);
+    if(info.file==='Talking.fbx') talkAction=act;
+    btn.style.opacity=''; btn.style.pointerEvents='';
+    btn.onclick=()=>playOnce(act, btn, info.label);
+  }, null, ()=>btn.remove());
+}
+
+(function init(){
+  loadProgress(5,'LOADING ALYA...');
+  new THREE.FBXLoader().load('models/Breathing Idle.fbx',
+    g=>{ loadProgress(85,'PREPARING...'); setupModel(g); ANIM_LIST.forEach((a,i)=>setTimeout(()=>loadAnimBg(a),i*200)); },
+    p=>{ if(p.total) loadProgress(Math.round(p.loaded/p.total*80),'LOADING ALYA... '+Math.round(p.loaded/p.total*80)+'%'); },
+    e=>{ document.getElementById('ldtxt').textContent='ERROR: '+(e.message||e); }
+  );
+})();
+
+function setMode(m,btn){ document.querySelectorAll('.mb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); applyHoloMode(m); }
+
+/* ─── RENDER DÖNGÜSÜ ─── */
+let t=0, fpsT=performance.now(), fpsF=0;
+function animate(){
+  requestAnimationFrame(animate); t+=.016; fpsF++;
+  if(performance.now()-fpsT>1000){ document.getElementById('fps').textContent=fpsF+' FPS'; fpsF=0; fpsT=performance.now(); }
+  controls.update();
+  if(mixer) mixer.update(.016);
+  allShaders.forEach(m=>{ if(m._shader?.uniforms?.uTime) m._shader.uniforms.uTime.value=t; });
+  if(model) model.position.y+=Math.sin(t*.6)*.00022;
+  particles.rotation.y=t*.04;
+  const pp=pGeo.attributes.position.array;
+  for(let i=0;i<PC;i++){ pp[i*3+1]+=Math.sin(pPh[i]+t)*.0013; pPh[i]+=.006; }
+  pGeo.attributes.position.needsUpdate=true;
+  const rs=1+Math.sin(t*1.5)*.042;
+  r1.scale.set(rs,rs,rs); r1.material.opacity=.42+Math.sin(t*1.5)*.22; r2.scale.set(1/rs,1/rs,1/rs);
+  pl1.position.x=Math.sin(t*.30)*2; pl1.position.z=3.5+Math.cos(t*.22)*.9;
+  cone.material.opacity=.018+Math.sin(t*1.9)*.010;
+  const cw=W(), ch=H();
+  renderer.setSize(cw,ch,false); camera.aspect=cw/ch; camera.updateProjectionMatrix();
+  renderer.render(scene,camera);
+}
+animate();
+function onResize(){ const cw=W(),ch=H(); renderer.setSize(cw,ch,false); camera.aspect=cw/ch; camera.updateProjectionMatrix(); }
+window.addEventListener('resize', onResize);
+
+/* ════════════════════════════════════════════════
+   D-ID STREAMS API — Gerçek zamanlı WebRTC lip sync
+   Fotoğraftan konuşan avatar, Gemini AI zekası
+════════════════════════════════════════════════ */
+const DID_IDLE_SRC  = 'https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z';
+const DID_PHOTO_URL = 'https://create-images-results.d-id.com/google-oauth2|108190213974643723963/upl_NbzC3lRCskVe5b6CE7rt5/image.png';
+let DID_KEY = localStorage.getItem('did_alya_key') || 'c2VyZGFyLmJhdGthbjZAZ21haWwuY29t:Q020zil49gOU-oBrTwMHv';
+
+// WebRTC stream durumu
+let didPc = null, didStreamId = null, didSessionId = null;
+let didRtcReady = false, didTalking = false;
+
+function hgSetStatus(txt, busy=false){
+  const el=document.getElementById('hg-status');
+  if(!el) return;
+  el.textContent=txt;
+  el.classList.toggle('busy', busy);
+}
+
+function getDIDAuth(){
+  if(DID_KEY.startsWith('Basic ')) return DID_KEY;
+  if(DID_KEY.includes(':'))        return 'Basic ' + DID_KEY;
+  return 'Basic ' + btoa(DID_KEY + ':');
+}
+
+// ── WebRTC Streams API (HTTPS'te gerçek zamanlı) ──────────────────
+async function didInitStream(){
+  const auth = getDIDAuth();
+  hgSetStatus('● BAĞLANIYOR…', true);
+
+  // 1. Stream oluştur
+  const r = await fetch('https://api.d-id.com/talks/streams', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':auth},
+    body: JSON.stringify({ source_url: DID_PHOTO_URL, config:{ stitch:true, motion_factor:0.6 } })
+  });
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.description || 'Stream başlatılamadı');
+
+  didStreamId   = data.id;
+  didSessionId  = data.session_id;
+
+  // 2. RTCPeerConnection
+  didPc = new RTCPeerConnection({ iceServers: data.ice_servers || [{urls:'stun:stun.l.google.com:19302'}] });
+
+  // 3. Gelen stream → video elementine bağla
+  const vid = document.getElementById('hg-video');
+  didPc.ontrack = e => {
+    if(e.streams?.[0]){
+      vid.srcObject = e.streams[0];
+      vid.muted = false;
+    }
+  };
+
+  // 4. ICE adayları → D-ID'ye gönder
+  didPc.onicecandidate = async e => {
+    if(!e.candidate) return;
+    await fetch(`https://api.d-id.com/talks/streams/${didStreamId}/ice`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':auth},
+      body: JSON.stringify({ candidate: e.candidate, session_id: didSessionId })
+    }).catch(()=>{});
+  };
+
+  // 5. Offer → Answer
+  const offer = typeof data.offer === 'string' ? {type:'offer', sdp:data.offer} : data.offer;
+  await didPc.setRemoteDescription(new RTCSessionDescription(offer));
+  const answer = await didPc.createAnswer();
+  await didPc.setLocalDescription(answer);
+
+  // 6. Answer'ı D-ID'ye gönder
+  await fetch(`https://api.d-id.com/talks/streams/${didStreamId}/sdp`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':auth},
+    body: JSON.stringify({ answer, session_id: didSessionId })
+  });
+
+  // 7. ICE bağlantısını bekle (15s timeout)
+  await new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('ICE timeout')), 15000);
+    didPc.oniceconnectionstatechange = () => {
+      const s = didPc.iceConnectionState;
+      if(s === 'connected' || s === 'completed'){ clearTimeout(t); resolve(); }
+      if(s === 'failed'){ clearTimeout(t); reject(new Error('ICE failed')); }
+    };
+  });
+
+  didRtcReady = true;
+  hgSetStatus('● ALYA HAZIR');
+}
+
+async function didStreamSpeak(text){
+  const auth = getDIDAuth();
+  const voiceMap = { en:'en-US-JennyNeural', fr:'fr-FR-DeniseNeural', ar:'ar-AE-FatimaNeural' };
+  await fetch(`https://api.d-id.com/talks/streams/${didStreamId}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':auth},
+    body: JSON.stringify({
+      script:{ type:'text', input:text.slice(0,500),
+        provider:{ type:'microsoft', voice_id: voiceMap[LANG]||'en-US-JennyNeural' } },
+      session_id: didSessionId,
+      config:{ stitch:true, motion_factor:0.6 }
+    })
+  });
+}
+
+// ── Talks API (localhost fallback — async video üretimi) ─────────
+async function didTalksSpeak(text){
+  const auth = getDIDAuth();
+  const vid = document.getElementById('hg-video');
+  const voiceMap = { en:'en-US-JennyNeural', fr:'fr-FR-DeniseNeural', ar:'ar-AE-FatimaNeural' };
+
+  hgSetStatus('● HAZIRLANIYOR…', true);
+
+  const cr = await fetch('https://api.d-id.com/talks', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':auth},
+    body: JSON.stringify({
+      source_url: DID_PHOTO_URL,
+      script:{ type:'text', input:text.slice(0,500),
+        provider:{ type:'microsoft', voice_id: voiceMap[LANG]||'en-US-JennyNeural' } },
+      config:{ stitch:true, motion_factor:0.6, normalization_factor:0.1 }
+    })
+  });
+  const crData = await cr.json();
+  if(!cr.ok) throw new Error(crData.description||crData.message||'D-ID hata');
+
+  let resultUrl = null;
+  for(let i=0; i<40; i++){
+    await new Promise(r=>setTimeout(r, i===0 ? 2000 : 1500));
+    const sr = await fetch(`https://api.d-id.com/talks/${crData.id}`,{headers:{'Authorization':auth}});
+    const sd = await sr.json();
+    if(sd.status==='done'){ resultUrl=sd.result_url; break; }
+    if(sd.status==='error') throw new Error('D-ID video hatası');
+    if(i%2===1) hgSetStatus(`● HAZIRLANIYOR… ${Math.round(2+i*1.5)}s`, true);
+  }
+  if(!resultUrl) throw new Error('Zaman aşımı');
+
+  hgSetStatus('● KONUŞUYOR', false);
+  vid.srcObject = null;
+  vid.loop = false; vid.muted = false;
+  vid.src = resultUrl; vid.load();
+  await vid.play().catch(()=>{});
+  await new Promise(r=>{ vid.onended=r; vid.onerror=r; });
+  vid.onended=null; vid.onerror=null;
+}
+
+function didRestoreIdle(){
+  const vid = document.getElementById('hg-video');
+  vid.srcObject = null;
+  vid.loop = true; vid.muted = true;
+  vid.src = DID_IDLE_SRC; vid.load(); vid.play().catch(()=>{});
+  hgSetStatus('● ALYA HAZIR');
+}
+
+// ── Ana konuşma fonksiyonu ────────────────────────────────────────
+function hgInit(){
+  if(model) model.visible=false;
+  hgSetStatus('● BAĞLANIYOR…', true);
+  // HTTPS'te WebRTC dene, localhost'ta doğrudan Talks API'ye geç
+  didInitStream()
+    .catch(e => {
+      console.info('WebRTC kullanılamıyor, Talks API aktif:', e.message);
+      didRtcReady = false;
+      hgSetStatus('● ALYA HAZIR');
+    });
+}
+
+async function hgSpeak(text){
+  if(didTalking) return;
+  didTalking = true;
+  try {
+    if(didRtcReady){
+      // WebRTC: gerçek zamanlı, 0ms gecikme
+      hgSetStatus('● KONUŞUYOR', false);
+      await didStreamSpeak(text);
+      hgSetStatus('● ALYA HAZIR');
+    } else {
+      // Talks API: async video üretimi (localhost)
+      await didTalksSpeak(text);
+      didRestoreIdle();
+    }
+  } catch(e){
+    console.warn('D-ID hata:', e.message);
+    speakSafe(text);
+    didRestoreIdle();
+  } finally {
+    didTalking = false;
+  }
+}
+
+function hgReset(){ localStorage.removeItem('did_alya_key'); location.reload(); }
+
+// Başlat — model yüklendikten sonra tetiklenir
+hgInit();
+
+/* ════════════════════════════════════════════════
+   GEMINI AI
+════════════════════════════════════════════════ */
+const GEMINI_KEY = 'AIzaSyA-RAbZ98TVmu2-O5THvQWxjj-F81Mq5xY';
+let LANG = 'en';
+
+const SYS = `You are Alya, the AI concierge of Dubai Square — EMAAR's $6B landmark mall at Dubai Creek Harbour. Sophisticated, warm, precise.
+
+LAYOUT & NAVIGATION:
+- Ground Floor (GF): Main Entrance (north), Blank Street Coffee, event atrium. Parking ramp on north side.
+- Level 1 (L1): Apple Store (east wing), Zara (central), Sephora (west), % Arabica café, Sushi Counter (AED 120). Take central escalators from GF.
+- Level 2 (L2): Luxury Quarter (right of escalators) — Gucci, Louis Vuitton, Chanel, Rolex. Caffe Cipriani (mid), Cipriani Restaurant (AED 220), Nusr-Et Steakhouse (AED 400, east end).
+- Level 3 (L3): Fine Dining — Nobu Dubai Square (Japanese-Peruvian, AED 350, north terrace), Zuma (Japanese, AED 280, south terrace). Take glass elevator from GF atrium.
+- B1 Parking: 320 spaces, 12 EV charging bays (east wing), currently 67% full. Enter from north ramp.
+- B2 Parking: 280 spaces, 8 EV bays (north corner), currently 45% full. Recommended level.
+- Car Finder: Guests can tap the interactive parking map to save and locate their car space (Zone A/B/C system).
+- Creek Promenade: Exit via East Exit (GF), 2-min walk, 1.2km waterfront. Outside 38°C, inside 22°C.
+
+RESERVATIONS:
+- Nobu: +971-4-555-0101 | reservations@nobu-dubaisquare.com
+- Zuma: +971-4-555-0202 | reservations@zuma-dubai.com
+- Cipriani: +971-4-555-0303
+- Nusr-Et: +971-4-555-0404
+
+STYLE: Luxury concierge. Keep responses to 2-3 complete sentences. You MUST end on a fully completed sentence with a period. Never stop mid-word or mid-sentence under any circumstance. No bullet points, no markdown, no asterisks.`;
+
+const LANG_SFX = {
+  tr: '\n\nÖNEMLİ: Yalnızca Türkçe yanıt ver. Lüks bir otel konsiyerjinin sıcak Türkçesiyle. Maksimum 2-3 cümle.',
+  ar: '\n\nمهم: أجب باللغة العربية فقط. أسلوب مدير فندق فاخر. جملتان أو ثلاث.'
+};
+
+const WELCOME = {
+  en: "Welcome to Dubai Square. I'm Alya, your personal AI concierge. How can I help you today?",
+  tr: "Dubai Square'e hoş geldiniz. Ben Alya, yapay zeka konsierjinizim. Size nasıl yardımcı olabilirim?",
+  ar: "مرحباً بكم في دبي سكوير. أنا ألياء، مساعدتكم الذكية. كيف يمكنني مساعدتك اليوم؟"
+};
+
+function setLang(l){
+  LANG=l;
+  document.querySelectorAll('.lb').forEach(b=>b.classList.toggle('active',b.id==='lb'+l.toUpperCase()));
+  document.getElementById('welcomeBubble').textContent=WELCOME[l]||WELCOME.en;
+  gemHist.length=0;
+}
+
+const gemHist=[];
+async function callGemini(userText){
+  gemHist.push({role:'user',parts:[{text:userText}]});
+  if(gemHist.length>10) gemHist.splice(0,2);
+  const res=await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:SYS+(LANG_SFX[LANG]||'')}]},
+        contents:gemHist,
+        generationConfig:{temperature:0.72,maxOutputTokens:350}
+      })
+    }
+  );
+  const data=await res.json();
+  if(data.error) throw new Error(data.error.message);
+  const reply=data.candidates[0].content.parts[0].text.trim();
+  gemHist.push({role:'model',parts:[{text:reply}]});
+  return reply;
+}
+
+/* ════════════════════════════════════════════════
+   SPEECH
+════════════════════════════════════════════════ */
+const synth=window.speechSynthesis;
+let voices=[];
+function loadVoices(){ voices=synth.getVoices(); }
+loadVoices();
+if(speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadVoices;
+
+function pickVoice(lang){
+  if(lang==='ar'){
+    return voices.find(v=>/ar-SA|ar-AE|ar-001/i.test(v.lang))
+        || voices.find(v=>/^ar/i.test(v.lang))
+        || null;
+  }
+  if(lang==='tr'){
+    return voices.find(v=>/tr-TR|tr/i.test(v.lang)) || null;
+  }
+  /* English — prefer female */
+  return voices.find(v=>/en-US/i.test(v.lang)&&/samantha|victoria|karen|ava|zoe|jenny/i.test(v.name))
+      || voices.find(v=>/en-US/i.test(v.lang)&&!/male/i.test(v.name))
+      || voices.find(v=>/en/i.test(v.lang))
+      || voices[0];
+}
+
+let ttsUnlocked = false;
+document.addEventListener('click', () => { ttsUnlocked = true; }, { once: false });
+document.addEventListener('keydown', () => { ttsUnlocked = true; }, { once: false });
+
+function speakSafe(text){
+  if(ttsUnlocked){ speak(text); return; }
+  // TTS henüz açık değil — kısa sessiz utterance ile kilidi aç
+  const u0 = new SpeechSynthesisUtterance(' ');
+  u0.volume = 0;
+  u0.onend = () => { ttsUnlocked = true; speak(text); };
+  synth.speak(u0);
+}
+
+function speak(text){
+  synth.cancel();
+  const clean=text.replace(/<br>/g,' ').replace(/[🍽️☕🅿️⚡🗺️🌊🍱🍣🍝🥩🛍️👜💎🍎💄⌚📍]/g,'');
+  const u=new SpeechSynthesisUtterance(clean);
+  const v=pickVoice(LANG); if(v) u.voice=v;
+  u.lang = LANG==='ar'?'ar-SA':LANG==='tr'?'tr-TR':'en-US';
+  u.rate=0.90; u.pitch=1.02; u.volume=1;
+  u.onstart=()=>{ document.getElementById('micBtn').className='speaking'; setState('💬 SPEAKING'); };
+  u.onend=()=>{ document.getElementById('micBtn').className=''; setState('STANDBY'); };
+  u.onerror=()=>{ document.getElementById('micBtn').className=''; setState('STANDBY'); };
+  synth.speak(u);
+}
+
+/* ════════════════════════════════════════════════
+   SPEECH RECOGNITION
+════════════════════════════════════════════════ */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null, listening=false;
+if(SR){
+  rec=new SR(); rec.continuous=false; rec.interimResults=false;
+  rec.onresult=e=>{ document.getElementById('inp').value=e.results[0][0].transcript; sendMsg(); };
+  rec.onerror=()=>stopListening(); rec.onend=()=>stopListening();
+}
+
+function toggleVoice(){
+  if(!rec){ alert('Chrome required for voice input.'); return; }
+  listening ? stopListening() : startListening();
+}
+function startListening(){
+  if(listening) return;
+  synth.cancel(); returnToIdle();
+  listening=true; document.getElementById('micBtn').className='listening';
+  rec.lang=LANG==='tr'?'tr-TR':LANG==='ar'?'ar-SA':'en-US';
+  try{ rec.start(); }catch(e){}
+}
+function stopListening(){ listening=false; document.getElementById('micBtn').className=''; try{ rec.stop(); }catch(e){} }
+
+/* ════════════════════════════════════════════════
+   ACTION CARDS
+════════════════════════════════════════════════ */
+const VENUES = ['Nobu','Zuma','Cipriani','Nusr-Et','Sushi Counter'];
+
+function parseActions(text){
+  const t = text.toLowerCase(), acts = [];
+  const venue = VENUES.find(v => t.includes(v.toLowerCase()));
+  if(venue || /reserv|book a table|dine/i.test(text))
+    acts.push({label:'🍽 Reserve Table', fn:`openReservation('${venue||''}')`});
+  if(/park|b1|b2|ev.charg|otopark|araç|araba|car/i.test(text)){
+    acts.push({label:'🅿 Navigate to Parking', fn:`openMap('parking')`});
+    acts.push({label:'🚗 Find My Car', fn:`openMap('parking')`});
+  }
+  if(/level|floor|l1|l2|l3|luxury quarter|escalator|elevator|where is|navigate|direction/i.test(text))
+    acts.push({label:'🗺 Floor Map', fn:`openMap('floors')`});
+  if(/waterfront|promenade|creek|east exit/i.test(text))
+    acts.push({label:'🌊 Creek Promenade', fn:`openMap('creek')`});
+  if(/nobu|zuma|cipriani/i.test(text))
+    acts.push({label:'📞 Contact Restaurant', fn:`openMap('contact')`});
+  return acts;
+}
+
+/* ════════════════════════════════════════════════
+   CHAT
+════════════════════════════════════════════════ */
+function addMsg(txt, side, actions=[]){
+  const msgs=document.getElementById('msgs');
+  const div=document.createElement('div'); div.className='msg '+side;
+  const bub=document.createElement('div'); bub.className='bubble';
+  bub.innerHTML=txt.replace(/\n/g,'<br>');
+  div.appendChild(bub);
+  if(actions.length){
+    const row=document.createElement('div'); row.className='actions';
+    actions.forEach(a=>{
+      const b=document.createElement('button'); b.className='act-btn';
+      b.textContent=a.label; b.setAttribute('onclick',a.fn);
+      row.appendChild(b);
+    });
+    div.appendChild(row);
+  }
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+function showTyping(){
+  const msgs=document.getElementById('msgs');
+  const div=document.createElement('div'); div.className='msg l'; div.id='typ';
+  div.innerHTML='<div class="bubble dot-anim"><span>●</span><span>●</span><span>●</span></div>';
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('inp'), txt=inp.value.trim();
+  if(!txt) return;
+  addMsg(txt,'u'); inp.value='';
+  showTyping();
+  try{
+    const reply=await callGemini(txt);
+    document.getElementById('typ')?.remove();
+    addMsg(reply,'l', parseActions(reply)); hgSpeak(reply);
+  } catch(e){
+    document.getElementById('typ')?.remove();
+    const fb="I'm here to help with Dubai Square. Try asking about restaurants, parking, or directions.";
+    addMsg(fb,'l',[]);
+  }
+}
+function quick(t){ document.getElementById('inp').value=t; sendMsg(); }
+
+/* ════════════════════════════════════════════════
+   RESERVATION MODAL
+════════════════════════════════════════════════ */
+function openReservation(venue){
+  document.getElementById('resVenue').value = venue || 'Dubai Square Restaurant';
+  const d=new Date(); d.setDate(d.getDate()+1);
+  document.getElementById('resDate').value = d.toISOString().split('T')[0];
+  document.getElementById('resForm').style.display='';
+  document.getElementById('resConfirmed').style.display='none';
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+function confirmRes(){
+  const name=document.getElementById('resName').value.trim()||'Guest';
+  const venue=document.getElementById('resVenue').value;
+  const date=document.getElementById('resDate').value;
+  const time=document.getElementById('resTime').value;
+  const guests=document.getElementById('resGuests').value;
+  const ref='DSQ-'+Math.random().toString(36).substr(2,6).toUpperCase();
+  document.getElementById('resConfMsg').textContent=
+    `${name}, your table for ${guests} at ${venue} on ${date} at ${time} is confirmed.`;
+  document.getElementById('resRef').textContent='Booking ref: '+ref;
+  document.getElementById('resForm').style.display='none';
+  document.getElementById('resConfirmed').style.display='';
+}
+
+/* ════════════════════════════════════════════════
+   INTERACTIVE FLOOR MAP — SVG ARCHITECTURAL
+════════════════════════════════════════════════ */
+const LVLS=[
+  {id:'l3',label:'L3',name:'Level 3 · Fine Dining'},
+  {id:'l2',label:'L2',name:'Level 2 · Luxury Quarter'},
+  {id:'l1',label:'L1',name:'Level 1 · Retail'},
+  {id:'gf',label:'GF',name:'Ground Floor'},
+  {id:'b1',label:'B1',name:'Basement 1 · Parking'},
+  {id:'b2',label:'B2',name:'Basement 2 · Parking'},
+];
+
+/* ── Category colors ── */
+const CAT_COLOR={
+  luxury:'#c8901a', dining:'#e05522', cafe:'#8B6c14',
+  tech:'#2255cc',   fashion:'#7744cc', beauty:'#cc3388',
+  retail:'#337799', outdoor:'#116644', event:'#224488',
+};
+
+/* ── Store data per floor (SVG coords: plan 0-454, header y=0-30, stores below) ── */
+const FLOORS={
+  gf:{zones:[
+    {id:'blank', name:'Blank Street Coffee', sub:'Specialty Coffee · GF West', cat:'cafe',
+     x:8,  y:34, w:110, h:113},
+    {id:'events',name:'Event Atrium',        sub:'Capacity 800 · Central',     cat:'event',
+     x:126,y:34, w:200, h:113},
+    {id:'retail',name:'Retail Gallery',      sub:'East Wing · GF',             cat:'retail',
+     x:334,y:34, w:112, h:113},
+    {id:'creek', name:'Creek Promenade',     sub:'→ East Exit · 1.2km · 2 min walk', cat:'outdoor',
+     x:8,  y:195,w:438, h:147, full:true},
+  ]},
+  l1:{zones:[
+    {id:'apple',  name:'Apple Store',    sub:'L1 West · Premium Tech',      cat:'tech',    x:8,  y:34,w:108,h:113},
+    {id:'zara',   name:'Zara',           sub:'L1 Central · Fashion',        cat:'fashion', x:124,y:34,w:96, h:113},
+    {id:'sephora',name:'Sephora',        sub:'L1 East · Beauty',            cat:'beauty',  x:228,y:34,w:88, h:113},
+    {id:'arabica',name:'% Arabica',      sub:'L1 East Wing · Coffee',       cat:'cafe',    x:324,y:34,w:122,h:113},
+    {id:'sushi',  name:'Sushi Counter',  sub:'L1 West · AED 120 avg',       cat:'dining',  x:8,  y:195,w:108,h:147},
+    {id:'fash',   name:'Fashion Gallery',sub:'L1 Central · Multi-brand',    cat:'fashion', x:124,y:195,w:114,h:147},
+    {id:'life',   name:'Lifestyle Zone', sub:'L1 East · Home & Living',     cat:'retail',  x:246,y:195,w:200,h:147},
+  ]},
+  l2:{zones:[
+    {id:'gucci',  name:'Gucci',         sub:'Luxury Quarter West',          cat:'luxury',  x:8,  y:34,w:108,h:113},
+    {id:'lv',     name:'Louis Vuitton', sub:'Luxury Quarter',               cat:'luxury',  x:124,y:34,w:96, h:113},
+    {id:'chanel', name:'Chanel',        sub:'Luxury Quarter East',          cat:'luxury',  x:270,y:34,w:88, h:113},
+    {id:'rolex',  name:'Rolex',         sub:'Luxury Watches',               cat:'luxury',  x:366,y:34,w:80, h:113},
+    {id:'caffe',  name:'Caffe Cipriani',sub:'Italian Café · L2 West',       cat:'cafe',    x:8,  y:195,w:108,h:147},
+    {id:'cip',    name:'Cipriani',      sub:'Fine Dining · AED 220',        cat:'dining',  x:124,y:195,w:124,h:147},
+    {id:'nusret', name:'Nusr-Et',       sub:'Steakhouse · AED 400',         cat:'dining',  x:256,y:195,w:190,h:147},
+  ]},
+  l3:{zones:[
+    {id:'nobu',   name:'Nobu Dubai Square', sub:'Japanese-Peruvian · AED 350 · N Terrace', cat:'dining',  x:8,  y:34,w:212,h:225},
+    {id:'zuma',   name:'Zuma',              sub:'Japanese · AED 280 · S Terrace',           cat:'dining',  x:228,y:34,w:218,h:225},
+    {id:'terrace',name:'Sky Terrace',       sub:'Open-air · Creek & Harbour Views',         cat:'outdoor', x:8,  y:267,w:438,h:75},
+  ]},
+};
+
+/* Parking layouts */
+const PARKING={
+  b1:{spaces:320,ev:12,occ:67,evZone:'East Wing',  ramp:'North Ramp'},
+  b2:{spaces:280,ev:8, occ:45,evZone:'North Corner',ramp:'North Ramp'},
+};
+
+/* Navigation entry point (escalator/lift lobby) per floor */
+const NAV_ENTRY={gf:{x:228,y:365},l1:{x:228,y:173},l2:{x:228,y:173},l3:{x:228,y:285}};
+
+const NS='http://www.w3.org/2000/svg';
+function se(p,tag,a,txt){
+  const el=document.createElementNS(NS,tag);
+  for(const[k,v]of Object.entries(a)) el.setAttribute(k,v);
+  if(txt!=null) el.textContent=txt; p.appendChild(el); return el;
+}
+
+let curLvl='l1', selZone=null;
+
+function buildLvlTabs(){
+  const w=document.getElementById('lvlTabs'); w.innerHTML='';
+  LVLS.forEach(l=>{
+    const b=document.createElement('button');
+    b.className='lvlTab'+(l.id===curLvl?' on':'');
+    b.textContent=l.label; b.title=l.name;
+    b.onclick=()=>showLevel(l.id);
+    w.appendChild(b);
+  });
+}
+
+function showLevel(id){
+  curLvl=id; selZone=null;
+  document.querySelectorAll('.lvlTab').forEach((b,i)=>b.classList.toggle('on',LVLS[i].id===id));
+  const mc=document.getElementById('mapContent'); mc.innerHTML='';
+  drawFloor(id);
+  document.getElementById('mapInfo').textContent='Tap a location for directions · '+LVLS.find(l=>l.id===id).name;
+}
+
+/* ── Main floor plan SVG renderer ── */
+function drawFloor(id){
+  const mc=document.getElementById('mapContent'); mc.innerHTML='';
+  if(id==='b1'||id==='b2'){ renderParking(mc,PARKING[id],id); return; }
+
+  const fl=FLOORS[id];
+  const svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('viewBox','0 0 640 360');
+  svg.setAttribute('width','100%');
+  svg.setAttribute('height','355');
+  svg.style.cssText='display:block;border-radius:8px;cursor:default';
+  mc.appendChild(svg);
+
+  /* Background */
+  se(svg,'rect',{x:0,y:0,width:640,height:360,fill:'#020c18'});
+
+  /* Floor plan area */
+  se(svg,'rect',{x:2,y:2,width:452,height:356,rx:6,fill:'#030f1c',stroke:'rgba(0,212,255,.2)','stroke-width':'1'});
+
+  /* Header band */
+  se(svg,'rect',{x:2,y:2,width:452,height:28,rx:5,fill:'rgba(0,212,255,.07)'});
+  se(svg,'text',{x:228,y:20,fill:'rgba(0,212,255,.75)','font-size':'9','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace','font-weight':'700','letter-spacing':'2.5'},
+    'DUBAI SQUARE  ·  '+(LVLS.find(l=>l.id===id)?.name||id).toUpperCase());
+
+  /* North arrow */
+  se(svg,'text',{x:440,y:18,fill:'rgba(0,212,255,.3)','font-size':'8','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace'},'N ↑');
+
+  /* Main horizontal corridor (not L3) */
+  if(id!=='l3'){
+    se(svg,'rect',{x:2,y:155,width:452,height:36,fill:'#041220'});
+    se(svg,'text',{x:228,y:177,fill:'rgba(0,212,255,.12)','font-size':'7','text-anchor':'middle',
+      'font-family':'JetBrains Mono,monospace','letter-spacing':'3'},'MAIN CORRIDOR');
+    /* Escalators */
+    [[165,159],[198,159]].forEach(([ex,ey])=>{
+      se(svg,'rect',{x:ex,y:ey,width:22,height:28,rx:3,fill:'#071828',stroke:'rgba(0,212,255,.22)','stroke-width':'1'});
+      se(svg,'text',{x:ex+11,y:ey+17,fill:'rgba(0,212,255,.35)','font-size':'5.5','text-anchor':'middle',
+        'font-family':'JetBrains Mono,monospace'},'ESC');
+    });
+    /* Central lift/atrium circle */
+    se(svg,'circle',{cx:228,cy:173,r:20,fill:'#040d1c',stroke:'rgba(0,212,255,.42)','stroke-width':'1.2','stroke-dasharray':'4 2'});
+    se(svg,'text',{x:228,y:170,fill:'rgba(0,212,255,.5)','font-size':'5.5','text-anchor':'middle',
+      'font-family':'JetBrains Mono,monospace'},'ATRIUM');
+    se(svg,'text',{x:228,y:180,fill:'rgba(0,212,255,.3)','font-size':'5','text-anchor':'middle',
+      'font-family':'JetBrains Mono,monospace'},'⬆ LIFT');
+    /* Structural columns */
+    [[60,150],[60,191],[396,150],[396,191]].forEach(([cx,cy])=>{
+      se(svg,'rect',{x:cx-4,y:cy-4,width:8,height:8,fill:'#0a1e34',stroke:'rgba(0,212,255,.35)','stroke-width':'1'});
+    });
+  }
+
+  /* GF entrance arrow */
+  if(id==='gf'){
+    se(svg,'polygon',{points:'228,352 222,342 228,346 234,342',fill:'rgba(0,212,255,.55)'});
+    se(svg,'text',{x:228,y:357,fill:'rgba(0,212,255,.35)','font-size':'6','text-anchor':'middle',
+      'font-family':'JetBrains Mono,monospace'},'▼ MAIN ENTRANCE');
+  }
+
+  /* Scale bar */
+  se(svg,'line',{x1:14,y1:350,x2:100,y2:350,stroke:'rgba(0,212,255,.2)','stroke-width':'1'});
+  se(svg,'text',{x:57,y:348,fill:'rgba(0,212,255,.2)','font-size':'5.5','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace'},'0——50m');
+
+  /* Legend panel */
+  se(svg,'rect',{x:458,y:2,width:180,height:356,rx:6,fill:'#010810',stroke:'rgba(0,212,255,.1)','stroke-width':'1'});
+  /* ALYA branding at top of legend */
+  se(svg,'text',{x:548,y:16,fill:'#00d4ff','font-size':'13','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace','font-weight':'700','letter-spacing':'5',
+    filter:'drop-shadow(0 0 6px #00d4ff)'},'ALYA');
+  se(svg,'text',{x:548,y:26,fill:'rgba(0,212,255,.35)','font-size':'6','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace','letter-spacing':'2'},'AI CONCIERGE · DIRECTORY');
+  se(svg,'line',{x1:466,y1:30,x2:630,y2:30,stroke:'rgba(0,212,255,.15)','stroke-width':'1'});
+
+  /* Draw zones + legend */
+  let legY=36, lastCat='';
+  fl.zones.forEach(z=>{
+    drawZone(svg, z, id);
+    if(z.cat!==lastCat){
+      const c=CAT_COLOR[z.cat]||'#446688';
+      se(svg,'rect',{x:462,y:legY,width:172,height:13,rx:2,fill:c+'28'});
+      se(svg,'text',{x:466,y:legY+10,fill:c,'font-size':'7','font-family':'JetBrains Mono,monospace',
+        'font-weight':'700'},z.cat.toUpperCase());
+      legY+=15; lastCat=z.cat;
+    }
+    const c=CAT_COLOR[z.cat]||'#446688';
+    se(svg,'text',{x:470,y:legY+8,fill:'rgba(200,220,240,.75)','font-size':'8',
+      'font-family':'JetBrains Mono,monospace'},z.name);
+    se(svg,'text',{x:470,y:legY+17,fill:c+'88','font-size':'6.5',
+      'font-family':'JetBrains Mono,monospace'},z.sub.slice(0,28));
+    legY+=22;
+    if(legY>330){ legY=36; } /* overflow guard */
+  });
+}
+
+/* ── Draw individual store zone ── */
+function drawZone(svg, z, lvl){
+  const isSel=selZone&&selZone.id===z.id;
+  const col=CAT_COLOR[z.cat]||'#336688';
+  const g=document.createElementNS(NS,'g');
+  g.style.cursor='pointer';
+
+  /* Zone fill */
+  se(g,'rect',{x:z.x,y:z.y,width:z.w,height:z.h,rx:3,
+    fill: isSel ? col+'28' : col+'0f',
+    stroke: isSel ? col : col+'55',
+    'stroke-width': isSel ? '2' : '1'});
+
+  /* Horizontal texture lines */
+  for(let i=1;i<5;i++){
+    se(g,'line',{x1:z.x,y1:z.y+z.h/5*i,x2:z.x+z.w,y2:z.y+z.h/5*i,
+      stroke:col+'1a','stroke-width':'1'});
+  }
+
+  /* Store name label */
+  const cx=z.x+z.w/2, cy=z.y+z.h/2;
+  const fs=Math.min(11, Math.max(7, z.w/9));
+  se(g,'text',{x:cx,y:cy+(z.sub?-4:2),fill:isSel?col:'rgba(205,225,245,.88)',
+    'font-size':fs,'text-anchor':'middle','font-family':'JetBrains Mono,monospace','font-weight':'700'},
+    z.name);
+  if(z.sub){
+    const sub=z.sub.split('·')[0].trim();
+    se(g,'text',{x:cx,y:cy+fs+2,fill:col+'aa',
+      'font-size':Math.min(6.5,z.w/13),'text-anchor':'middle','font-family':'JetBrains Mono,monospace'},sub);
+  }
+
+  /* Selection highlight ring */
+  if(isSel){
+    const ring=se(g,'rect',{x:z.x-2,y:z.y-2,width:z.w+4,height:z.h+4,rx:4,
+      fill:'none',stroke:col,'stroke-width':'1.5',opacity:.7});
+    ring.style.animation='mapPulse 1.4s ease-in-out infinite';
+    se(g,'circle',{cx:cx,cy:z.y+10,r:5,fill:col});
+    se(g,'text',{x:cx,y:z.y+14.5,fill:'#fff','font-size':'7','text-anchor':'middle','font-weight':'700'},'✓');
+  }
+
+  g.addEventListener('click',()=>navigateTo(z,lvl));
+  svg.appendChild(g);
+}
+
+/* ── Navigate to a zone ── */
+function navigateTo(zone, lvl){
+  selZone=zone;
+  const mc=document.getElementById('mapContent'); mc.innerHTML='';
+  drawFloor(lvl);
+  const svg=mc.querySelector('svg');
+  if(!svg) return;
+  const en=NAV_ENTRY[lvl]||{x:228,y:360};
+  const tx=zone.x+zone.w/2, ty=zone.y+zone.h/2;
+  const corrY=173;
+  /* Corridor-following path */
+  const d=`M ${en.x} ${en.y} L ${en.x} ${corrY} L ${tx} ${corrY} L ${tx} ${ty}`;
+  const path=document.createElementNS(NS,'path');
+  path.setAttribute('d',d);
+  path.setAttribute('stroke','#00d4ff');
+  path.setAttribute('stroke-width','2.5');
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke-dasharray','900 900');
+  path.setAttribute('stroke-dashoffset','900');
+  path.setAttribute('opacity','.88');
+  path.style.animation='mapDash .9s ease-out forwards';
+  svg.appendChild(path);
+  /* YOU ARE HERE dot */
+  se(svg,'circle',{cx:en.x,cy:en.y,r:7,fill:'#00d4ff',opacity:'.15'});
+  se(svg,'circle',{cx:en.x,cy:en.y,r:4,fill:'#00d4ff'});
+  se(svg,'rect',{x:en.x-42,y:en.y-26,width:84,height:28,rx:4,
+    fill:'rgba(0,10,22,.88)',stroke:'#00d4ff','stroke-width':'1'});
+  se(svg,'text',{x:en.x,y:en.y-16,fill:'#00d4ff','font-size':'8','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace','font-weight':'700','letter-spacing':'1'},'ALYA');
+  se(svg,'text',{x:en.x,y:en.y-7,fill:'rgba(0,212,255,.55)','font-size':'5.5','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace'},'YOU ARE HERE');
+  /* Destination label above the zone */
+  const dtx=zone.x+zone.w/2, dty=zone.y;
+  se(svg,'rect',{x:dtx-55,y:dty-22,width:110,height:18,rx:3,
+    fill:'rgba(0,212,255,.15)',stroke:'#00d4ff','stroke-width':'1'});
+  se(svg,'text',{x:dtx,y:dty-9,fill:'#00d4ff','font-size':'8','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace','font-weight':'700'},zone.name);
+  document.getElementById('mapInfo').textContent=`Route to ${zone.name} · ${zone.sub.split('·')[0].trim()}`;
+}
+
+function renderParking(mc, fl, id){
+  const carKey=`myCar_${id}`;
+  const savedCar=localStorage.getItem(carKey);
+  const free=Math.round(fl.spaces*(1-fl.occ/100));
+
+  /* ── SVG parking plan ── */
+  const svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('viewBox','0 0 640 300');
+  svg.setAttribute('width','100%');
+  svg.setAttribute('height','295');
+  svg.style.cssText='display:block;border-radius:8px;cursor:default';
+  mc.appendChild(svg);
+
+  /* background */
+  se(svg,'rect',{x:0,y:0,width:640,height:300,fill:'#010c18'});
+  se(svg,'rect',{x:2,y:2,width:452,height:296,rx:6,fill:'#02101e',stroke:'rgba(0,212,255,.18)','stroke-width':'1'});
+
+  /* header */
+  se(svg,'rect',{x:2,y:2,width:452,height:22,rx:5,fill:'rgba(0,212,255,.06)'});
+  se(svg,'text',{x:228,y:16,fill:'rgba(0,212,255,.65)','font-size':'9','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace','font-weight':'700','letter-spacing':'2'},
+    `DUBAI SQUARE  ·  ${id.toUpperCase()} UNDERGROUND PARKING`);
+
+  /* North ramp indicator — below header, centered, clearly separated */
+  se(svg,'rect',{x:170,y:26,width:116,height:16,rx:3,fill:'rgba(255,180,0,.08)',stroke:'rgba(255,180,0,.3)','stroke-width':'1'});
+  se(svg,'text',{x:228,y:37,fill:'rgba(255,180,0,.55)','font-size':'6.5','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace','letter-spacing':'.5'},'↓  NORTH RAMP  ·  ENTRANCE / EXIT');
+
+  /* EV zone config */
+  const evEast=(fl.evZone==='East Wing');
+  const evNorth=(fl.evZone==='North Corner');
+
+  /* ── Draw 3 sections: A (left), B (center), C (right/EV) ── */
+  /* Section layout: 3 columns of bays separated by driving lanes */
+  /* Each section has rows of bays on both sides of a central lane */
+  const sections=[
+    {label:'A', x:8,  isEV:evNorth},
+    {label:'B', x:160,isEV:false},
+    {label:'C', x:312,isEV:evEast},
+  ];
+  const secW=136, spW=15, spH=26, laneH=20, bayRows=4;
+
+  sections.forEach((sec,si)=>{
+    const col=sec.isEV?'rgba(0,220,80,.55)':'rgba(0,140,220,.35)';
+    const fillEV='rgba(0,30,12,.9)', fillFree='rgba(2,14,26,.9)', fillOcc='rgba(22,4,4,.9)';
+
+    /* Section label */
+    se(svg,'text',{x:sec.x+secW/2,y:54,fill:sec.isEV?'rgba(0,220,80,.55)':'rgba(0,212,255,.3)',
+      'font-size':'8','text-anchor':'middle','font-family':'JetBrains Mono,monospace','font-weight':'700'},
+      `SECTION ${sec.label}${sec.isEV?' · ⚡ EV':''}`);
+
+    const numSpaces=Math.floor(secW/spW);
+
+    for(let row=0;row<bayRows;row++){
+      /* Two rows of bays + one driving lane between pairs */
+      const topY=60+row*(spH*2+laneH);
+      const laneY=topY+spH;
+      const botY=laneY+laneH;
+
+      /* Driving lane */
+      se(svg,'rect',{x:sec.x,y:laneY,width:secW,height:laneH,fill:'#030f1c'});
+      /* Lane arrow (alternating direction) */
+      se(svg,'text',{x:sec.x+secW/2,y:laneY+14,fill:'rgba(255,220,0,.18)','font-size':'9',
+        'text-anchor':'middle'},(row%2===0)?'→':'←');
+      /* Lane center line */
+      se(svg,'line',{x1:sec.x,y1:laneY+laneH/2,x2:sec.x+secW,y2:laneY+laneH/2,
+        stroke:'rgba(255,220,0,.12)','stroke-width':'1','stroke-dasharray':'6 4'});
+
+      /* Top bay row + bottom bay row */
+      [topY, botY].forEach(by=>{
+        for(let c=0;c<numSpaces;c++){
+          const spaceIdx=si*bayRows*numSpaces*2 + row*numSpaces*2 + (by===botY?numSpaces:0) + c;
+          const isMyCar=savedCar===String(spaceIdx);
+          /* Deterministic occupancy based on index */
+          const occ=!isMyCar && (spaceIdx*7+13)%100 < fl.occ;
+          const spx=sec.x+c*spW;
+          const fill=isMyCar?'rgba(0,60,180,.5)':sec.isEV?(occ?fillEV:'rgba(0,20,8,.9)'):occ?fillOcc:fillFree;
+          const stroke=isMyCar?'#00d4ff':sec.isEV?'rgba(0,200,80,.4)':'rgba(0,100,160,.25)';
+          const sw=isMyCar?'1.5':'1';
+          const rect=se(svg,'rect',{x:spx,y:by,width:spW-1,height:spH,rx:1,fill,stroke,'stroke-width':sw});
+          /* Parking space divider line */
+          se(svg,'line',{x1:spx,y1:by,x2:spx,y2:by+spH,stroke:'rgba(0,60,120,.3)','stroke-width':'.5'});
+          /* EV lightning bolt */
+          if(sec.isEV&&!occ&&!isMyCar){
+            se(svg,'text',{x:spx+spW/2,y:by+18,fill:'rgba(0,220,80,.55)','font-size':'8',
+              'text-anchor':'middle'},'⚡');
+          }
+          /* My car marker */
+          if(isMyCar){
+            se(svg,'text',{x:spx+spW/2,y:by+19,fill:'#00d4ff','font-size':'11','text-anchor':'middle'},'🚗');
+          }
+          /* Click to mark */
+          if(!occ||isMyCar){
+            rect.style.cursor='pointer';
+            rect.addEventListener('click',()=>markMyCarSVG(id,spaceIdx,svg,
+              mc.querySelector(`#carFinder-${id}`),fl,sec.label,Math.floor(row)+1,c+1));
+          }
+        }
+      });
+    }
+
+    /* Column markers (structural pillars) */
+    [60+bayRows*(spH*2+laneH)+10].forEach(py=>{
+      for(let c=0;c<=2;c++){
+        se(svg,'rect',{x:sec.x+c*(secW/2)-3,y:py,width:6,height:6,
+          fill:'#0a1e34',stroke:'rgba(0,212,255,.3)','stroke-width':'1'});
+      }
+    });
+  });
+
+  /* ── Walking path (cyan dashed, horizontal) ── */
+  const walkY=60+bayRows*(spH*2+laneH)+6;
+  se(svg,'line',{x1:8,y1:walkY,x2:444,y2:walkY,stroke:'rgba(0,212,255,.35)','stroke-width':'1.5',
+    'stroke-dasharray':'8 5'});
+  se(svg,'text',{x:228,y:walkY-3,fill:'rgba(0,212,255,.28)','font-size':'6.5','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace'},'— PEDESTRIAN WALKWAY —');
+
+  /* ── Legend / stats panel (right) ── */
+  se(svg,'rect',{x:458,y:2,width:180,height:296,rx:6,fill:'#010810',stroke:'rgba(0,212,255,.1)','stroke-width':'1'});
+  const stats=[
+    {n:fl.spaces,l:'TOTAL SPACES', c:'rgba(0,212,255,.7)'},
+    {n:free,      l:'AVAILABLE',   c:'#64ffda'},
+    {n:fl.ev,     l:'EV BAYS',     c:'#00e850'},
+    {n:fl.occ+'%',l:'OCCUPANCY',   c:fl.occ>70?'#ff4444':'#44dd88'},
+  ];
+  stats.forEach((s,i)=>{
+    const sy=20+i*60;
+    se(svg,'rect',{x:462,y:sy,width:172,height:52,rx:4,fill:'rgba(0,212,255,.04)',stroke:'rgba(0,212,255,.1)','stroke-width':'1'});
+    se(svg,'text',{x:548,y:sy+28,fill:s.c,'font-size':'20','text-anchor':'middle',
+      'font-family':'JetBrains Mono,monospace','font-weight':'700'},String(s.n));
+    se(svg,'text',{x:548,y:sy+42,fill:'rgba(0,212,255,.4)','font-size':'7','text-anchor':'middle',
+      'font-family':'JetBrains Mono,monospace','letter-spacing':'1'},s.l);
+  });
+  se(svg,'rect',{x:462,y:258,width:172,height:30,rx:4,fill:'rgba(0,212,255,.04)',stroke:'rgba(0,212,255,.1)','stroke-width':'1'});
+  se(svg,'text',{x:548,y:275,fill:'rgba(0,212,255,.35)','font-size':'7','text-anchor':'middle',
+    'font-family':'JetBrains Mono,monospace'},`EV: ${fl.evZone}`);
+
+  /* ── Car finder panel (below SVG) ── */
+  const cfDiv=document.createElement('div');
+  cfDiv.id=`carFinder-${id}`;
+  cfDiv.className='carFinder';
+  mc.appendChild(cfDiv);
+  renderCarFinder(cfDiv, id, savedCar, fl);
+}
+
+function markMyCarSVG(id, spaceIdx, svg, panel, fl, section, row, col){
+  localStorage.setItem(`myCar_${id}`, String(spaceIdx));
+  const mc=document.getElementById('mapContent'); mc.innerHTML='';
+  renderParking(mc, fl, id);
+  document.getElementById('mapInfo').textContent=
+    `Car saved · Section ${section}, Row ${row}, Space ${col} — tap "Get Directions" for navigation`;
+}
+
+/* Compute SVG center coords of a parking space from its index */
+function spaceCenter(spaceIdx){
+  const secXs=[8,160,312], secLabels=['A','B','C'];
+  const spW=15,spH=26,laneH=20,bayRows=4,numSpaces=9;
+  const perSec=bayRows*numSpaces*2;
+  const si=Math.floor(spaceIdx/perSec);
+  const rem=spaceIdx%perSec;
+  const rowIdx=Math.floor(rem/(numSpaces*2));
+  const isBot=Math.floor((rem%(numSpaces*2))/numSpaces)===1;
+  const colIdx=rem%numSpaces;
+  const topY=60+rowIdx*(spH*2+laneH);
+  const by=isBot?topY+spH+laneH:topY;
+  return{
+    x: secXs[si]!=null ? secXs[si]+colIdx*spW+spW/2 : 228,
+    y: by+spH/2,
+    section: secLabels[si]||'A',
+    row: rowIdx+1,
+    col: colIdx+1
+  };
+}
+
+function getCarDirections(id){
+  const saved=localStorage.getItem(`myCar_${id}`);
+  if(!saved){ document.getElementById('mapInfo').textContent='No car registered.'; return; }
+  const pos=spaceCenter(parseInt(saved));
+  const svg=document.querySelector('#mapContent svg');
+  if(!svg){ document.getElementById('mapInfo').textContent='Open the parking map first.'; return; }
+  /* Remove previous nav */
+  const old=svg.querySelector('#carNav');
+  if(old) old.remove();
+  const g=document.createElementNS(NS,'g');
+  g.id='carNav';
+  /* Ramp entry point (below ramp label) */
+  const rx=228, ry=44;
+  /* L-shaped path: ramp → top walk level → turn horizontally → down to space */
+  const d=`M ${rx} ${ry} L ${rx} 58 L ${pos.x} 58 L ${pos.x} ${pos.y}`;
+  const path=document.createElementNS(NS,'path');
+  path.setAttribute('d',d);
+  path.setAttribute('stroke','#00d4ff');
+  path.setAttribute('stroke-width','2.2');
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke-dasharray','600 600');
+  path.setAttribute('stroke-dashoffset','600');
+  path.setAttribute('opacity','.9');
+  path.style.animation='mapDash .9s ease-out forwards';
+  g.appendChild(path);
+  /* Destination ring */
+  const ring=document.createElementNS(NS,'circle');
+  ring.setAttribute('cx',pos.x); ring.setAttribute('cy',pos.y);
+  ring.setAttribute('r','10'); ring.setAttribute('fill','none');
+  ring.setAttribute('stroke','#00d4ff'); ring.setAttribute('stroke-width','2');
+  ring.style.animation='carPulse 1s ease-in-out infinite';
+  g.appendChild(ring);
+  /* Destination label */
+  const lbl=document.createElementNS(NS,'text');
+  lbl.setAttribute('x',pos.x); lbl.setAttribute('y',pos.y-14);
+  lbl.setAttribute('fill','#00d4ff'); lbl.setAttribute('font-size','7.5');
+  lbl.setAttribute('text-anchor','middle');
+  lbl.setAttribute('font-family','JetBrains Mono,monospace');
+  lbl.setAttribute('font-weight','700');
+  lbl.textContent=`SECTION ${pos.section} · ROW ${pos.row} · SPACE ${pos.col}`;
+  g.appendChild(lbl);
+  /* Ramp start dot + ALYA label */
+  const dot=document.createElementNS(NS,'circle');
+  dot.setAttribute('cx',rx); dot.setAttribute('cy',ry);
+  dot.setAttribute('r','5'); dot.setAttribute('fill','rgba(255,180,0,.8)');
+  g.appendChild(dot);
+  const alyaLbl=document.createElementNS(NS,'text');
+  alyaLbl.setAttribute('x',rx); alyaLbl.setAttribute('y',ry-8);
+  alyaLbl.setAttribute('fill','#00d4ff'); alyaLbl.setAttribute('font-size','8');
+  alyaLbl.setAttribute('text-anchor','middle');
+  alyaLbl.setAttribute('font-family','JetBrains Mono,monospace');
+  alyaLbl.setAttribute('font-weight','700'); alyaLbl.setAttribute('letter-spacing','2');
+  alyaLbl.textContent='ALYA';
+  g.appendChild(alyaLbl);
+  svg.appendChild(g);
+  document.getElementById('mapInfo').textContent=
+    `Your car: Section ${pos.section}, Row ${pos.row}, Space ${pos.col} · Follow the blue path from the ramp`;
+}
+
+function renderCarFinder(panel, id, savedCar, fl){
+  panel.innerHTML='';
+  const h=document.createElement('h4');
+  h.textContent='🚗  FIND MY CAR';
+  panel.appendChild(h);
+
+  if(savedCar===null||savedCar===undefined){
+    const hint=document.createElement('div');
+    hint.style.cssText='font-size:8px;color:rgba(0,212,255,.3);letter-spacing:.5px;padding:8px 0';
+    hint.textContent='No car registered. Tap any free space on the map above to save your spot.';
+    panel.appendChild(hint);
+    return;
+  }
+
+  const pos=spaceCenter(parseInt(savedCar));
+  const isEV=(fl.evZone==='East Wing'&&pos.section==='C')||(fl.evZone==='North Corner'&&pos.section==='A');
+  const rampSteps=id==='b1'?'North Ramp → 1 level up · head to Section':'North Ramp → 2 levels up · head to Section';
+
+  const loc=document.createElement('div');
+  loc.className='carLoc';
+  loc.innerHTML=`
+    <div class="space-num">${id.toUpperCase()} · SECTION ${pos.section} · ROW ${pos.row} · SPACE ${pos.col}</div>
+    <div class="space-dir">
+      ${isEV?'⚡ EV Charging Bay · ':''}<br>
+      From entrance: ${rampSteps} ${pos.section}<br>
+      The 🚗 marker shows your exact space
+    </div>`;
+  panel.appendChild(loc);
+
+  const btns=document.createElement('div');
+  btns.className='carBtns';
+
+  const dirBtn=document.createElement('button');
+  dirBtn.className='carBtn';
+  dirBtn.textContent='📍 Get Directions';
+  dirBtn.addEventListener('click',()=>getCarDirections(id));
+  btns.appendChild(dirBtn);
+
+  const clrBtn=document.createElement('button');
+  clrBtn.className='carBtn danger';
+  clrBtn.textContent='✕ Clear';
+  clrBtn.addEventListener('click',()=>clearMyCar(id));
+  btns.appendChild(clrBtn);
+
+  panel.appendChild(btns);
+}
+
+function clearMyCar(id){
+  localStorage.removeItem(`myCar_${id}`);
+  const mc=document.getElementById('mapContent'); mc.innerHTML='';
+  renderParking(mc, PARKING[id], id);
+  document.getElementById('mapInfo').textContent='Car location cleared.';
+}
+
+/* ─── Open/close ─── */
+function openMap(type, storeId){
+  const lvlMap={parking:'b2',floors:'l1',creek:'gf',contact:'l2'};
+  const target=lvlMap[type]||'l1';
+  curLvl=target; selZone=null;
+  buildLvlTabs();
+  const mc=document.getElementById('mapContent'); mc.innerHTML='';
+  drawFloor(target);
+  document.getElementById('mapInfo').textContent='Tap a location for directions · '+LVLS.find(l=>l.id===target).name;
+  document.getElementById('mapOverlay').classList.add('show');
+  if(storeId){
+    const fl=FLOORS[target];
+    if(fl&&fl.zones){
+      const z=fl.zones.find(z=>z.id===storeId||z.name.toLowerCase().includes(storeId.toLowerCase()));
+      if(z) setTimeout(()=>navigateTo(z,target),400);
+    }
+  }
+}
+
+function closeMap(){
+  document.getElementById('mapOverlay').classList.remove('show');
+  selZone=null;
+}
+
+
+function greet(){
+  const msg = WELCOME[LANG] || WELCOME.en;
+  speak(msg);
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     ALYA DEMO TOUR
+════════════════════════════════════════════════════ -->
+<style>
+#demoStartBtn{
+  position:fixed;bottom:28px;right:356px;z-index:500;
+  padding:10px 22px;border-radius:20px;
+  border:1px solid rgba(0,212,255,.45);
+  background:rgba(0,212,255,.07);
+  color:#00d4ff;font-size:10px;font-family:'JetBrains Mono',monospace;
+  letter-spacing:2px;cursor:pointer;transition:all .25s;
+  backdrop-filter:blur(6px);
+}
+#demoStartBtn:hover{background:rgba(0,212,255,.2);box-shadow:0 0 22px rgba(0,212,255,.25)}
+#demoBar{
+  display:none;position:fixed;bottom:0;left:0;right:340px;z-index:500;
+  height:50px;background:rgba(2,6,18,.96);border-top:1px solid rgba(0,212,255,.14);
+  align-items:center;padding:0 18px;gap:14px;
+  font-family:'JetBrains Mono',monospace;backdrop-filter:blur(10px);
+}
+#demoBar.vis{display:flex}
+#demoSceneNum{font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1px;min-width:56px}
+#demoDots{display:flex;gap:5px;flex:1;justify-content:center}
+.ddot{width:8px;height:8px;border-radius:50%;background:rgba(0,212,255,.12);
+  border:1px solid rgba(0,212,255,.2);cursor:pointer;transition:all .2s;flex-shrink:0}
+.ddot.act{background:#00d4ff;box-shadow:0 0 8px #00d4ff;border-color:#00d4ff}
+.ddot.done{background:rgba(0,212,255,.32);border-color:rgba(0,212,255,.38)}
+.ddot:hover{border-color:#00d4ff}
+#demoPrev,#demoNext{
+  padding:6px 16px;border-radius:10px;border:1px solid rgba(0,212,255,.22);
+  background:rgba(0,212,255,.05);color:rgba(0,212,255,.65);
+  font-size:8.5px;letter-spacing:1.5px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;transition:all .2s;
+}
+#demoPrev:hover,#demoNext:hover{background:rgba(0,212,255,.16);color:#00d4ff;border-color:#00d4ff}
+#demoStop{
+  padding:6px 12px;border-radius:10px;border:1px solid rgba(255,85,85,.2);
+  background:rgba(255,85,85,.05);color:rgba(255,85,85,.55);
+  font-size:8px;letter-spacing:1px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;transition:all .2s;
+}
+#demoStop:hover{background:rgba(255,85,85,.14);color:#ff5555}
+#demoProgressBar{height:2px;position:absolute;bottom:0;left:0;
+  background:linear-gradient(90deg,#00d4ff,#64ffda);transition:width .5s ease}
+#demoCallout{
+  display:none;position:fixed;z-index:700;
+  max-width:300px;min-width:220px;
+  background:rgba(2,6,20,.97);
+  border:1px solid rgba(0,212,255,.4);
+  border-radius:12px;padding:15px 17px;
+  box-shadow:0 0 40px rgba(0,212,255,.18),0 8px 32px rgba(0,0,0,.5);
+  font-family:'JetBrains Mono',monospace;
+  pointer-events:none;transition:top .3s,left .3s;
+}
+#demoCallout.vis{display:block}
+.ct-badge{
+  display:inline-block;font-size:8px;color:rgba(0,212,255,.5);
+  letter-spacing:2px;margin-bottom:8px;
+  border:1px solid rgba(0,212,255,.2);padding:2px 8px;border-radius:4px;
+  background:rgba(0,212,255,.05);
+}
+.ct-title{font-size:12.5px;color:#fff;font-weight:700;letter-spacing:.8px;margin-bottom:7px}
+.ct-desc{font-size:9.5px;color:rgba(175,210,240,.82);line-height:1.72;letter-spacing:.2px}
+.demo-hl{
+  outline:2px solid rgba(0,212,255,.65)!important;
+  box-shadow:0 0 20px rgba(0,212,255,.25),inset 0 0 14px rgba(0,212,255,.04)!important;
+  border-radius:6px!important;
+}
+</style>
+
+<button id="demoStartBtn" onclick="startAlyademo()">▶ DEMO</button>
+
+<div id="demoBar">
+  <div id="demoSceneNum">01 / 12</div>
+  <div id="demoDots"></div>
+  <button id="demoPrev" onclick="alyaDemoPrev()">◀</button>
+  <button id="demoNext" onclick="alyaDemoNext()">▶</button>
+  <button id="demoStop" onclick="stopAlyademo()">✕ END</button>
+  <div id="demoProgressBar"></div>
+</div>
+
+<div id="demoCallout">
+  <div class="ct-badge" id="ctBadge">SCENE 01</div>
+  <div class="ct-title" id="ctTitle">TITLE</div>
+  <div class="ct-desc"  id="ctDesc">Description</div>
+</div>
+
+<script>
+(function(){
+  /* ─── SAHNE LİSTESİ ─── */
+  const SC = [
+    {
+      title:'MEET ALYA',
+      desc:'ALYA is Dubai Square\'s AI concierge — a real-time 3D hologram powered by generative AI. She serves 20 000+ daily visitors in English, Arabic and Turkish, 24/7.',
+      hl:'canvas#c',
+      enter(){
+        const b=[...document.querySelectorAll('.ab')].find(b=>b.textContent.includes('WAVING'));
+        if(b) setTimeout(()=>b.click(),600);
+      }
+    },
+    {
+      title:'HOLOGRAM MODES',
+      desc:'4 live shader modes: HOLOGRAM (cyan scan-line), GOLD (luxury finish), X-RAY (crystal wireframe), REAL (photorealistic). Switch instantly with no reload.',
+      hl:'.modes',
+      enter(){
+        const btns=document.querySelectorAll('.mb');
+        let i=1;
+        window._dIv=setInterval(()=>{ if(i>3){clearInterval(window._dIv);return;} setMode(i,btns[i]); i++; },1100);
+      },
+      exit(){ clearInterval(window._dIv); setMode(0,document.querySelectorAll('.mb')[0]); }
+    },
+    {
+      title:'FBX ANIMATIONS',
+      desc:'Alya performs real motion-captured FBX gestures — waving, pointing, nodding, stretching. Each animation is context-aware and triggered automatically during conversation.',
+      hl:'#animPanel',
+      enter(){
+        const b=[...document.querySelectorAll('.ab')].find(b=>b.textContent.includes('WAVING'));
+        if(b) b.click();
+      }
+    },
+    {
+      title:'POINTING & DIRECTIONS',
+      desc:'When guiding a guest to a restaurant or store, Alya physically points the way. Gesture animations are cross-faded seamlessly with the idle breathing motion.',
+      hl:'#animPanel',
+      enter(){
+        const b=[...document.querySelectorAll('.ab')].find(b=>b.textContent.includes('POINTING'));
+        if(b) b.click();
+      }
+    },
+    {
+      title:'MULTILINGUAL AI',
+      desc:'Switch to Turkish or Arabic with one tap. Alya\'s voice synthesis selects the correct accent and intonation automatically. Conversation history is preserved across language changes.',
+      hl:'.langs',
+      enter(){
+        setLang('ar');
+        setTimeout(()=>{ speak(WELCOME.ar); },500);
+      },
+      exit(){ setLang('en'); }
+    },
+    {
+      title:'NATURAL CONVERSATION',
+      desc:'Guests type or speak naturally. Alya understands complex intent — "book me a table for 4 at the best Japanese restaurant" triggers the right action without any menu navigation.',
+      hl:'#inputRow',
+      enter(){
+        const inp=document.getElementById('inp');
+        const q="Best restaurant for a romantic dinner tonight?";
+        let i=0; inp.value='';
+        window._dTyp=setInterval(()=>{
+          if(i>=q.length){clearInterval(window._dTyp); setTimeout(()=>sendMsg(),500); return;}
+          inp.value+=q[i++];
+        },45);
+      },
+      exit(){ clearInterval(window._dTyp); }
+    },
+    {
+      title:'ACTION CARDS',
+      desc:'Alya surfaces contextual action cards after each response — Reserve Table, Floor Map, Creek Promenade. One tap triggers the relevant system without re-typing.',
+      hl:'#msgs',
+      enter(){}
+    },
+    {
+      title:'TABLE RESERVATION',
+      desc:'Complete restaurant bookings in-chat: venue, date, time, party size — then receive a booking reference. Integrated with Nobu, Zuma, Cipriani and Nusr-Et.',
+      hl:'#overlay .modal',
+      enter(){ openReservation('Nobu Dubai Square'); },
+      exit(){ closeModal(); }
+    },
+    {
+      title:'INTERACTIVE FLOOR MAP',
+      desc:'6-level interactive SVG map covering GF, L1, L2, L3, B1 and B2. Every store, café and venue is tappable. Navigation paths are drawn live with animated routing.',
+      hl:'#mapOverlay .mapBox',
+      enter(){ openMap('floors'); }
+    },
+    {
+      title:'LIVE NAVIGATION',
+      desc:'Select any destination and Alya draws a corridor-following animated path from your current position to the exact entrance — updated in real time as you move through the mall.',
+      hl:'#mapContent',
+      enter(){
+        showLevel('l3');
+        setTimeout(()=>{
+          const z=FLOORS.l3?.zones?.find(z=>z.id==='nobu');
+          if(z) navigateTo(z,'l3');
+        },500);
+      }
+    },
+    {
+      title:'SMART PARKING',
+      desc:'600 spaces across B1 and B2 with live occupancy. EV charging bay status, section-by-section availability, and the Car Finder system — save your spot and navigate back to it.',
+      hl:'#mapContent',
+      enter(){ showLevel('b2'); },
+      exit(){ closeMap(); }
+    },
+    {
+      title:'VOICE COMMANDS',
+      desc:'Guests speak directly to Alya — tap the mic or say her name. Live speech recognition in 3 languages. Ideal for hands-free kiosk deployment in the mall concourse.',
+      hl:'#micBtn',
+      enter(){
+        const m=document.getElementById('micBtn');
+        m.classList.add('speaking');
+        speak("Welcome to Dubai Square. I'm Alya — just say my name or tap the microphone to begin.");
+        setTimeout(()=>m.className='',3000);
+      }
+    },
+  ];
+
+  let cur=-1;
+
+  /* ─── DOTS ─── */
+  function buildDots(){
+    const d=document.getElementById('demoDots'); d.innerHTML='';
+    SC.forEach((_,i)=>{
+      const el=document.createElement('div');
+      el.className='ddot'+(i===cur?' act':i<cur?' done':'');
+      el.title=SC[i].title;
+      el.onclick=()=>goScene(i);
+      d.appendChild(el);
+    });
+  }
+
+  /* ─── CALLOUT POZISYONU ─── */
+  function placeCallout(hlSel){
+    const co=document.getElementById('demoCallout');
+    co.classList.add('vis');
+    const barH=50, pad=14;
+    const bodyW=window.innerWidth-340;
+    const coW=co.offsetWidth||260;
+    const coH=co.offsetHeight||130;
+    let top, left;
+    const el=hlSel?document.querySelector(hlSel):null;
+    if(el && el.offsetParent!==null){
+      const r=el.getBoundingClientRect();
+      // Try above first
+      top=r.top-coH-pad;
+      if(top<60) top=r.bottom+pad;
+      left=Math.max(12, Math.min(r.left+r.width/2-coW/2, bodyW-coW-12));
+    } else {
+      top=80; left=Math.max(12,bodyW/2-coW/2);
+    }
+    top=Math.max(60,Math.min(top, window.innerHeight-barH-coH-12));
+    co.style.top=top+'px'; co.style.left=left+'px';
+  }
+
+  /* ─── HIGHLIGHT ─── */
+  function clearHl(){ document.querySelectorAll('.demo-hl').forEach(e=>e.classList.remove('demo-hl')); }
+
+  /* ─── SAHNEYE GİT ─── */
+  function goScene(idx){
+    if(idx<0||idx>=SC.length) return;
+    if(cur>=0 && SC[cur].exit) SC[cur].exit();
+    clearHl();
+    cur=idx;
+    const s=SC[idx];
+    if(s.hl){ const el=document.querySelector(s.hl); if(el) el.classList.add('demo-hl'); }
+    document.getElementById('ctBadge').textContent=`SCENE ${String(idx+1).padStart(2,'0')} · ALYA`;
+    document.getElementById('ctTitle').textContent=s.title;
+    document.getElementById('ctDesc').textContent=s.desc;
+    document.getElementById('demoSceneNum').textContent=`${String(idx+1).padStart(2,'0')} / ${SC.length}`;
+    document.getElementById('demoProgressBar').style.width=((idx+1)/SC.length*100)+'%';
+    buildDots();
+    setTimeout(()=>placeCallout(s.hl),80);
+    if(s.enter) s.enter();
+  }
+
+  window.startAlyademo=function(){
+    document.getElementById('demoStartBtn').style.display='none';
+    document.getElementById('demoBar').classList.add('vis');
+    goScene(0);
+  };
+  window.alyaDemoNext=function(){ if(cur<SC.length-1) goScene(cur+1); else stopAlyademo(); };
+  window.alyaDemoPrev=function(){ if(cur>0) goScene(cur-1); };
+  window.stopAlyademo=function(){
+    if(cur>=0 && SC[cur].exit) SC[cur].exit();
+    clearHl(); cur=-1;
+    closeModal(); closeMap();
+    document.getElementById('demoBar').classList.remove('vis');
+    document.getElementById('demoCallout').classList.remove('vis');
+    document.getElementById('demoStartBtn').style.display='';
+    returnToIdle();
+    setMode(0,document.querySelectorAll('.mb')[0]);
+    setLang('en');
+  };
+
+  /* ─── KLAVYE ─── */
+  document.addEventListener('keydown',e=>{
+    if(!document.getElementById('demoBar').classList.contains('vis')) return;
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();alyaDemoNext();}
+    if(e.key==='ArrowLeft'){e.preventDefault();alyaDemoPrev();}
+    if(e.key==='Escape') stopAlyademo();
+  });
+})();
+</script>
+</body>
+</html>
