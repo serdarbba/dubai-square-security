@@ -67,18 +67,38 @@ body.embed .hc.hbr{right:20px}
 /* ── ALYA HOLOGRAM VİDEO ── */
 #hg-wrap{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
   display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
-#hg-video{width:auto;height:100%;max-width:100%;object-fit:contain;
+
+/* Shared hologram video styles */
+.hg-vid{position:absolute;width:auto;height:96%;max-width:100%;object-fit:contain;
   mix-blend-mode:screen;
-  filter:hue-rotate(165deg) saturate(1.3) brightness(1.15) contrast(1.1);
-  display:block;opacity:1;transition:opacity 1.2s}
-/* Hologram kenar parlaması — siyana yakın radyal gradient */
-#hg-glow{position:absolute;inset:0;
-  background:radial-gradient(ellipse 55% 70% at 50% 48%,
-    transparent 38%, rgba(0,212,255,.06) 60%, rgba(0,212,255,.18) 100%);
+  filter:hue-rotate(168deg) saturate(1.25) brightness(1.12) contrast(1.08);
+  transition:opacity .7s ease;
+  /* Organik hologram masking — keskin çerçeve yok, doğal yayılım */
+  mask-image: radial-gradient(ellipse 64% 90% at 50% 47%,
+    black 0%, black 32%,
+    rgba(0,0,0,.88) 52%,
+    rgba(0,0,0,.35) 74%,
+    transparent 92%);
+  -webkit-mask-image: radial-gradient(ellipse 64% 90% at 50% 47%,
+    black 0%, black 32%,
+    rgba(0,0,0,.88) 52%,
+    rgba(0,0,0,.35) 74%,
+    transparent 92%)}
+
+/* Idle video — her zaman görünür */
+#hg-video{opacity:1}
+/* Speaking video — D-ID lip sync için, sessizce bekler */
+#hg-stream{opacity:0;pointer-events:none}
+
+/* Alt projeksyon ışığı */
+#hg-floor{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:40%;height:120px;
+  background:radial-gradient(ellipse 100% 100% at 50% 100%,
+    rgba(0,212,255,.12) 0%, transparent 70%);
   pointer-events:none}
 #hg-scanlines{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
-  background:repeating-linear-gradient(0deg,rgba(0,212,255,.06) 0,rgba(0,212,255,.06) 1px,transparent 1px,transparent 3px);
-  pointer-events:none;z-index:5;animation:scanMove 8s linear infinite}
+  background:repeating-linear-gradient(0deg,rgba(0,212,255,.045) 0,rgba(0,212,255,.045) 1px,transparent 1px,transparent 4px);
+  pointer-events:none;z-index:5;animation:scanMove 10s linear infinite}
 @keyframes scanMove{0%{background-position:0 0}100%{background-position:0 100%}}
 #hg-status{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
   font-size:9px;letter-spacing:2px;color:rgba(0,212,255,.45);z-index:10;
@@ -274,10 +294,13 @@ body.embed .hc.hbr{right:20px}
 
 <!-- D-ID Avatar Video — idle loop -->
 <div id="hg-wrap">
-  <video id="hg-video" autoplay playsinline loop muted
+  <!-- Idle loop — hiç dokunulmaz, her zaman görünür -->
+  <video id="hg-video" class="hg-vid" autoplay playsinline loop muted
     src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z">
   </video>
-  <div id="hg-glow"></div>
+  <!-- Konuşma videosu — D-ID WebRTC/Talks buraya gelir -->
+  <video id="hg-stream" class="hg-vid" playsinline autoplay></video>
+  <div id="hg-floor"></div>
 </div>
 <div id="hg-scanlines"></div>
 <div id="hg-status">● ALYA HAZIR</div>
@@ -307,13 +330,7 @@ body.embed .hc.hbr{right:20px}
 <div id="fps">-- FPS</div>
 <div id="stateBar">STANDBY</div>
 
-<!-- Mod butonları -->
-<div class="modes">
-  <button class="mb on" onclick="setMode(0,this)">HOLOGRAM</button>
-  <button class="mb"    onclick="setMode(1,this)">GOLD</button>
-  <button class="mb"    onclick="setMode(2,this)">XRAY</button>
-  <button class="mb"    onclick="setMode(3,this)">REAL</button>
-</div>
+<!-- Mod butonları kaldırıldı -->
 
 <!-- Sol animasyon paneli -->
 <div class="anims" id="animPanel">
@@ -716,7 +733,7 @@ let didPendingStream = null; // ontrack erken gelirse sakla, ICE bağlantısına
 
 async function didInitStream(){
   const auth = getDIDAuth();
-  const vid = document.getElementById('hg-video');
+  const vid = document.getElementById('hg-stream'); // idle'a dokunma
 
   // 1. Stream oluştur
   const r = await fetch('https://api.d-id.com/talks/streams', {
@@ -795,10 +812,10 @@ async function didStreamSpeak(text){
   });
 }
 
-// ── Talks API (localhost fallback — async video üretimi) ─────────
+// ── Talks API — video #hg-stream'de oynar, idle hiç bozulmaz ─────
 async function didTalksSpeak(text){
   const auth = getDIDAuth();
-  const vid = document.getElementById('hg-video');
+  const vid = document.getElementById('hg-stream'); // idle DEĞİL, stream!
   const voiceMap = { en:'en-US-JennyNeural', fr:'fr-FR-DeniseNeural', ar:'ar-AE-FatimaNeural' };
 
   hgSetStatus('● HAZIRLANIYOR…', true);
@@ -829,38 +846,71 @@ async function didTalksSpeak(text){
 
   hgSetStatus('● KONUŞUYOR', false);
   vid.srcObject = null;
-  vid.loop = false; vid.muted = false;
+  vid.loop = false; vid.muted = false; vid.volume = 1;
   vid.src = resultUrl; vid.load();
-  await vid.play().catch(()=>{});
+  showSpeaking();
+  await vid.play().catch(()=>{ speak(text); }); // play hatası → TTS
   await new Promise(r=>{ vid.onended=r; vid.onerror=r; });
   vid.onended=null; vid.onerror=null;
 }
 
 function didRestoreIdle(){
-  const vid = document.getElementById('hg-video');
-  vid.srcObject = null;
-  vid.loop = true; vid.muted = true;
-  vid.src = DID_IDLE_SRC; vid.load(); vid.play().catch(()=>{});
+  showIdle();
+  // Idle video kendisi loop autoplay ile devam eder — load() gerekmez
   hgSetStatus('● ALYA HAZIR');
 }
 
 // ── Ana konuşma fonksiyonu ────────────────────────────────────────
+// Idle → konuşma geçişi
+function showSpeaking(){
+  document.getElementById('hg-video').style.opacity  = '0';
+  document.getElementById('hg-stream').style.opacity = '1';
+}
+function showIdle(){
+  document.getElementById('hg-stream').style.opacity = '0';
+  document.getElementById('hg-video').style.opacity  = '1';
+  const s = document.getElementById('hg-stream');
+  setTimeout(()=>{ s.srcObject=null; s.src=''; s.load(); }, 800);
+}
+
 function hgInit(){
   if(model) model.visible=false;
   hgSetStatus('● ALYA HAZIR');
-  // Idle video zaten HTML'de autoplay ile başlıyor — dokunma
+  // WebRTC'yi arka planda başlat — #hg-video'ya dokunmadan
+  if(window.RTCPeerConnection){
+    didInitStream().catch(e=>{
+      console.info('WebRTC yok → Talks API:', e.message);
+      didRtcReady = false;
+    });
+  }
 }
 
 async function hgSpeak(text){
   if(didTalking) return;
   didTalking = true;
+  hgSetStatus('● HAZIRLANIYOR…', true);
   try {
-    await didTalksSpeak(text);
+    if(didRtcReady){
+      // WebRTC: gerçek zamanlı, 0ms gecikme
+      const vs = document.getElementById('hg-stream');
+      vs.muted = false;
+      vs.volume = 1;
+      await vs.play().catch(()=>{});
+      showSpeaking();
+      hgSetStatus('● KONUŞUYOR');
+      await didStreamSpeak(text);
+      const ms = Math.max(2500, text.split(' ').length * 400);
+      await new Promise(r=>setTimeout(r, ms));
+    } else {
+      // Talks API: D-ID video üret, #hg-stream'de oynat
+      await didTalksSpeak(text);
+    }
   } catch(e){
-    console.warn('D-ID Talks hatası:', e.message);
-    speakSafe(text);
+    console.warn('D-ID:', e.message);
+    speak(text); // kullanıcı butona bastı → TTS çalışır
   } finally {
-    didRestoreIdle();
+    showIdle();
+    hgSetStatus('● ALYA HAZIR');
     didTalking = false;
   }
 }
@@ -1796,15 +1846,11 @@ function greet(){
       }
     },
     {
-      title:'HOLOGRAM MODES',
-      desc:'4 live shader modes: HOLOGRAM (cyan scan-line), GOLD (luxury finish), X-RAY (crystal wireframe), REAL (photorealistic). Switch instantly with no reload.',
-      hl:'.modes',
-      enter(){
-        const btns=document.querySelectorAll('.mb');
-        let i=1;
-        window._dIv=setInterval(()=>{ if(i>3){clearInterval(window._dIv);return;} setMode(i,btns[i]); i++; },1100);
-      },
-      exit(){ clearInterval(window._dIv); setMode(0,document.querySelectorAll('.mb')[0]); }
+      title:'HOLOGRAM MODE',
+      desc:'Real-time holographic avatar powered by D-ID AI — lip-sync and voice responses driven by Gemini intelligence.',
+      hl:'#hg-wrap',
+      enter(){},
+      exit(){}
     },
     {
       title:'FBX ANIMATIONS',
@@ -1973,7 +2019,7 @@ function greet(){
     document.getElementById('demoCallout').classList.remove('vis');
     document.getElementById('demoStartBtn').style.display='';
     returnToIdle();
-    setMode(0,document.querySelectorAll('.mb')[0]);
+    if(document.querySelectorAll('.mb').length) setMode(0,document.querySelectorAll('.mb')[0]);
     setLang('en');
   };
 
