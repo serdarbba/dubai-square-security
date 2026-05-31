@@ -857,15 +857,26 @@ function hgInit(){
 async function hgSpeak(text){
   if(didTalking) return;
   didTalking = true;
+  const vid = document.getElementById('hg-video');
   try {
     if(didRtcReady){
-      // WebRTC: gerçek zamanlı, 0ms gecikme
+      // WebRTC: gerçek zamanlı lip sync
       hgSetStatus('● KONUŞUYOR', false);
+      vid.muted = false;
+      vid.play().catch(()=>{});
       await didStreamSpeak(text);
+      // D-ID konuşma süresi kadar bekle (yaklaşık)
+      const words = text.split(' ').length;
+      await new Promise(r => setTimeout(r, Math.max(2000, words * 380)));
       hgSetStatus('● ALYA HAZIR');
     } else {
-      // Talks API: async video üretimi (localhost)
-      await didTalksSpeak(text);
+      // Talks API: async video üretimi
+      try {
+        await didTalksSpeak(text);
+      } catch(e2){
+        console.warn('Talks API:', e2.message);
+        speakSafe(text); // kesin fallback
+      }
       didRestoreIdle();
     }
   } catch(e){
@@ -1701,7 +1712,8 @@ function closeMap(){
 
 function greet(){
   const msg = WELCOME[LANG] || WELCOME.en;
-  speak(msg);
+  addMsg(msg,'l',[]);
+  hgSpeak(msg);
 }
 </script>
 
