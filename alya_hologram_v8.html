@@ -64,16 +64,22 @@ body.embed .hc.hbr{right:20px}
   animation:abPulse .8s ease-in-out infinite}
 @keyframes abPulse{0%,100%{opacity:1}50%{opacity:.55}}
 
-/* ── HEYGEN CANLI VİDEO ── */
+/* ── ALYA HOLOGRAM VİDEO ── */
 #hg-wrap{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
   display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
 #hg-video{width:auto;height:100%;max-width:100%;object-fit:contain;
   mix-blend-mode:screen;
-  filter:brightness(1.1) contrast(1.15) saturate(1.1);
+  filter:hue-rotate(165deg) saturate(1.3) brightness(1.15) contrast(1.1);
   display:block;opacity:1;transition:opacity 1.2s}
+/* Hologram kenar parlaması — siyana yakın radyal gradient */
+#hg-glow{position:absolute;inset:0;
+  background:radial-gradient(ellipse 55% 70% at 50% 48%,
+    transparent 38%, rgba(0,212,255,.06) 60%, rgba(0,212,255,.18) 100%);
+  pointer-events:none}
 #hg-scanlines{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
-  background:repeating-linear-gradient(0deg,rgba(0,212,255,.055) 0,rgba(0,212,255,.055) 1px,transparent 1px,transparent 4px);
-  pointer-events:none;z-index:5}
+  background:repeating-linear-gradient(0deg,rgba(0,212,255,.06) 0,rgba(0,212,255,.06) 1px,transparent 1px,transparent 3px);
+  pointer-events:none;z-index:5;animation:scanMove 8s linear infinite}
+@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 100%}}
 #hg-status{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
   font-size:9px;letter-spacing:2px;color:rgba(0,212,255,.45);z-index:10;
   font-family:'JetBrains Mono',monospace;pointer-events:none;transition:color .3s}
@@ -271,6 +277,7 @@ body.embed .hc.hbr{right:20px}
   <video id="hg-video" autoplay playsinline loop muted
     src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z">
   </video>
+  <div id="hg-glow"></div>
 </div>
 <div id="hg-scanlines"></div>
 <div id="hg-status">● ALYA HAZIR</div>
