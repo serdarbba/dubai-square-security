@@ -651,7 +651,11 @@ function loadAnimBg(info){
   new THREE.FBXLoader().load('models/Breathing Idle.fbx',
     g=>{ loadProgress(85,'PREPARING...'); setupModel(g); ANIM_LIST.forEach((a,i)=>setTimeout(()=>loadAnimBg(a),i*200)); },
     p=>{ if(p.total) loadProgress(Math.round(p.loaded/p.total*80),'LOADING ALYA... '+Math.round(p.loaded/p.total*80)+'%'); },
-    e=>{ document.getElementById('ldtxt').textContent='ERROR: '+(e.message||e); }
+    ()=>{
+      // 3D model bulunamadı (GitHub Pages) — D-ID avatar ile devam et
+      loadProgress(100,'READY');
+      setTimeout(()=>{ document.getElementById('loading').classList.add('fade'); greet(); },500);
+    }
   );
 })();
 
