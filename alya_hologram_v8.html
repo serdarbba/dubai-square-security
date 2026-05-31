@@ -844,13 +844,16 @@ async function didTalksSpeak(text){
   }
   if(!resultUrl) throw new Error('Zaman aşımı');
 
-  hgSetStatus('● KONUŞUYOR', false);
   vid.srcObject = null;
-  vid.loop = false; vid.muted = false; vid.volume = 1;
+  vid.loop = false; vid.muted = true; // TTS zaten sesi veriyor, lip sync sessiz
   vid.src = resultUrl; vid.load();
   showSpeaking();
-  await vid.play().catch(()=>{ speak(text); }); // play hatası → TTS
-  await new Promise(r=>{ vid.onended=r; vid.onerror=r; });
+  await vid.play(); // throws if blocked → caller catches
+  await new Promise((resolve, reject)=>{
+    vid.onended = resolve;
+    vid.onerror = reject;
+    setTimeout(resolve, 90000); // 90s güvenlik: asla takılmaz
+  });
   vid.onended=null; vid.onerror=null;
 }
 
@@ -888,26 +891,30 @@ function hgInit(){
 async function hgSpeak(text){
   if(didTalking) return;
   didTalking = true;
-  hgSetStatus('● HAZIRLANIYOR…', true);
+
+  // ① TTS ANINDA — D-ID'den bağımsız, her zaman çalışır
+  speak(text);
+  hgSetStatus('● KONUŞUYOR');
+
   try {
     if(didRtcReady){
-      // WebRTC: gerçek zamanlı, 0ms gecikme
+      // WebRTC: gerçek zamanlı lip sync (ses TTS'ten, video D-ID'den)
       const vs = document.getElementById('hg-stream');
-      vs.muted = false;
-      vs.volume = 1;
-      await vs.play().catch(()=>{});
+      vs.muted = true; // TTS zaten sesi veriyor
       showSpeaking();
-      hgSetStatus('● KONUŞUYOR');
       await didStreamSpeak(text);
       const ms = Math.max(2500, text.split(' ').length * 400);
       await new Promise(r=>setTimeout(r, ms));
     } else {
-      // Talks API: D-ID video üret, #hg-stream'de oynat
-      await didTalksSpeak(text);
+      // Talks API: arka planda video üret, sessiz lip sync olarak oynat
+      didTalksSpeak(text).catch(e=>console.warn('D-ID Talks:', e.message));
+      // TTS ne kadar sürer tahmini — o kadar bekle
+      const ms = Math.max(3000, text.split(' ').length * 420);
+      await new Promise(r=>setTimeout(r, ms));
     }
   } catch(e){
     console.warn('D-ID:', e.message);
-    speak(text); // kullanıcı butona bastı → TTS çalışır
+    // TTS zaten çalışıyor, ek bir şey gerekmez
   } finally {
     showIdle();
     hgSetStatus('● ALYA HAZIR');
