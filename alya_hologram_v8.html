@@ -1120,6 +1120,16 @@ function showTyping(){
 async function sendMsg(){
   const inp=document.getElementById('inp'), txt=inp.value.trim();
   if(!txt) return;
+
+  // TTS kilidini ŞIMDI aç — await'ten önce, hâlâ user gesture context'indeyiz
+  // Chrome/Safari: synth.speak() sadece gesture anında çalışır
+  if(!ttsUnlocked){
+    const u0=new SpeechSynthesisUtterance(' ');
+    u0.volume=0;
+    synth.speak(u0);
+    ttsUnlocked=true;
+  }
+
   addMsg(txt,'u'); inp.value='';
   showTyping();
   try{
@@ -1129,7 +1139,7 @@ async function sendMsg(){
   } catch(e){
     document.getElementById('typ')?.remove();
     const fb="I'm here to help with Dubai Square. Try asking about restaurants, parking, or directions.";
-    addMsg(fb,'l',[]);
+    addMsg(fb,'l',[]); speak(fb);
   }
 }
 function quick(t){ document.getElementById('inp').value=t; sendMsg(); }
