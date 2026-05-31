@@ -68,7 +68,8 @@ body.embed .hc.hbr{right:20px}
 #hg-wrap{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
   display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
 #hg-video{width:auto;height:100%;max-width:100%;object-fit:contain;
-  filter:brightness(.95) contrast(1.05);
+  mix-blend-mode:screen;
+  filter:brightness(1.1) contrast(1.15) saturate(1.1);
   display:block;opacity:1;transition:opacity 1.2s}
 #hg-scanlines{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
   background:repeating-linear-gradient(0deg,rgba(0,212,255,.055) 0,rgba(0,212,255,.055) 1px,transparent 1px,transparent 4px);
