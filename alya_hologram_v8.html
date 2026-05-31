@@ -712,9 +712,11 @@ function getDIDAuth(){
 }
 
 // ── WebRTC Streams API (HTTPS'te gerçek zamanlı) ──────────────────
+let didPendingStream = null; // ontrack erken gelirse sakla, ICE bağlantısına kadar beklet
+
 async function didInitStream(){
   const auth = getDIDAuth();
-  hgSetStatus('● BAĞLANIYOR…', true);
+  const vid = document.getElementById('hg-video');
 
   // 1. Stream oluştur
   const r = await fetch('https://api.d-id.com/talks/streams', {
@@ -725,20 +727,14 @@ async function didInitStream(){
   const data = await r.json();
   if(!r.ok) throw new Error(data.description || 'Stream başlatılamadı');
 
-  didStreamId   = data.id;
-  didSessionId  = data.session_id;
+  didStreamId  = data.id;
+  didSessionId = data.session_id;
 
   // 2. RTCPeerConnection
   didPc = new RTCPeerConnection({ iceServers: data.ice_servers || [{urls:'stun:stun.l.google.com:19302'}] });
 
-  // 3. Gelen stream → video elementine bağla
-  const vid = document.getElementById('hg-video');
-  didPc.ontrack = e => {
-    if(e.streams?.[0]){
-      vid.srcObject = e.streams[0];
-      vid.muted = false;
-    }
-  };
+  // 3. ontrack — ICE bağlanana kadar srcObject ayarlama, sadece sakla
+  didPc.ontrack = e => { if(e.streams?.[0]) didPendingStream = e.streams[0]; };
 
   // 4. ICE adayları → D-ID'ye gönder
   didPc.onicecandidate = async e => {
@@ -763,15 +759,22 @@ async function didInitStream(){
     body: JSON.stringify({ answer, session_id: didSessionId })
   });
 
-  // 7. ICE bağlantısını bekle (15s timeout)
+  // 7. ICE bağlantısını bekle (20s timeout)
   await new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error('ICE timeout')), 15000);
+    const t = setTimeout(() => reject(new Error('ICE timeout')), 20000);
     didPc.oniceconnectionstatechange = () => {
       const s = didPc.iceConnectionState;
       if(s === 'connected' || s === 'completed'){ clearTimeout(t); resolve(); }
       if(s === 'failed'){ clearTimeout(t); reject(new Error('ICE failed')); }
     };
   });
+
+  // 8. ICE bağlandı — şimdi stream video'ya bağla
+  if(didPendingStream){
+    vid.srcObject = didPendingStream;
+    vid.muted = false;
+    vid.play().catch(()=>{});
+  }
 
   didRtcReady = true;
   hgSetStatus('● ALYA HAZIR');
@@ -848,8 +851,14 @@ function hgInit(){
   // HTTPS'te WebRTC dene, localhost'ta doğrudan Talks API'ye geç
   didInitStream()
     .catch(e => {
-      console.info('WebRTC kullanılamıyor, Talks API aktif:', e.message);
+      console.info('WebRTC yok, Talks API aktif:', e.message);
       didRtcReady = false;
+      didPendingStream = null;
+      // Idle video'yu geri yükle — WebRTC srcObject'i bırakmış olabilir
+      const vid = document.getElementById('hg-video');
+      vid.srcObject = null;
+      vid.loop = true; vid.muted = true;
+      vid.src = DID_IDLE_SRC; vid.load(); vid.play().catch(()=>{});
       hgSetStatus('● ALYA HAZIR');
     });
 }
@@ -1713,7 +1722,9 @@ function closeMap(){
 function greet(){
   const msg = WELCOME[LANG] || WELCOME.en;
   addMsg(msg,'l',[]);
-  hgSpeak(msg);
+  // Greet: kullanıcı hareketi yok, sadece chat'e yaz + TTS dene
+  // D-ID lip sync kullanıcı ilk mesaj gönderince başlar
+  speakSafe(msg);
 }
 </script>
 
