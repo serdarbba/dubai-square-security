@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Alya 3D Hologram — GLTF Loader</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;font-family:'JetBrains Mono',monospace;color:#00d4ff;
+     display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.header{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 20px;background:rgba(2,8,16,.97);
+  border-bottom:1px solid rgba(0,212,255,.15);flex-shrink:0;gap:12px}
+.title{font-size:11px;letter-spacing:3px;color:#64ffda;font-weight:700;flex-shrink:0}
+.url-input{flex:1;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);
+  color:#00d4ff;font-family:'JetBrains Mono',monospace;font-size:10px;
+  padding:6px 12px;border-radius:5px;outline:none;min-width:0}
+.url-input:focus{border-color:rgba(0,212,255,.5);background:rgba(0,212,255,.08)}
+.url-input::placeholder{color:rgba(0,212,255,.3)}
+.load-btn{padding:7px 16px;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);
+  color:#00d4ff;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;
+  cursor:pointer;border-radius:5px;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.load-btn:hover{background:rgba(0,212,255,.25)}
+
+/* CANVAS */
+#canvasWrap{flex:1;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+
+/* HUD */
+.hud{position:absolute;inset:0;pointer-events:none}
+.hc{position:absolute;width:16px;height:16px;border-color:rgba(0,212,255,.4);border-style:solid}
+.htl{top:12px;left:12px;border-width:1.5px 0 0 1.5px}
+.htr{top:12px;right:12px;border-width:1.5px 1.5px 0 0}
+.hbl{bottom:12px;left:12px;border-width:0 0 1.5px 1.5px}
+.hbr{bottom:12px;right:12px;border-width:0 1.5px 1.5px 0}
+.hud-tl{position:absolute;top:8px;left:32px;font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1.5px}
+.hud-tr{position:absolute;top:8px;right:32px;font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1.5px}
+.hud-bl{position:absolute;bottom:8px;left:32px;font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1.5px}
+.hud-br{position:absolute;bottom:8px;right:32px;font-size:9px;color:rgba(0,212,255,.35);letter-spacing:1px}
+
+/* LOADING OVERLAY */
+#loadingOv{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;z-index:10;transition:opacity .6s}
+#loadingOv.done{opacity:0;pointer-events:none}
+.spin{width:40px;height:40px;border:2px solid rgba(0,212,255,.15);
+  border-top-color:#00d4ff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-status{font-size:10px;color:rgba(0,212,255,.5);letter-spacing:2px}
+
+/* Scan overlay */
+.scan-ov{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.02) 2px,rgba(0,212,255,.02) 3px);
+  animation:flk 7s infinite}
+@keyframes flk{0%,100%{opacity:1}94%{opacity:1}95%{opacity:.85}96%{opacity:1}}
+
+/* Controls hint */
+.controls{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:rgba(0,212,255,.35);letter-spacing:1.5px;white-space:nowrap}
+
+/* Shader mode toggle */
+.mode-btns{position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;pointer-events:all}
+.mode-btn{padding:4px 12px;border-radius:12px;border:1px solid rgba(0,212,255,.2);
+  background:rgba(0,212,255,.04);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.mode-btn.active{background:rgba(0,212,255,.18);border-color:var(--cyan,#00d4ff);color:#00d4ff}
+.mode-btn:hover{background:rgba(0,212,255,.1);color:#00d4ff}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">ALYA · 3D HOLOGRAM</div>
+  <input class="url-input" id="urlInput"
+    placeholder="GLB model URL girin veya Ready Player Me'den aldığınız URL'yi yapıştırın..."
+    value="">
+  <button class="load-btn" onclick="loadModel()">YÜKle ↗</button>
+</div>
+
+<div id="canvasWrap">
+  <canvas id="c"></canvas>
+
+  <div id="loadingOv">
+    <div class="spin"></div>
+    <div class="load-status" id="loadStatus">BAŞLATILIYOR...</div>
+  </div>
+
+  <div class="hud">
+    <div class="hc htl"></div><div class="hc htr"></div>
+    <div class="hc hbl"></div><div class="hc hbr"></div>
+    <div class="hud-tl">DUBAI SQUARE · AI CONCIERGE</div>
+    <div class="hud-tr">HOLOGRAM RENDERER v2</div>
+    <div class="hud-bl">STATUS: <span style="color:#64ffda">ACTIVE</span></div>
+    <div class="hud-br" id="fpsCounter">-- FPS</div>
+  </div>
+
+  <div class="mode-btns" id="modeBtns" style="display:none">
+    <button class="mode-btn active" onclick="setMode('hologram')">HOLOGRAM</button>
+    <button class="mode-btn" onclick="setMode('wireframe')">WIREFRAME</button>
+    <button class="mode-btn" onclick="setMode('xray')">X-RAY</button>
+    <button class="mode-btn" onclick="setMode('solid')">SOLID</button>
+  </div>
+
+  <div class="scan-ov"></div>
+  <div class="controls">SÜRÜKLE: DÖNDÜR  ·  SCROLL: ZOOM  ·  SAĞ TIK+SÜRÜKLE: KAYDIR</div>
+</div>
+
+<!-- Three.js + loaders -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+/* ── URL'yi query string veya localStorage'dan al ── */
+const params = new URLSearchParams(location.search);
+let modelUrl = params.get('url') || localStorage.getItem('alya_rpm_url') || '';
+// Fallback: Three.js örnek modeli (Soldier)
+const FALLBACK = 'models/michelle.glb';
+if (!modelUrl) modelUrl = FALLBACK;
+document.getElementById('urlInput').value = modelUrl;
+
+/* ── Three.js setup ── */
+const canvas = document.getElementById('c');
+const wrap   = document.getElementById('canvasWrap');
+const W = () => wrap.clientWidth;
+const H = () => wrap.clientHeight;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.setClearColor(0x000000, 1);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, W()/H(), 0.01, 100);
+camera.position.set(0, 1.2, 3.5);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 0.5;
+controls.maxDistance = 12;
+controls.target.set(0, 1, 0);
+
+/* ── Hologram shader ── */
+const HOLO_VS = `
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+varying vec2 vUv;
+void main(){
+  vNormal    = normalize(normalMatrix * normal);
+  vWorldPos  = (modelMatrix * vec4(position,1.0)).xyz;
+  vUv        = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+}`;
+
+const HOLO_FS = `
+uniform float  time;
+uniform vec3   holoColor;
+uniform float  opacity;
+uniform float  glitchAmt;
+varying vec3   vNormal;
+varying vec3   vWorldPos;
+varying vec2   vUv;
+
+float rand(float n){ return fract(sin(n)*43758.5453); }
+
+void main(){
+  vec3 viewDir = normalize(cameraPosition - vWorldPos);
+  // Fresnel kenar parlaması
+  float fresnel = 1.0 - abs(dot(viewDir, vNormal));
+  fresnel = pow(fresnel, 1.6);
+  // Yatay tarama
+  float scan  = sin(vWorldPos.y * 22.0 - time * 4.0) * 0.5 + 0.5;
+  scan = pow(scan, 0.5);
+  // İnce çizgi
+  float line = step(0.96, sin(vWorldPos.y * 120.0 - time * 1.5));
+  // Glitch
+  float gt   = floor(time * 8.0);
+  float gline= floor(vWorldPos.y * 14.0);
+  float glitch = step(1.0 - glitchAmt, rand(gt + gline)) * rand(gt * 3.7) * 0.6;
+  // Final
+  float alpha = (fresnel * 0.9 + scan * 0.3 + line * 0.15) * opacity + glitch;
+  alpha = clamp(alpha, 0.0, 1.0);
+  vec3 col = holoColor * (0.7 + scan * 0.4) + vec3(1.0) * fresnel * 0.35;
+  col = mix(col, vec3(0.6, 1.0, 0.8), line * 0.5);
+  gl_FragColor = vec4(col, alpha);
+}`;
+
+/* ── Shader modu ── */
+let currentMode = 'hologram';
+let currentModel = null;
+const meshMats = new Map(); // orijinal materyal saklama
+
+function makeHoloMat(color = 0x00d4ff) {
+  return new THREE.ShaderMaterial({
+    vertexShader: HOLO_VS,
+    fragmentShader: HOLO_FS,
+    uniforms: {
+      time:      { value: 0 },
+      holoColor: { value: new THREE.Color(color) },
+      opacity:   { value: 0.88 },
+      glitchAmt: { value: 0.012 }
+    },
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+}
+
+function applyMode(model, mode) {
+  model.traverse(obj => {
+    if (!obj.isMesh) return;
+    if (!meshMats.has(obj.uuid)) meshMats.set(obj.uuid, obj.material);
+    switch (mode) {
+      case 'hologram':
+        obj.material = makeHoloMat(0x00d4ff); break;
+      case 'wireframe':
+        obj.material = new THREE.MeshBasicMaterial({
+          color: 0x00d4ff, wireframe: true, transparent: true, opacity: 0.55
+        }); break;
+      case 'xray':
+        obj.material = makeHoloMat(0x64ffda);
+        obj.material.uniforms.opacity.value = 0.45;
+        obj.material.uniforms.glitchAmt.value = 0.005; break;
+      case 'solid':
+        const orig = meshMats.get(obj.uuid);
+        obj.material = orig || new THREE.MeshStandardMaterial({ color: 0x334455 }); break;
+    }
+  });
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === mode);
+  });
+  if (currentModel) applyMode(currentModel, mode);
+}
+
+/* ── Parçacık sistemi ── */
+function makeParticles(height = 2) {
+  const geo = new THREE.BufferGeometry();
+  const pts = [];
+  for (let i = 0; i < 400; i++) {
+    const r = 0.8 + Math.random() * 1.2;
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = (Math.random() - 0.5) * Math.PI;
+    pts.push(
+      Math.cos(phi) * Math.cos(theta) * r,
+      Math.sin(phi) * r * height * 0.5 + height * 0.5,
+      Math.cos(phi) * Math.sin(theta) * r
+    );
+  }
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  return new THREE.Points(geo,
+    new THREE.PointsMaterial({ color: 0x00d4ff, size: 0.025, transparent: true, opacity: 0.45, depthWrite: false })
+  );
+}
+
+/* ── Halka + ışık ── */
+const ring = new THREE.Mesh(
+  new THREE.TorusGeometry(0.7, 0.012, 8, 80),
+  new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.5 })
+);
+ring.rotation.x = Math.PI / 2;
+scene.add(ring);
+
+const ring2 = new THREE.Mesh(
+  new THREE.TorusGeometry(1.0, 0.007, 8, 80),
+  new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.2 })
+);
+ring2.rotation.x = Math.PI / 2;
+scene.add(ring2);
+
+// Işıklar
+scene.add(new THREE.AmbientLight(0x001133, 0.5));
+const cLight = new THREE.PointLight(0x00d4ff, 3, 10); cLight.position.set(0, 2, 3); scene.add(cLight);
+const tLight = new THREE.PointLight(0x64ffda, 2, 6); tLight.position.set(-2, 1, 1); scene.add(tLight);
+const bLight = new THREE.PointLight(0x0044aa, 1, 5); bLight.position.set(0, 1, -3); scene.add(bLight);
+
+/* ── Model yükle ── */
+let particles = null;
+let mixer = null;
+let isLoading = false;
+
+function loadModel(urlOverride) {
+  if (isLoading) return;
+  isLoading = true;
+  const url = urlOverride || document.getElementById('urlInput').value.trim() || FALLBACK;
+
+  // Önceki modeli temizle
+  if (currentModel) { scene.remove(currentModel); currentModel = null; meshMats.clear(); }
+  if (particles)    { scene.remove(particles); particles = null; }
+  if (mixer)        { mixer = null; }
+
+  const ov = document.getElementById('loadingOv');
+  const st = document.getElementById('loadStatus');
+  ov.classList.remove('done');
+  st.textContent = 'MODEL YÜKLENİYOR...';
+
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    url,
+    (gltf) => {
+      const model = gltf.scene;
+
+      // Model boyutunu normalize et
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 2.0 / maxDim;
+      model.scale.setScalar(scale);
+
+      // Tabana otur
+      const box2 = new THREE.Box3().setFromObject(model);
+      model.position.y = -box2.min.y;
+
+      // Hologram materyali uygula
+      applyMode(model, currentMode);
+      scene.add(model);
+      currentModel = model;
+
+      // Parçacıklar
+      const modelH = (box2.max.y - box2.min.y) * scale + model.position.y;
+      particles = makeParticles(modelH || 2);
+      scene.add(particles);
+
+      // Animasyonlar
+      if (gltf.animations && gltf.animations.length) {
+        mixer = new THREE.AnimationMixer(model);
+        mixer.clipAction(gltf.animations[0]).play();
+        st.textContent = `${gltf.animations.length} ANİMASYON BULUNDU`;
+      }
+
+      // Kamera hedefini modelin ortasına al
+      const centerY = (box2.max.y + box2.min.y) / 2 * scale + model.position.y;
+      controls.target.set(0, centerY * 0.6, 0);
+      controls.update();
+
+      // Halkaları yere otur
+      ring.position.y = -0.02;
+      ring2.position.y = -0.02;
+
+      // UI
+      document.getElementById('modeBtns').style.display = 'flex';
+      setTimeout(() => { ov.classList.add('done'); isLoading = false; }, 500);
+      st.textContent = 'YÜKLEME TAMAMLANDI ✓';
+    },
+    (progress) => {
+      if (progress.total > 0) {
+        const pct = Math.round(progress.loaded / progress.total * 100);
+        st.textContent = `YÜKLENİYOR... ${pct}%`;
+      }
+    },
+    (err) => {
+      console.error('Load error:', err);
+      st.textContent = 'HATA — URL kontrol edin';
+      isLoading = false;
+      // CORS hatası için bilgi
+      if (err.message?.includes('CORS') || err.message?.includes('fetch')) {
+        st.textContent = 'CORS HATASI — proxy deneyin';
+      }
+    }
+  );
+}
+
+/* ── Render loop ── */
+let t = 0, lastFPS = performance.now(), frames = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  t += 0.016;
+  frames++;
+  if (performance.now() - lastFPS > 1000) {
+    document.getElementById('fpsCounter').textContent = frames + ' FPS';
+    frames = 0; lastFPS = performance.now();
+  }
+
+  controls.update();
+  if (mixer) mixer.update(0.016);
+
+  // Shader zamanını güncelle
+  if (currentModel) {
+    currentModel.traverse(obj => {
+      if (obj.isMesh && obj.material.uniforms?.time) {
+        obj.material.uniforms.time.value = t;
+      }
+    });
+  }
+
+  // Float
+  if (currentModel) currentModel.position.y = (currentModel.position.y || 0) + Math.sin(t * 0.7) * 0.0003;
+
+  // Parçacık dönüşü
+  if (particles) { particles.rotation.y = t * 0.06; }
+
+  // Halka nabzı
+  const rs = 1 + Math.sin(t * 1.8) * 0.05;
+  ring.scale.set(rs, rs, rs);
+  ring.material.opacity = 0.35 + Math.sin(t * 1.8) * 0.18;
+
+  // Işık hareketi
+  cLight.position.x = Math.sin(t * 0.4) * 1.5;
+  cLight.position.z = 2 + Math.cos(t * 0.3) * 1;
+
+  renderer.setSize(W(), H(), false);
+  camera.aspect = W() / H();
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+}
+animate();
+
+/* ── İlk yükleme ── */
+setTimeout(() => loadModel(modelUrl), 300);
+
+/* ── Enter key ── */
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadModel();
+});
+</script>
+</body>
+</html>

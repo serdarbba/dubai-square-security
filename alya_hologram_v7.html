@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALYA — AI Hologram</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+canvas#c{display:block;width:100%;height:100%}
+
+/* HUD */
+.hud{position:fixed;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace}
+.hc{position:absolute;width:22px;height:22px;border-color:rgba(0,212,255,.5);border-style:solid}
+.htl{top:20px;left:20px;border-width:2px 0 0 2px}
+.htr{top:20px;right:20px;border-width:2px 2px 0 0}
+.hbl{bottom:20px;left:20px;border-width:0 0 2px 2px}
+.hbr{bottom:20px;right:20px;border-width:0 2px 2px 0}
+.hl{position:absolute;font-size:9px;color:rgba(0,212,255,.45);letter-spacing:2px}
+.hl-tl{top:14px;left:48px}
+.hl-tr{top:14px;right:48px;text-align:right}
+.hl-bl{bottom:14px;left:48px}
+.hl-br{bottom:14px;right:48px;text-align:right}
+.scan{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.011) 2px,rgba(0,212,255,.011) 3px);
+  animation:flk 9s infinite}
+@keyframes flk{0%,100%{opacity:1}93%{opacity:.65}95%{opacity:1}}
+
+/* Yükleme */
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:#000;z-index:99;transition:opacity 1s}
+#loading.fade{opacity:0;pointer-events:none}
+.ld-ring{width:52px;height:52px;border:2px solid rgba(0,212,255,.15);
+  border-top-color:#00d4ff;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ldtxt{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,212,255,.6);letter-spacing:3px;text-align:center;line-height:2}
+#ldbar{width:220px;height:2px;background:rgba(0,212,255,.1);margin-top:18px;border-radius:2px}
+#ldbarInner{width:0%;height:100%;background:#00d4ff;border-radius:2px;transition:width .4s}
+
+/* Mod butonları */
+.modes{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
+.mb{padding:6px 16px;border-radius:14px;border:1px solid rgba(0,212,255,.22);
+  background:rgba(0,212,255,.05);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1.5px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.mb.on{background:rgba(0,212,255,.2);border-color:#00d4ff;color:#fff;text-shadow:0 0 10px #00d4ff}
+.mb:hover{background:rgba(0,212,255,.12);color:#00d4ff}
+
+/* Sol — animasyon tetikleyiciler */
+.anims{position:fixed;left:24px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:8px;z-index:10}
+.aLabel{font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,212,255,.28);
+  letter-spacing:1.5px;margin-bottom:2px}
+.ab{padding:8px 18px;border:1px solid rgba(0,212,255,.2);border-radius:12px;
+  background:rgba(0,212,255,.04);color:rgba(0,212,255,.45);font-size:10px;
+  letter-spacing:1px;cursor:pointer;font-family:'JetBrains Mono',monospace;
+  transition:all .25s;text-align:left;min-width:150px;display:flex;align-items:center;gap:8px}
+.ab .ic{font-size:14px;line-height:1}
+.ab:hover{background:rgba(0,212,255,.1);color:#00d4ff;border-color:rgba(0,212,255,.4)}
+.ab.idle-btn{border-color:rgba(100,255,218,.3);color:rgba(100,255,218,.6);background:rgba(100,255,218,.05)}
+.ab.idle-btn.on{border-color:#64ffda;color:#64ffda;background:rgba(100,255,218,.12);
+  box-shadow:0 0 12px rgba(100,255,218,.2)}
+.ab.on{background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.5);color:#ffb400}
+.ab.loading-anim{opacity:.4;cursor:default;pointer-events:none}
+.ab.loading-anim::after{content:'...';color:rgba(0,212,255,.3)}
+
+/* Sağ — bilgi */
+.side{position:fixed;right:28px;top:50%;transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.35);
+  letter-spacing:1px;line-height:2.8;pointer-events:none;
+  border-left:1px solid rgba(0,212,255,.1);padding-left:14px}
+.sv{color:#64ffda;font-weight:700}
+
+/* Durum çubuğu */
+#stateBar{position:fixed;bottom:56px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;
+  color:rgba(100,255,218,.4);pointer-events:none;text-align:center;
+  transition:color .4s}
+#stateBar.active{color:rgba(255,180,0,.7)}
+
+.hint{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.18);
+  letter-spacing:2px;white-space:nowrap;pointer-events:none}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="ld-ring"></div>
+  <div id="ldtxt">ALYA YÜKLENİYOR...</div>
+  <div id="ldbar"><div id="ldbarInner"></div></div>
+</div>
+
+<canvas id="c"></canvas>
+
+<div class="hud">
+  <div class="hc htl"></div><div class="hc htr"></div>
+  <div class="hc hbl"></div><div class="hc hbr"></div>
+  <div class="hl hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hl hl-tr">ALYA · 3D HOLOGRAFİK ASISTAN</div>
+  <div class="hl hl-bl">DURUM: <span style="color:#64ffda" id="statusLbl">YÜKLENIYOR</span></div>
+  <div class="hl hl-br" id="fps">-- FPS</div>
+</div>
+<div class="scan"></div>
+
+<div class="modes">
+  <button class="mb on"  onclick="setMode(0,this)">HOLOGRAM</button>
+  <button class="mb"     onclick="setMode(1,this)">ALTIN</button>
+  <button class="mb"     onclick="setMode(2,this)">XRAY</button>
+  <button class="mb"     onclick="setMode(3,this)">GERÇEK</button>
+</div>
+
+<div class="anims" id="animPanel">
+  <div class="aLabel">HAREKET KONTROLİ</div>
+</div>
+
+<div class="side">
+  <div>KARAKTER  <span class="sv">ALYA</span></div>
+  <div>DURUM     <span class="sv" id="mAnim">BEKLEMEDE</span></div>
+  <div>MOD       <span class="sv" id="mLbl">HOLOGRAM</span></div>
+  <div>SÜRE      <span class="sv"><span id="upt">0s</span></span></div>
+</div>
+
+<div id="stateBar">BEKLEMEDE</div>
+<div class="hint">FARE: DÖNDÜR &nbsp;·&nbsp; SCROLL: ZOOM</div>
+
+<!-- Three.js r134 + FBX loader -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/FBXLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+/* ─── TEMEL KURULUM ─── */
+const W = () => window.innerWidth, H = () => window.innerHeight;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 1);
+renderer.outputEncoding = THREE.sRGBEncoding;
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, W()/H(), 0.01, 60);
+camera.position.set(0, 1.4, 4.5);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = .07;
+controls.minDistance   = .6;
+controls.maxDistance   = 16;
+controls.target.set(0, 1.0, 0);
+
+/* ─── IŞIKLAR ─── */
+scene.add(new THREE.AmbientLight(0x112244, 1.0));
+const pl1 = new THREE.PointLight(0x00d4ff, 5, 14); pl1.position.set(1.5,3,4); scene.add(pl1);
+const pl2 = new THREE.PointLight(0x64ffda, 3, 8);  pl2.position.set(-2,2,2);  scene.add(pl2);
+const pl3 = new THREE.PointLight(0x0033aa, 2, 7);  pl3.position.set(0,2,-4);  scene.add(pl3);
+
+/* ─── DEKOR ─── */
+function ring(r, t, op){
+  const m = new THREE.Mesh(
+    new THREE.TorusGeometry(r, t, 8, 90),
+    new THREE.MeshBasicMaterial({ color:0x00d4ff, transparent:true, opacity:op })
+  );
+  m.rotation.x = Math.PI/2; scene.add(m); return m;
+}
+const r1 = ring(.72,.013,.55), r2 = ring(1.12,.008,.22); ring(1.65,.004,.08);
+const cone = new THREE.Mesh(
+  new THREE.CylinderGeometry(.01,.82,2.4,32,1,true),
+  new THREE.MeshBasicMaterial({ color:0x00d4ff, transparent:true, opacity:.026, side:THREE.DoubleSide })
+);
+cone.position.y = -1.2; scene.add(cone);
+const PC = 700, pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(PC*3), pPh = [];
+for(let i=0;i<PC;i++){
+  const rad=1.3+Math.random()*2.8, a=Math.random()*Math.PI*2, phi=(Math.random()-.5)*Math.PI;
+  pPos[i*3]=Math.cos(phi)*Math.cos(a)*rad; pPos[i*3+1]=Math.sin(phi)*rad+1.2; pPos[i*3+2]=Math.cos(phi)*Math.sin(a)*rad;
+  pPh.push(Math.random()*Math.PI*2);
+}
+pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos,3));
+const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({color:0x00d4ff,size:.022,transparent:true,opacity:.38,depthWrite:false}));
+scene.add(particles);
+
+/* ─── HOLOGRAM SHADER ─── */
+/* Orijinal materyali klonlayarak skinning desteğini koruyoruz.
+   onBeforeCompile ile sadece renk+efekt inject edilir — bone animasyonu bozulmaz. */
+const MODE_COLORS = [0x00d4ff, 0xffcc44, 0x64ffda, 0xffffff];
+
+function makeHologramMat(origMat, mode) {
+  if(mode === 3){
+    /* GERÇEK mod — orijinali döndür */
+    return origMat || new THREE.MeshStandardMaterial();
+  }
+
+  const col = new THREE.Color(MODE_COLORS[mode]);
+
+  /* Orijinal materyali klonla — skinning:true ve tüm bone setup korunur */
+  const m = origMat
+    ? origMat.clone()
+    : new THREE.MeshStandardMaterial({ skinning: true });
+
+  m.transparent = true;
+  m.depthWrite  = false;
+  m.side        = THREE.DoubleSide;
+  m.opacity     = [.88, .88, .60][mode] ?? .88;
+  m.needsUpdate = true;
+
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = { value: 0 };
+    shader.uniforms.uMode = { value: mode };
+    shader.uniforms.uCol  = { value: col.clone() };
+
+    /* Vertex: animated world-Y için varying */
+    shader.vertexShader = 'varying float vWY;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <skinning_vertex>',
+      `#include <skinning_vertex>
+       vWY = (modelMatrix * vec4(transformed, 1.0)).y;`
+    );
+
+    /* Fragment: uniformlar + vWY */
+    shader.fragmentShader =
+      'uniform float uTime;\nuniform float uMode;\nuniform vec3 uCol;\nvarying float vWY;\n'
+      + shader.fragmentShader;
+
+    /* Hologram overlay — gl_FragColor set edildikten hemen sonra */
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <tonemapping_fragment>',
+      `/* ── HOLOGRAM ── */
+      float fr   = 1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition)));
+      fr = pow(fr, 1.7);
+      float scan = sin(vWY * 22.0 - uTime * 3.2) * .5 + .5;
+      float line = step(.975, sin(vWY * 150.0 - uTime * 2.0));
+      float glch = step(.988, fract(sin(floor(uTime*9.) + floor(vWY*16.)) * 43758.5)) * .4;
+
+      if(uMode < 0.5){
+        gl_FragColor.rgb  = mix(gl_FragColor.rgb * .25, uCol, .60);
+        gl_FragColor.rgb += fr   * vec3(.4,.9,1.) * .55;
+        gl_FragColor.rgb += line * vec3(.5,1.,.9) * .35;
+        gl_FragColor.rgb += glch * vec3(.8,1.,1.) * .30;
+        gl_FragColor.rgb += scan * uCol * .08;
+        gl_FragColor.a    = clamp(.50 + fr*.40 + scan*.08 + line*.12 + glch*.15, 0., 1.);
+      } else if(uMode < 1.5){
+        float lum = dot(gl_FragColor.rgb, vec3(.299,.587,.114));
+        gl_FragColor.rgb  = mix(vec3(lum*.9+.08,lum*.72,lum*.06), uCol, .55);
+        gl_FragColor.rgb += fr   * vec3(1.,.95,.5) * .5;
+        gl_FragColor.rgb += line * vec3(1.,.9,.4)  * .3;
+        gl_FragColor.a    = clamp(.55 + fr*.40 + scan*.08 + line*.12, 0., 1.);
+      } else {
+        gl_FragColor.rgb = uCol * (fr*.85 + scan*.10 + line*.35 + glch*.20);
+        gl_FragColor.a   = clamp(fr*.90 + scan*.05 + line*.20 + glch*.15, 0., 1.);
+      }
+      #include <tonemapping_fragment>`
+    );
+
+    m._shader = shader;
+  };
+
+  return m;
+}
+
+/* ─── MODEL & ANİMASYON SİSTEMİ ─── */
+let model = null, mixer = null;
+let idleAction = null, idleBtn = null, curAction = null, curMode = 0;
+const origMats = new Map(), allShaders = [];
+const LABELS = ['HOLOGRAM','ALTIN','XRAY','GERÇEK'];
+
+function setState(txt, active){
+  const el = document.getElementById('stateBar');
+  el.textContent = txt;
+  el.className = active ? 'active' : '';
+  document.getElementById('mAnim').textContent = txt;
+}
+
+function applyHoloMode(m){
+  curMode = m;
+  document.getElementById('mLbl').textContent = LABELS[m];
+  if(!model) return;
+  allShaders.length = 0;
+  model.traverse(o => {
+    if(!o.isMesh && !o.isSkinnedMesh) return;
+    if(!origMats.has(o.uuid)) origMats.set(o.uuid, o.material);
+    const orig = origMats.get(o.uuid);
+    const mat  = makeHologramMat(orig, m);
+    o.material = mat;
+    if(m < 3) allShaders.push(mat);
+  });
+}
+
+function returnToIdle(){
+  if(!idleAction) return;
+  if(curAction && curAction !== idleAction) curAction.crossFadeTo(idleAction, 0.5, false);
+  idleAction.setLoop(THREE.LoopRepeat, Infinity);
+  idleAction.play();
+  curAction = idleAction;
+  document.querySelectorAll('.ab').forEach(b => b.classList.remove('on'));
+  if(idleBtn) idleBtn.classList.add('on');
+  setState('BEKLEMEDE', false);
+}
+
+function playOnce(act, btn, label){
+  if(!act || !mixer) return;
+  act.setLoop(THREE.LoopOnce, 1);
+  act.clampWhenFinished = true;
+  act.reset();
+  if(curAction && curAction !== act) curAction.crossFadeTo(act, 0.35, false);
+  else { act.play(); }
+  curAction = act;
+  document.querySelectorAll('.ab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  setState('▶  ' + label, true);
+
+  const onFinish = (e) => {
+    if(e.action !== act) return;
+    mixer.removeEventListener('finished', onFinish);
+    returnToIdle();
+  };
+  mixer.addEventListener('finished', onFinish);
+}
+
+/* ─── ANA KARAKTER YÜKLEYİCİ ─── */
+function loadProgress(pct, txt){
+  document.getElementById('ldbarInner').style.width = pct + '%';
+  if(txt) document.getElementById('ldtxt').textContent = txt;
+}
+
+function setupModel(group){
+  if(model){ scene.remove(model); }
+  origMats.clear();
+  model = group;
+
+  /* Boyut normalize — Mixamo cm biriminde */
+  const box = new THREE.Box3().setFromObject(model);
+  const sz  = box.getSize(new THREE.Vector3());
+  const sc  = 2.2 / Math.max(sz.x, sz.y, sz.z);
+  model.scale.setScalar(sc);
+  const b2  = new THREE.Box3().setFromObject(model);
+  model.position.y = -b2.min.y;
+  scene.add(model);
+
+  /* Kamera */
+  const b3  = new THREE.Box3().setFromObject(model);
+  const cen = b3.getCenter(new THREE.Vector3());
+  const h   = b3.max.y - b3.min.y;
+  const dist = (h * .65) / Math.tan((camera.fov * Math.PI / 180) * .5);
+  controls.target.set(0, cen.y, 0);
+  camera.position.set(0, cen.y, Math.max(dist, 2.2));
+  controls.update();
+
+  /* Hologram uygula */
+  applyHoloMode(curMode);
+
+  /* İlk animasyon — IDLE */
+  const panel = document.getElementById('animPanel');
+  panel.querySelectorAll('.ab').forEach(b => b.remove());
+
+  if(group.animations && group.animations.length){
+    mixer = new THREE.AnimationMixer(model);
+    const clip = group.animations[0];
+    idleAction = mixer.clipAction(clip);
+    idleAction.setLoop(THREE.LoopRepeat, Infinity);
+    idleAction.play();
+    curAction = idleAction;
+
+    const btn = document.createElement('button');
+    btn.className = 'ab idle-btn on';
+    btn.innerHTML = '<span class="ic">●</span> BEKLEMEDE';
+    btn.onclick = () => returnToIdle();
+    idleBtn = btn;
+    panel.appendChild(btn);
+  }
+
+  /* UI güncelle */
+  document.getElementById('statusLbl').textContent = 'ONLINE';
+  setState('BEKLEMEDE', false);
+
+  /* Ekranı aç */
+  loadProgress(100, 'HAZIR');
+  setTimeout(() => document.getElementById('loading').classList.add('fade'), 600);
+}
+
+/* ─── ARKA PLANDA ANİMASYON YÜKLEYİCİ ─── */
+const ANIM_LIST = [
+  { file:'Waving.fbx',           label:'SELAMLAMA',     icon:'👋' },
+  { file:'Talking.fbx',          label:'KONUŞUYOR',     icon:'💬' },
+  { file:'Pointing Forward.fbx', label:'YÖNLENDİRİYOR', icon:'👉' },
+  { file:'Head Nod Yes.fbx',     label:'ONAY',          icon:'✓'  },
+  { file:'Arm Stretching.fbx',   label:'GERİNİYOR',     icon:'🤸' },
+];
+
+function loadAnimBg(animInfo, idx){
+  const panel = document.getElementById('animPanel');
+
+  /* Placeholder buton — yüklenirken */
+  const btn = document.createElement('button');
+  btn.className = 'ab loading-anim';
+  btn.innerHTML = `<span class="ic">${animInfo.icon}</span> ${animInfo.label}`;
+  panel.appendChild(btn);
+
+  const loader = new THREE.FBXLoader();
+  loader.load(
+    'models/' + animInfo.file,
+    (group) => {
+      if(!mixer || !group.animations || !group.animations.length) return;
+      const clip = group.animations[0];
+      clip.name  = animInfo.label;
+      const act  = mixer.clipAction(clip, model);
+
+      btn.className = 'ab';
+      btn.innerHTML = `<span class="ic">${animInfo.icon}</span> ${animInfo.label}`;
+      btn.onclick   = () => playOnce(act, btn, animInfo.label);
+    },
+    (p) => { /* sessiz progress */ },
+    (e) => {
+      btn.remove(); /* hata varsa butonu gizle */
+      console.warn('Animasyon yüklenemedi:', animInfo.file, e);
+    }
+  );
+}
+
+/* ─── ANA YÜKLEME ─── */
+(function init(){
+  loadProgress(5, 'ALYA YÜKLENİYOR...');
+  const loader = new THREE.FBXLoader();
+  loader.load(
+    'models/Breathing Idle.fbx',
+    (group) => {
+      loadProgress(85, 'HAZIRLANIYOR...');
+      setupModel(group);
+      /* Animasyonları arka planda yükle */
+      ANIM_LIST.forEach((a, i) => {
+        setTimeout(() => loadAnimBg(a, i), i * 200);
+      });
+    },
+    (p) => {
+      if(p.total){
+        const pct = Math.round(p.loaded / p.total * 80);
+        loadProgress(pct, 'ALYA YÜKLENİYOR... ' + pct + '%');
+      }
+    },
+    (e) => {
+      document.getElementById('ldtxt').textContent = 'HATA: ' + (e.message || e);
+      console.error(e);
+    }
+  );
+})();
+
+/* ─── MOD ─── */
+function setMode(m, btn){
+  document.querySelectorAll('.mb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  applyHoloMode(m);
+}
+
+/* ─── RENDER DÖNGÜSÜ ─── */
+let t = 0, fpsT = performance.now(), fpsF = 0;
+const t0 = Date.now();
+
+function animate(){
+  requestAnimationFrame(animate);
+  t += .016; fpsF++;
+  if(performance.now() - fpsT > 1000){
+    document.getElementById('fps').textContent = fpsF + ' FPS';
+    fpsF = 0; fpsT = performance.now();
+  }
+  const s = Math.floor((Date.now()-t0)/1000);
+  document.getElementById('upt').textContent = s<60 ? s+'s' : Math.floor(s/60)+'m';
+
+  controls.update();
+  if(mixer) mixer.update(.016);
+
+  /* Tüm hologram shaderlarının uTime'ını güncelle */
+  allShaders.forEach(mat => {
+    if(mat._shader?.uniforms?.uTime) mat._shader.uniforms.uTime.value = t;
+  });
+
+  /* Hafif float */
+  if(model) model.position.y += Math.sin(t * .6) * .00022;
+
+  /* Dekor */
+  particles.rotation.y = t * .04;
+  const pp = pGeo.attributes.position.array;
+  for(let i=0;i<PC;i++){ pp[i*3+1] += Math.sin(pPh[i]+t) * .0013; pPh[i] += .006; }
+  pGeo.attributes.position.needsUpdate = true;
+  const rs = 1 + Math.sin(t*1.5)*.042;
+  r1.scale.set(rs,rs,rs); r1.material.opacity = .42 + Math.sin(t*1.5)*.22;
+  r2.scale.set(1/rs,1/rs,1/rs);
+  pl1.position.x = Math.sin(t*.30)*2; pl1.position.z = 3.5 + Math.cos(t*.22)*.9;
+  cone.material.opacity = .018 + Math.sin(t*1.9)*.010;
+
+  renderer.setSize(W(), H(), false);
+  camera.aspect = W()/H(); camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+}
+animate();
+window.addEventListener('resize', () => { renderer.setSize(W(),H(),false); camera.aspect=W()/H(); camera.updateProjectionMatrix(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Alya 3D Hologram</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;width:100vw;height:100vh;
+     font-family:'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center}
+#c{display:block}
+/* HUD overlay */
+.hud{position:fixed;inset:0;pointer-events:none}
+.hud-corner{position:absolute;width:18px;height:18px;border-color:rgba(0,212,255,.5);border-style:solid}
+.tl{top:16px;left:16px;border-width:1.5px 0 0 1.5px}
+.tr{top:16px;right:16px;border-width:1.5px 1.5px 0 0}
+.bl{bottom:16px;left:16px;border-width:0 0 1.5px 1.5px}
+.br{bottom:16px;right:16px;border-width:0 1.5px 1.5px 0}
+.hud-label{position:absolute;font-size:9px;letter-spacing:2px;color:rgba(0,212,255,.45)}
+.hl-tl{top:10px;left:38px}
+.hl-tr{top:10px;right:38px;text-align:right}
+.hl-bl{bottom:10px;left:38px}
+.hl-br{bottom:10px;right:38px;text-align:right}
+/* scanline overlay */
+.scan-ov{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.022) 2px,rgba(0,212,255,.022) 3px);
+  animation:flk 6s infinite}
+@keyframes flk{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.82}94%{opacity:1}98%{opacity:.9}99%{opacity:1}}
+/* Status bar */
+.status{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  font-size:9px;letter-spacing:2px;color:rgba(0,212,255,.4);text-align:center}
+.status b{color:#64ffda}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="hud">
+  <div class="hud-corner tl"></div>
+  <div class="hud-corner tr"></div>
+  <div class="hud-corner bl"></div>
+  <div class="hud-corner br"></div>
+  <div class="hud-label hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hud-label hl-tr">HOLOGRAM v2.1</div>
+  <div class="hud-label hl-bl">STATUS: <span style="color:#64ffda">ONLINE</span></div>
+  <div class="hud-label hl-br" id="fps">60 FPS</div>
+</div>
+<div class="scan-ov"></div>
+<div class="status"><b>ALYA</b> · DRAG TO ROTATE · SCROLL TO ZOOM</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script>
+const W=window.innerWidth, H=window.innerHeight;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true,alpha:true});
+renderer.setSize(W,H); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000,1);
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,W/H,.1,100);
+camera.position.set(0,0.2,4.5);
+
+/* ── Hologram şader malzemesi ── */
+const holoVS=`
+varying vec3 vNormal;
+varying vec3 vPos;
+varying vec2 vUv;
+void main(){
+  vNormal=normalize(normalMatrix*normal);
+  vPos=(modelMatrix*vec4(position,1.0)).xyz;
+  vUv=uv;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+}`;
+
+const holoFS=`
+uniform float time;
+uniform vec3 color;
+uniform float opacity;
+varying vec3 vNormal;
+varying vec3 vPos;
+varying vec2 vUv;
+
+void main(){
+  // Kenar parlaklığı (fresnel)
+  vec3 viewDir=normalize(cameraPosition-vPos);
+  float fresnel=1.0-max(dot(viewDir,vNormal),0.0);
+  fresnel=pow(fresnel,1.8);
+
+  // Yatay tarama çizgileri
+  float scan=sin(vPos.y*18.0-time*3.0)*.5+.5;
+  scan=pow(scan,.6);
+
+  // Dikey tarama (ikincil)
+  float scan2=sin(vPos.y*80.0-time*1.5)*.5+.5;
+  scan2=smoothstep(.3,.7,scan2)*.3+.7;
+
+  // Titreşim efekti
+  float glitch=step(.995,sin(time*7.3+vPos.y*40.0))*.3;
+
+  float alpha=(fresnel*0.85+scan*.25)*opacity*scan2;
+  alpha=clamp(alpha+glitch,0.0,1.0);
+
+  vec3 col=color*(scan*.5+.6)+(vec3(1.0)*fresnel*.4);
+  gl_FragColor=vec4(col,alpha);
+}`;
+
+const holoMat=new THREE.ShaderMaterial({
+  vertexShader:holoVS, fragmentShader:holoFS,
+  uniforms:{time:{value:0},color:{value:new THREE.Color(0x00d4ff)},opacity:{value:.85}},
+  transparent:true, side:THREE.DoubleSide, depthWrite:false,
+});
+
+/* ── Kafa geometrisi ── */
+const headGeo=new THREE.SphereGeometry(1,64,64);
+// Hafif baş şekli: y ekseninde biraz basık, önde çıkık
+const positions=headGeo.attributes.position;
+for(let i=0;i<positions.count;i++){
+  const x=positions.getX(i), y=positions.getY(i), z=positions.getZ(i);
+  // Üst: biraz sivri, alt: çene için hafif basık
+  const yfactor=y>0?1.12:0.88;
+  // Ön taraf (z>0) biraz çıkık (yüz)
+  const zfactor=z>0?1.06:0.95;
+  positions.setXYZ(i, x*.88, y*yfactor, z*zfactor);
+}
+headGeo.computeVertexNormals();
+
+const head=new THREE.Mesh(headGeo, holoMat.clone());
+head.material.uniforms.color.value=new THREE.Color(0x00d4ff);
+
+/* ── Wireframe overlay ── */
+const wireGeo=new THREE.SphereGeometry(1.004,18,18);
+const wpos=wireGeo.attributes.position;
+for(let i=0;i<wpos.count;i++){
+  const x=wpos.getX(i),y=wpos.getY(i),z=wpos.getZ(i);
+  wpos.setXYZ(i,x*.885,y*(y>0?1.125:.885),z*(z>0?1.065:.955));
+}
+wireGeo.computeVertexNormals();
+const wireMat=new THREE.MeshBasicMaterial({color:0x00d4ff,wireframe:true,transparent:true,opacity:.08});
+const wire=new THREE.Mesh(wireGeo,wireMat);
+
+/* ── Boyun / Gövde (konik) ── */
+const neckGeo=new THREE.CylinderGeometry(.18,.28,.55,32);
+const neck=new THREE.Mesh(neckGeo,holoMat.clone());
+neck.material.uniforms.color.value=new THREE.Color(0x00b8e6);
+neck.material.uniforms.opacity.value=.6;
+neck.position.y=-1.0;
+
+const bustGeo=new THREE.CylinderGeometry(.28,.65,.9,32,1,true);
+const bust=new THREE.Mesh(bustGeo,holoMat.clone());
+bust.material.uniforms.color.value=new THREE.Color(0x0099cc);
+bust.material.uniforms.opacity.value=.5;
+bust.position.y=-1.7;
+
+/* ── Saç partikülleri ── */
+const hairGeo=new THREE.BufferGeometry();
+const hairPts=[];
+for(let i=0;i<1200;i++){
+  const theta=Math.random()*Math.PI*2;
+  const phi=Math.random()*Math.PI*.8; // üst yarıküre
+  const r=1.0+Math.random()*.25;
+  const x=Math.sin(phi)*Math.cos(theta)*r*.88;
+  const y=Math.cos(phi)*r*(phi<.6?1.12:.88)+.15;
+  const z=Math.sin(phi)*Math.sin(theta)*r*(Math.sin(theta)>0?1.06:.95);
+  if(y>-.2) hairPts.push(x,y,z);
+}
+hairGeo.setAttribute('position',new THREE.Float32BufferAttribute(hairPts,3));
+const hairMat=new THREE.PointsMaterial({color:0x0066aa,size:.025,transparent:true,opacity:.6,depthWrite:false});
+const hair=new THREE.Points(hairGeo,hairMat);
+
+/* ── Yüz detayları (göz, burun çizgileri) ── */
+function makeLine(pts,color=0x00d4ff,opacity=.5){
+  const geo=new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(...p)));
+  const mat=new THREE.LineBasicMaterial({color,transparent:true,opacity});
+  return new THREE.Line(geo,mat);
+}
+
+// Gözler
+const eyeL=[], eyeR=[];
+for(let t=0;t<=32;t++){
+  const a=t/32*Math.PI*2;
+  eyeL.push([-.28+Math.cos(a)*.11, .18+Math.sin(a)*.055, .88]);
+  eyeR.push([ .28+Math.cos(a)*.11, .18+Math.sin(a)*.055, .88]);
+}
+const eyeLineL=makeLine(eyeL,0x64ffda,.7);
+const eyeLineR=makeLine(eyeR,0x64ffda,.7);
+
+// Göz içi nokta
+const pupilGeo=new THREE.CircleGeometry(.045,16);
+const pupilMat=new THREE.MeshBasicMaterial({color:0x64ffda,transparent:true,opacity:.8});
+const pupilL=new THREE.Mesh(pupilGeo,pupilMat); pupilL.position.set(-.28,.18,.882);
+const pupilR=new THREE.Mesh(pupilGeo,pupilMat); pupilR.position.set(.28,.18,.882);
+
+// Dudak çizgisi
+const lipPts=[];
+for(let t=0;t<=24;t++){
+  const a=-Math.PI+t/24*Math.PI;
+  lipPts.push([Math.cos(a)*.16, -.35+Math.sin(a)*.04, .88]);
+}
+const lip=makeLine(lipPts,0x00d4ff,.45);
+
+// Burun
+const nosePts=[[0,-.05,.9],[-.06,-.22,.86],[.06,-.22,.86],[0,-.05,.9]];
+const nose=makeLine(nosePts,0x00d4ff,.3);
+
+/* ── Ana grup ── */
+const group=new THREE.Group();
+group.add(head,wire,hair,neck,bust,eyeLineL,eyeLineR,pupilL,pupilR,lip,nose);
+group.position.y=-.1;
+scene.add(group);
+
+/* ── Parçacık sistemi (etrafında uçan) ── */
+const flareGeo=new THREE.BufferGeometry();
+const flarePts=[],flarePhs=[],flareSpeeds=[];
+for(let i=0;i<280;i++){
+  const r=1.6+Math.random()*1.4;
+  const theta=Math.random()*Math.PI*2;
+  const phi=(Math.random()-.5)*Math.PI;
+  flarePts.push(Math.cos(phi)*Math.cos(theta)*r, Math.sin(phi)*r+-.1, Math.cos(phi)*Math.sin(theta)*r);
+  flarePhs.push(Math.random()*Math.PI*2);
+  flareSpeeds.push(.4+Math.random()*.8);
+}
+flareGeo.setAttribute('position',new THREE.Float32BufferAttribute(flarePts,3));
+flareGeo.setAttribute('phase',new THREE.Float32BufferAttribute(flarePhs,1));
+const flareMat=new THREE.PointsMaterial({color:0x00d4ff,size:.04,transparent:true,opacity:.55,depthWrite:false});
+const flares=new THREE.Points(flareGeo,flareMat);
+scene.add(flares);
+
+/* ── Alt ışık halkası ── */
+const ringGeo=new THREE.TorusGeometry(.85,.015,8,80);
+const ringMat=new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:.4});
+const ring=new THREE.Mesh(ringGeo,ringMat);
+ring.rotation.x=Math.PI/2; ring.position.y=-1.25;
+const ring2=new THREE.Mesh(new THREE.TorusGeometry(1.15,.008,8,80),new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:.2}));
+ring2.rotation.x=Math.PI/2; ring2.position.y=-1.25;
+scene.add(ring,ring2);
+
+/* ── Işıklar ── */
+const ambLight=new THREE.AmbientLight(0x001133,.4);
+const cyanLight=new THREE.PointLight(0x00d4ff,2.5,8);
+cyanLight.position.set(0,1,3);
+const tealLight=new THREE.PointLight(0x64ffda,1.5,6);
+tealLight.position.set(-2,.5,1);
+const backLight=new THREE.PointLight(0x0055aa,1,5);
+backLight.position.set(0,0,-3);
+scene.add(ambLight,cyanLight,tealLight,backLight);
+
+/* ── Mouse sürükleme ── */
+let drag=false,lastX=0,lastY=0,rotY=0,rotX=0,targetY=0,targetX=0;
+const cv=document.getElementById('c');
+cv.addEventListener('mousedown',e=>{ drag=true; lastX=e.clientX; lastY=e.clientY; });
+window.addEventListener('mouseup',()=>{ drag=false; });
+window.addEventListener('mousemove',e=>{
+  if(!drag) return;
+  targetY+=(e.clientX-lastX)*.008;
+  targetX+=(e.clientY-lastY)*.005;
+  targetX=Math.max(-1,Math.min(.8,targetX));
+  lastX=e.clientX; lastY=e.clientY;
+});
+cv.addEventListener('wheel',e=>{
+  camera.position.z=Math.max(2,Math.min(8,camera.position.z+e.deltaY*.01));
+});
+
+/* ── Touch ── */
+let lastTX=0;
+cv.addEventListener('touchstart',e=>{ lastTX=e.touches[0].clientX; });
+cv.addEventListener('touchmove',e=>{
+  targetY+=(e.touches[0].clientX-lastTX)*.012;
+  lastTX=e.touches[0].clientX;
+});
+
+/* ── Render loop ── */
+let t=0, lastFPS=performance.now(), frames=0;
+function animate(){
+  requestAnimationFrame(animate);
+  t+=.016;
+  frames++;
+  if(performance.now()-lastFPS>1000){
+    document.getElementById('fps').textContent=frames+' FPS';
+    frames=0; lastFPS=performance.now();
+  }
+
+  // Yavaş otomatik dönüş (sürükleme yoksa)
+  if(!drag){ targetY+=.003; }
+  rotY+=(targetY-rotY)*.08;
+  rotX+=(targetX-rotX)*.08;
+  group.rotation.y=rotY;
+  group.rotation.x=rotX;
+
+  // Hologram şader zamanı
+  [head,neck,bust].forEach(m=>{ if(m.material.uniforms) m.material.uniforms.time.value=t; });
+
+  // Float animasyonu
+  group.position.y=-.1+Math.sin(t*.7)*.06;
+
+  // Flaş partikülleri dönüşü
+  flares.rotation.y=t*.08;
+  flares.rotation.x=t*.04;
+  const fpos=flareGeo.attributes.position.array;
+  for(let i=0;i<flarePhs.length;i++){
+    const idx=i*3;
+    const a=flarePhs[i]+t*flareSpeeds[i]*.12;
+    fpos[idx+1]+=Math.sin(a)*.004;
+  }
+  flareGeo.attributes.position.needsUpdate=true;
+
+  // Halka nabzı
+  const rscale=1+Math.sin(t*1.8)*.04;
+  ring.scale.set(rscale,rscale,rscale);
+  ring2.scale.set(1/rscale,1/rscale,1/rscale);
+  ringMat.opacity=.3+Math.sin(t*1.8)*.15;
+
+  // Göz parlaması
+  const blinkVal=Math.sin(t*2.3)*.3+.7;
+  pupilL.material.opacity=blinkVal*.85;
+  pupilR.material.opacity=blinkVal*.85;
+  eyeLineL.material.opacity=blinkVal*.75;
+  eyeLineR.material.opacity=blinkVal*.75;
+
+  // Işık hareketi
+  cyanLight.position.x=Math.sin(t*.4)*1.5;
+  cyanLight.position.y=1+Math.sin(t*.6)*.5;
+
+  renderer.render(scene,camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>

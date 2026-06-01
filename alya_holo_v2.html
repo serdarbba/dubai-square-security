@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALYA — Hologram v2</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+canvas#c{display:block;width:100%;height:100%}
+
+/* HUD */
+.hud{position:fixed;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace}
+.hc{position:absolute;width:20px;height:20px;border-color:rgba(0,212,255,.45);border-style:solid}
+.htl{top:18px;left:18px;border-width:1.5px 0 0 1.5px}
+.htr{top:18px;right:18px;border-width:1.5px 1.5px 0 0}
+.hbl{bottom:18px;left:18px;border-width:0 0 1.5px 1.5px}
+.hbr{bottom:18px;right:18px;border-width:0 1.5px 1.5px 0}
+.hl{position:absolute;font-size:9px;color:rgba(0,212,255,.4);letter-spacing:2px}
+.hl-tl{top:12px;left:44px}
+.hl-tr{top:12px;right:44px;text-align:right}
+.hl-bl{bottom:12px;left:44px}
+.hl-br{bottom:12px;right:44px;text-align:right}
+
+/* Scanline overlay */
+.scan{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.018) 2px,rgba(0,212,255,.018) 3px);
+  animation:flk 8s infinite}
+@keyframes flk{0%,100%{opacity:1}93%{opacity:1}94%{opacity:.78}95%{opacity:1}98%{opacity:.9}}
+
+/* Hint */
+.hint{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.3);
+  letter-spacing:2px;white-space:nowrap;pointer-events:none}
+
+/* Mod butonları */
+.modes{position:fixed;top:18px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;z-index:10}
+.mb{padding:5px 13px;border-radius:12px;border:1px solid rgba(0,212,255,.2);
+  background:rgba(0,212,255,.04);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.mb.on{background:rgba(0,212,255,.18);border-color:#00d4ff;color:#00d4ff}
+.mb:hover{background:rgba(0,212,255,.1);color:#00d4ff}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="hud">
+  <div class="hc htl"></div><div class="hc htr"></div>
+  <div class="hc hbl"></div><div class="hc hbr"></div>
+  <div class="hl hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hl hl-tr">ALYA · HOLOGRAM v2</div>
+  <div class="hl hl-bl">STATUS: <span style="color:#64ffda">ONLINE</span></div>
+  <div class="hl hl-br" id="fps">-- FPS</div>
+</div>
+<div class="scan"></div>
+<div class="hint">FARE: DÖNDÜR  ·  SCROLL: ZOOM</div>
+
+<div class="modes">
+  <button class="mb on" onclick="setMode(0,this)">HOLOGRAM</button>
+  <button class="mb" onclick="setMode(1,this)">WIREFRAME</button>
+  <button class="mb" onclick="setMode(2,this)">XRAY</button>
+  <button class="mb" onclick="setMode(3,this)">GERÇEK</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* ══ RENDERER ══ */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000,1);
+renderer.shadowMap.enabled = true;
+
+const scene  = new THREE.Scene();
+const W = ()=>window.innerWidth, H = ()=>window.innerHeight;
+const camera = new THREE.PerspectiveCamera(38, W()/H(), 0.01, 100);
+camera.position.set(0, 1.72, 2.6);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.07;
+controls.minDistance = 0.8; controls.maxDistance = 10;
+controls.target.set(0, 1.55, 0);
+
+/* ══ HOLOGRAM SHADER ══ */
+const VS = `
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+varying vec2 vUv;
+void main(){
+  vNormal   = normalize(normalMatrix * normal);
+  vWorldPos = (modelMatrix * vec4(position,1.0)).xyz;
+  vUv       = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+}`;
+
+const FS = `
+uniform float     uTime;
+uniform vec3      uColor;
+uniform float     uOpacity;
+uniform float     uGlitch;
+uniform float     uRim;
+uniform float     uHasMap;   /* 1.0 = texture var, 0.0 = yok */
+uniform float     uTexBlend; /* tekstür hologram karışım oranı 0-1 */
+uniform sampler2D map;
+varying vec3      vNormal;
+varying vec3      vWorldPos;
+varying vec2      vUv;
+
+float rand(float s){ return fract(sin(s)*43758.5); }
+
+void main(){
+  vec3 vd = normalize(cameraPosition - vWorldPos);
+
+  /* Fresnel rim */
+  float rim = 1.0 - abs(dot(vd, vNormal));
+  rim = pow(rim, 1.5) * uRim;
+
+  /* Tarama bantları */
+  float scan1 = sin(vWorldPos.y * 22.0 - uTime * 3.2) * 0.5 + 0.5;
+  scan1 = pow(scan1, 0.5);
+
+  /* İnce tarama çizgisi */
+  float line = step(0.975, sin(vWorldPos.y * 120.0 - uTime * 2.0)) * 0.35;
+
+  /* Soldan sağa sweep */
+  float sweep = pow(sin(vWorldPos.x * 3.0 + uTime * 1.2)*0.5+0.5, 4.0) * 0.22;
+
+  /* Yukarı doğru ışık süpürmesi */
+  float rise = sin(vWorldPos.y * 1.8 - uTime * 0.9) * 0.5 + 0.5;
+  rise = pow(rise, 3.0) * 0.15;
+
+  /* Glitch */
+  float gt = floor(uTime * 9.0);
+  float gl = floor(vWorldPos.y * 16.0);
+  float glitch = step(1.0 - uGlitch, rand(gt + gl)) * rand(gt * 2.3) * 0.45;
+
+  /* ─── Tekstür yollu insan hologram ─── */
+  vec3 col;
+  float alpha;
+
+  if(uHasMap > 0.5){
+    vec4 tex = texture2D(map, vUv);
+    /* Orijinal rengi mavi/cyan'a doğru eğ */
+    vec3 tinted = mix(
+      tex.rgb,
+      tex.rgb * vec3(0.38, 0.82, 1.0) + uColor * 0.28,
+      uTexBlend
+    );
+    /* Yüz/ten detaylarını koru, kenarları rim ile parlat */
+    col = tinted * (0.72 + scan1 * 0.28) + vec3(0.9,1.0,1.0) * rim * 0.55;
+    col = mix(col, vec3(0.55,1.0,0.9), line * 0.7);
+    col = mix(col, vec3(1.0)*0.92, glitch * 0.5);
+    /* Tekstürlü alanda dolgu var, kenarlarda hologram görünümü */
+    float fill  = tex.a * 0.82;
+    float holoE = rim * 0.9 + scan1 * 0.18 + line + sweep + rise;
+    alpha = clamp(fill + holoE * 0.35 + glitch, 0.0, 1.0) * uOpacity;
+  } else {
+    /* Tekstürsüz mesh → saf hologram rim efekti */
+    col = uColor * (0.65 + scan1 * 0.45) + vec3(1.0) * rim * 0.4;
+    col = mix(col, vec3(0.55,1.0,0.9), line);
+    col = mix(col, vec3(1.0)*0.9, glitch * 0.5);
+    alpha = clamp((rim * 0.85 + scan1 * 0.25 + line + sweep + rise) * uOpacity + glitch, 0.0, 1.0);
+  }
+
+  gl_FragColor = vec4(col, alpha);
+}`;
+
+/* origMat → mevcut Three.js materyali. Tekstürü aktarır. */
+function holoMat(origMat, color=0x00d4ff, opacity=0.9, glitch=0.012, texBlend=0.62){
+  const hasTex = origMat && origMat.map ? 1.0 : 0.0;
+  return new THREE.ShaderMaterial({
+    vertexShader: VS, fragmentShader: FS,
+    uniforms:{
+      uTime:    {value:0},
+      uColor:   {value: new THREE.Color(color)},
+      uOpacity: {value: opacity},
+      uGlitch:  {value: glitch},
+      uRim:     {value: 1.0},
+      uHasMap:  {value: hasTex},
+      uTexBlend:{value: texBlend},
+      map:      {value: hasTex ? origMat.map : null},
+    },
+    transparent:true, side:THREE.DoubleSide, depthWrite:false,
+  });
+}
+
+/* ══ MOD SİSTEMİ ══ */
+let mode = 0;
+const meshMats = new Map();
+
+function applyMode(model, m){
+  model.traverse(o=>{
+    if(!o.isMesh) return;
+    if(!meshMats.has(o.uuid)) meshMats.set(o.uuid, o.material);
+    const orig = meshMats.get(o.uuid);
+    switch(m){
+      case 0: o.material = holoMat(orig, 0x00d4ff, 0.92, 0.012, 0.62); break;
+      case 1: o.material = new THREE.MeshBasicMaterial({
+                color:0x00d4ff, wireframe:true, transparent:true, opacity:0.5}); break;
+      case 2: {
+        const mm = holoMat(orig, 0x64ffda, 0.55, 0.004, 0.35);
+        mm.uniforms.uRim.value = 1.6; o.material = mm; break;
+      }
+      case 3: o.material = orig || new THREE.MeshStandardMaterial({color:0x556677}); break;
+    }
+  });
+}
+
+function setMode(m, btn){
+  mode = m;
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(window._model){
+    applyMode(window._model, m);
+    // Modu değiştirince tam bedeni göstermek için kamerayı sıfırla
+    const box = new THREE.Box3().setFromObject(window._model);
+    const sz  = box.getSize(new THREE.Vector3());
+    const cen = box.getCenter(new THREE.Vector3());
+    const dist = (sz.y * 0.62) / Math.tan((camera.fov * Math.PI / 180) * 0.5);
+    controls.target.set(0, cen.y, 0);
+    camera.position.set(0, cen.y, Math.max(dist, 2.0));
+    controls.update();
+  }
+}
+
+/* ══ IŞIKLAR ══ */
+scene.add(new THREE.AmbientLight(0x1a3555, 0.7));
+/* Ana yüz ışığı — önden yukarıdan */
+const cl = new THREE.PointLight(0x55ddff, 4.5, 10); cl.position.set(0.8, 2.6, 2.8); scene.add(cl);
+/* Sol dolgu — sıcak cyan */
+const tl = new THREE.PointLight(0x64ffda, 2.8, 7); tl.position.set(-1.6, 2.0, 1.4); scene.add(tl);
+/* Arka halo — mavi */
+const bl = new THREE.PointLight(0x0055bb, 1.8, 6); bl.position.set(0, 2.0, -2.8); scene.add(bl);
+/* Kafa üstü rim ışığı */
+const hl = new THREE.SpotLight(0x88ffff, 3.0, 8, Math.PI/5, 0.4);
+hl.position.set(0, 4.5, 0.5); hl.target.position.set(0, 1.7, 0);
+scene.add(hl); scene.add(hl.target);
+
+/* ══ DEKOR ELEMENLERİ ══ */
+// Alt halkalar
+function addRing(r, tube, y, opacity){
+  const m = new THREE.Mesh(
+    new THREE.TorusGeometry(r, tube, 8, 80),
+    new THREE.MeshBasicMaterial({color:0x00d4ff, transparent:true, opacity})
+  );
+  m.rotation.x = Math.PI/2; m.position.y = y;
+  scene.add(m); return m;
+}
+const ring1 = addRing(0.65, 0.012, 0, 0.55);
+const ring2 = addRing(0.95, 0.007, 0, 0.22);
+const ring3 = addRing(1.35, 0.004, 0, 0.1);
+
+// Parçacıklar
+const PCOUNT = 500;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(PCOUNT*3);
+const pPhase = [];
+for(let i=0;i<PCOUNT;i++){
+  const r = 1.2 + Math.random()*1.8;
+  const t = Math.random()*Math.PI*2;
+  const p = (Math.random()-0.5)*Math.PI;
+  pPos[i*3]   = Math.cos(p)*Math.cos(t)*r;
+  pPos[i*3+1] = Math.sin(p)*r + 1.0;
+  pPos[i*3+2] = Math.cos(p)*Math.sin(t)*r;
+  pPhase.push(Math.random()*Math.PI*2);
+}
+pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos,3));
+const particles = new THREE.Points(pGeo,
+  new THREE.PointsMaterial({color:0x00d4ff, size:0.022, transparent:true, opacity:0.5, depthWrite:false})
+);
+scene.add(particles);
+
+// Işık sütunu (projeksyon konisi)
+const coneGeo = new THREE.CylinderGeometry(0.01, 0.7, 2.0, 32, 1, true);
+const coneMat = new THREE.MeshBasicMaterial({color:0x00d4ff, transparent:true, opacity:0.035, side:THREE.DoubleSide});
+const cone = new THREE.Mesh(coneGeo, coneMat);
+cone.position.y = -1.0; scene.add(cone);
+
+/* ══ MODEL YÜKLE ══ */
+const loader = new THREE.GLTFLoader();
+loader.load('models/michelle.glb',
+  (gltf)=>{
+    const model = gltf.scene;
+
+    // Boyut normalize
+    const box = new THREE.Box3().setFromObject(model);
+    const sz  = box.getSize(new THREE.Vector3());
+    const sc  = 2.2 / Math.max(sz.x,sz.y,sz.z);
+    model.scale.setScalar(sc);
+
+    // Zemine otur
+    const box2 = new THREE.Box3().setFromObject(model);
+    model.position.y = -box2.min.y;
+
+    // Hologram materyali uygula
+    applyMode(model, mode);
+    scene.add(model);
+    window._model = model;
+
+    // Halkalar ve koniyi zemine hizala
+    const groundY = 0.02;
+    [ring1,ring2,ring3].forEach(r=>r.position.y = groundY);
+    cone.position.y = groundY - 1.0;
+
+    // Kamera: tüm bedeni gösterecek mesafe
+    const box3  = new THREE.Box3().setFromObject(model);
+    const modelH = box3.max.y - box3.min.y;
+    const cenY   = (box3.min.y + box3.max.y) * 0.5;
+    const dist   = (modelH * 0.62) / Math.tan((camera.fov * Math.PI / 180) * 0.5);
+    controls.target.set(0, cenY, 0);
+    camera.position.set(0, cenY, Math.max(dist, 2.0));
+    controls.update();
+
+    // Animasyonları çalıştır
+    if(gltf.animations?.length){
+      window._mixer = new THREE.AnimationMixer(model);
+      window._mixer.clipAction(gltf.animations[0]).play();
+    }
+
+    // Alt mesaj güncelle
+    document.querySelector('.hint').textContent = 'FARE: DÖNDÜR  ·  SCROLL: ZOOM  ·  MODEL: MICHELLE';
+  },
+  (p)=>{
+    if(p.total) document.querySelector('.hint').textContent =
+      'YÜKLENİYOR ' + Math.round(p.loaded/p.total*100) + '%...';
+  },
+  (err)=>{ console.error(err); document.querySelector('.hint').textContent = 'HATA: '+err.message; }
+);
+
+/* ══ RENDER LOOP ══ */
+let t=0, fpsT=performance.now(), fpsF=0;
+function animate(){
+  requestAnimationFrame(animate);
+  t += 0.016;
+  fpsF++;
+  if(performance.now()-fpsT > 1000){
+    document.getElementById('fps').textContent = fpsF+' FPS';
+    fpsF=0; fpsT=performance.now();
+  }
+
+  controls.update();
+  if(window._mixer) window._mixer.update(0.016);
+
+  // Shader zamanı güncelle
+  if(window._model){
+    window._model.traverse(o=>{
+      if(o.isMesh && o.material.uniforms?.uTime)
+        o.material.uniforms.uTime.value = t;
+    });
+    // Hafif float
+    window._model.position.y += Math.sin(t*0.65)*0.0003;
+  }
+
+  // Parçacık dönüşü + titreme
+  particles.rotation.y = t*0.055;
+  const pp = pGeo.attributes.position.array;
+  for(let i=0;i<PCOUNT;i++){
+    pp[i*3+1] += Math.sin(pPhase[i]+t)*0.0015;
+    pPhase[i] += 0.008;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+
+  // Halka nabzı
+  const rs = 1+Math.sin(t*1.6)*0.04;
+  ring1.scale.set(rs,rs,rs); ring1.material.opacity = 0.4+Math.sin(t*1.6)*0.2;
+  ring2.scale.set(1/rs,1/rs,1/rs);
+
+  // Işık hareketi — yüz etrafında yavaş döner
+  cl.position.x = Math.sin(t*0.28)*1.2;
+  cl.position.z = 2.5+Math.cos(t*0.22)*0.7;
+  cl.position.y = 2.6 + Math.sin(t*0.18)*0.4;
+
+  // Koni titreme
+  coneMat.opacity = 0.025+Math.sin(t*2)*0.015;
+
+  renderer.setSize(W(), H(), false);
+  camera.aspect = W()/H();
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  renderer.setSize(W(),H(),false);
+  camera.aspect=W()/H();
+  camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>

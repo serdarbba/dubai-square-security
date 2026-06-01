@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Management — BBA Security | Dubai Square</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#030d18;--s1:#071b2a;--s2:#0a2035;--s3:#0d2440;
+  --line:#1a3450;--line2:#234460;
+  --blue:#0ab0cc;--teal:#3ddbbe;--green:#38d96a;--red:#d64040;
+  --amber:#c8920a;--gold:#c8a820;--purple:#9880e0;
+  --txt:#aac8e0;--txt2:#6a90b0;--white:#e6f4fc;
+  --acc-full:#38d96a;     /* Green  — Full Access */
+  --acc-time:#c8a820;     /* Gold   — Time-Restricted */
+  --acc-sup:#c8920a;      /* Orange — Supervised */
+  --acc-deny:#d64040;     /* Red    — No Access */
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif}
+
+/* ── TOPBAR ── */
+.topbar{position:fixed;top:0;left:0;right:0;height:44px;background:var(--s1);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:500}
+.t-logo{font-size:12px;font-weight:600;color:var(--white);display:flex;align-items:center;gap:7px}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:glow 2s ease infinite}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.35}}
+.t-div{width:1px;height:16px;background:var(--line2);flex-shrink:0}
+.t-tag{font-size:9.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace;letter-spacing:.8px}
+.t-sp{flex:1}
+.t-live{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--red);border:1px solid rgba(214,64,64,.2);padding:3px 8px;border-radius:3px;letter-spacing:1px}
+.page-nav{display:flex;gap:0;border:1px solid var(--line2);border-radius:4px;overflow:hidden;margin-left:4px}
+.pn{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 12px;transition:all .15s;white-space:nowrap}
+.pn:hover{background:rgba(10,176,204,.08);color:var(--white)}
+.pn+.pn{border-left:1px solid var(--line2)}
+.pn-act{background:rgba(10,176,204,.12);color:var(--blue)!important}
+
+/* ── LAYOUT ── */
+.body{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;gap:0;overflow:hidden}
+.left-col{width:420px;flex-shrink:0;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.right-col{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── PANEL HEADER ── */
+.ph{padding:8px 12px;border-bottom:1px solid var(--line);font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ph::before{content:'';width:8px;height:1px;background:var(--blue)}
+
+/* ── FORM ── */
+.form-wrap{padding:12px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+.form-row{display:flex;flex-direction:column;gap:4px}
+.form-label{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:.8px;text-transform:uppercase}
+.form-input{background:rgba(4,14,28,.7);border:1px solid var(--line2);border-radius:3px;padding:7px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--white);outline:none;transition:border-color .15s;width:100%}
+.form-input:focus{border-color:rgba(10,176,204,.4)}
+.form-input::placeholder{color:rgba(100,140,170,.35)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Card type toggle */
+.type-toggle{display:flex;gap:0;border:1px solid var(--line2);border-radius:3px;overflow:hidden}
+.type-btn{flex:1;padding:7px 8px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
+.type-btn+.type-btn{border-left:1px solid var(--line2)}
+.type-btn.act{background:rgba(10,176,204,.12);color:var(--blue)}
+.type-btn:hover:not(.act){background:rgba(10,176,204,.05)}
+.type-icon{font-size:14px;line-height:1}
+
+/* Access level legend */
+.acc-legend{display:flex;gap:6px;flex-wrap:wrap}
+.acc-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:2px;font-size:8px;font-family:'JetBrains Mono',monospace;cursor:default}
+.acc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* Door access matrix */
+.door-matrix{display:flex;flex-direction:column;gap:2px}
+.door-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:3px;background:rgba(10,30,48,.5);border:1px solid var(--line)}
+.dr-id{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--blue);width:28px;flex-shrink:0}
+.dr-nm{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dr-floor{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);width:22px;flex-shrink:0;text-align:center}
+.acc-sel{display:flex;gap:2px}
+.acc-opt{width:18px;height:18px;border-radius:2px;border:1px solid transparent;cursor:pointer;transition:all .12s;opacity:.35;flex-shrink:0}
+.acc-opt:hover{opacity:.75;transform:scale(1.1)}
+.acc-opt.sel{opacity:1;box-shadow:0 0 6px currentColor}
+
+/* Card preview */
+.card-preview{background:linear-gradient(135deg,rgba(7,27,42,.9) 0%,rgba(10,32,53,.9) 100%);border:1px solid var(--line2);border-radius:6px;padding:14px 16px;position:relative;overflow:hidden;flex-shrink:0}
+.card-preview::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--blue),var(--teal))}
+.cp-logo{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.cp-name{font-size:16px;font-weight:600;color:var(--white);margin-bottom:3px}
+.cp-role{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-bottom:10px}
+.cp-row{display:flex;justify-content:space-between;align-items:flex-end}
+.cp-id{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--teal)}
+.cp-qr{width:36px;height:36px;background:rgba(10,176,204,.08);border:1px solid rgba(10,176,204,.2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--blue)}
+.cp-dots{position:absolute;top:14px;right:14px;display:flex;gap:3px}
+.cp-dot{width:8px;height:8px;border-radius:50%;border:1px solid}
+
+/* Chip strip */
+.chip-strip{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.chip{padding:2px 7px;border-radius:2px;font-size:7.5px;font-family:'JetBrains Mono',monospace;border:1px solid}
+
+/* Submit */
+.btn-submit{padding:9px 0;background:rgba(10,176,204,.12);border:1px solid rgba(10,176,204,.35);border-radius:3px;color:var(--blue);font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;cursor:pointer;width:100%;transition:all .2s;text-transform:uppercase}
+.btn-submit:hover{background:rgba(10,176,204,.22);border-color:rgba(10,176,204,.6)}
+.btn-submit:active{transform:scale(.98)}
+
+/* ── CARD LIST ── */
+.card-list{flex:1;overflow-y:auto;padding:10px}
+.card-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.card-item{background:rgba(7,27,42,.8);border:1px solid var(--line);border-radius:5px;padding:11px 13px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.card-item:hover{border-color:rgba(10,176,204,.3);background:rgba(10,32,53,.9)}
+.card-item::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.ci-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ci-name{font-size:11px;font-weight:500;color:var(--white)}
+.ci-type{font-size:7px;font-family:'JetBrains Mono',monospace;padding:2px 5px;border-radius:2px;letter-spacing:.5px}
+.ci-id{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-bottom:6px}
+.ci-dots{display:flex;gap:3px;margin-bottom:6px}
+.ci-dot{width:7px;height:7px;border-radius:50%}
+.ci-meta{display:flex;justify-content:space-between;font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.ci-actions{display:flex;gap:4px;margin-top:7px}
+.ci-btn{flex:1;padding:4px 0;font-size:7.5px;font-family:'JetBrains Mono',monospace;border-radius:2px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--txt2);transition:all .15s;letter-spacing:.5px}
+.ci-btn:hover{border-color:rgba(10,176,204,.35);color:var(--blue)}
+.ci-btn.ci-del:hover{border-color:rgba(214,64,64,.4);color:var(--red)}
+
+/* Stats bar */
+.stats-bar{padding:8px 12px;border-bottom:1px solid var(--line);display:flex;gap:18px;flex-shrink:0}
+.sb-stat{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.sb-val{color:var(--white);font-weight:500;margin-left:2px}
+.sb-dot{width:5px;height:5px;border-radius:50%}
+
+/* Search */
+.search-row{padding:8px 10px;border-bottom:1px solid var(--line);flex-shrink:0;display:flex;gap:6px}
+.search-inp{flex:1;background:rgba(4,14,28,.6);border:1px solid var(--line2);border-radius:3px;padding:5px 9px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--white);outline:none}
+.search-inp:focus{border-color:rgba(10,176,204,.35)}
+.search-inp::placeholder{color:rgba(100,140,170,.35)}
+.filter-btn{padding:5px 10px;background:transparent;border:1px solid var(--line2);border-radius:3px;font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer;transition:all .15s}
+.filter-btn.active{border-color:rgba(10,176,204,.4);color:var(--blue);background:rgba(10,176,204,.08)}
+.filter-btn:hover:not(.active){border-color:rgba(10,176,204,.2);color:var(--txt)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(3,7,14,.96);border:1px solid rgba(56,217,106,.4);border-radius:4px;padding:10px 18px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--green);z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .left-col{width:320px}
+  .form-row-2{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .body{flex-direction:column}
+  .left-col{width:100%!important;max-height:45vh;border-right:none;border-bottom:1px solid var(--line);flex-shrink:0}
+  .pn{display:none}
+  .t-tag{display:none}
+  .page-nav::before{content:'CARD MGMT';font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--blue);letter-spacing:1px}
+}
+@media(max-width:420px){
+  .left-col{max-height:40vh}
+  .form-row-2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="t-logo"><div class="t-dot"></div><span style="color:var(--blue)">BBA</span>&nbsp;Security Intelligence</div>
+  <div class="t-div"></div>
+  <span class="t-tag">DUBAI SQUARE · ACCESS CARD MANAGEMENT</span>
+  <div class="t-sp"></div>
+  <div class="t-live"><div class="ts-d" style="background:var(--red);animation:glow .8s ease infinite"></div>LIVE</div>
+  <div class="page-nav">
+    <a href="../" class="pn">Proposal</a>
+    <a href="../ops/" class="pn">Ops Center</a>
+    <a href="../twin/" class="pn">Digital Twin</a>
+    <a href="../access/" class="pn">Access Intel</a>
+    <a href="../graph/" class="pn">Entity Graph</a>
+    <a href="../demo/" class="pn">AI Operator</a>
+    <a href="../cards/" class="pn pn-act">Card Mgmt</a>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- LEFT: CARD CREATOR -->
+  <div class="left-col">
+    <div class="ph">Issue New Access Card</div>
+    <div class="form-wrap">
+
+      <!-- Card Preview -->
+      <div class="card-preview" id="cardPreview">
+        <div class="cp-dots">
+          <div class="cp-dot" id="prevDot1" style="background:var(--acc-deny);border-color:var(--acc-deny);opacity:.3"></div>
+          <div class="cp-dot" id="prevDot2" style="background:var(--acc-deny);border-color:var(--acc-deny);opacity:.3"></div>
+          <div class="cp-dot" id="prevDot3" style="background:var(--acc-deny);border-color:var(--acc-deny);opacity:.3"></div>
+        </div>
+        <div class="cp-logo"><div class="t-dot" style="width:5px;height:5px"></div>BBA SECURITY INTELLIGENCE</div>
+        <div class="cp-name" id="prevName">Full Name</div>
+        <div class="cp-role" id="prevRole">Access Level: —</div>
+        <div class="chip-strip" id="prevChips"></div>
+        <div class="cp-row" style="margin-top:10px">
+          <div>
+            <div style="font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-bottom:2px">CARD ID</div>
+            <div class="cp-id" id="prevId">DSQ-XXXX-0000</div>
+          </div>
+          <div class="cp-qr" id="prevQR">⬛</div>
+        </div>
+      </div>
+
+      <!-- Holder Info -->
+      <div class="form-row-2">
+        <div class="form-row">
+          <div class="form-label">First Name</div>
+          <input class="form-input" id="fFirst" placeholder="e.g. Ahmed" oninput="updatePreview()">
+        </div>
+        <div class="form-row">
+          <div class="form-label">Last Name</div>
+          <input class="form-input" id="fLast" placeholder="e.g. Al-Rashidi" oninput="updatePreview()">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Role / Department</div>
+        <input class="form-input" id="fRole" placeholder="e.g. Security Manager · Operations" oninput="updatePreview()">
+      </div>
+
+      <!-- Card Type -->
+      <div class="form-row">
+        <div class="form-label">Card Linked To</div>
+        <div class="type-toggle">
+          <button class="type-btn act" id="tbName" onclick="setType('name')">
+            <span class="type-icon">👤</span> Name / ID
+          </button>
+          <button class="type-btn" id="tbPhone" onclick="setType('phone')">
+            <span class="type-icon">📱</span> Mobile NFC
+          </button>
+          <button class="type-btn" id="tbBio" onclick="setType('bio')">
+            <span class="type-icon">👁</span> Biometric
+          </button>
+        </div>
+      </div>
+
+      <div class="form-row" id="phoneRow" style="display:none">
+        <div class="form-label">Mobile Number</div>
+        <input class="form-input" id="fPhone" placeholder="+971 5X XXX XXXX" oninput="updatePreview()">
+      </div>
+
+      <div class="form-row" id="bioRow" style="display:none">
+        <div class="form-label">Biometric Reference ID</div>
+        <input class="form-input" id="fBio" placeholder="BIO-XXXX-XXXX" oninput="updatePreview()">
+      </div>
+
+      <!-- Access Level Legend -->
+      <div class="form-row">
+        <div class="form-label" style="margin-bottom:5px">Access Matrix — assign level per door</div>
+        <div class="acc-legend" style="margin-bottom:8px">
+          <div class="acc-pill" style="background:rgba(56,217,106,.08);border:1px solid rgba(56,217,106,.2)"><div class="acc-dot" style="background:var(--acc-full)"></div><span style="color:var(--acc-full)">FULL</span></div>
+          <div class="acc-pill" style="background:rgba(200,168,32,.08);border:1px solid rgba(200,168,32,.2)"><div class="acc-dot" style="background:var(--acc-time)"></div><span style="color:var(--acc-time)">TIME-RESTRICTED</span></div>
+          <div class="acc-pill" style="background:rgba(200,146,10,.08);border:1px solid rgba(200,146,10,.2)"><div class="acc-dot" style="background:var(--acc-sup)"></div><span style="color:var(--acc-sup)">SUPERVISED</span></div>
+          <div class="acc-pill" style="background:rgba(214,64,64,.08);border:1px solid rgba(214,64,64,.2)"><div class="acc-dot" style="background:var(--acc-deny)"></div><span style="color:var(--acc-deny)">NO ACCESS</span></div>
+        </div>
+        <div class="door-matrix" id="doorMatrix"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">Validity Period</div>
+        <div class="form-row-2">
+          <input class="form-input" id="fFrom" type="date" value="2026-05-21" style="color-scheme:dark">
+          <input class="form-input" id="fTo" type="date" value="2027-05-21" style="color-scheme:dark">
+        </div>
+      </div>
+
+      <button class="btn-submit" onclick="issueCard()">⊕ &nbsp;ISSUE CARD</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: CARD LIST -->
+  <div class="right-col">
+    <div class="stats-bar" id="statsBar">
+      <div class="sb-stat"><div class="sb-dot" style="background:var(--blue)"></div>Total Cards<span class="sb-val" id="statTotal">0</span></div>
+      <div class="sb-stat"><div class="sb-dot" style="background:var(--acc-full)"></div>Full Access<span class="sb-val" id="statFull">0</span></div>
+      <div class="sb-stat"><div class="sb-dot" style="background:var(--acc-time)"></div>Time-Restricted<span class="sb-val" id="statTime">0</span></div>
+      <div class="sb-stat"><div class="sb-dot" style="background:var(--acc-sup)"></div>Supervised<span class="sb-val" id="statSup">0</span></div>
+      <div class="sb-stat"><div class="sb-dot" style="background:var(--red)"></div>Revoked<span class="sb-val" id="statRev">0</span></div>
+    </div>
+    <div class="search-row">
+      <input class="search-inp" id="searchInp" placeholder="Search by name, ID, role…" oninput="renderCards()">
+      <button class="filter-btn active" id="fAll" onclick="setFilter('ALL',this)">All</button>
+      <button class="filter-btn" id="fName" onclick="setFilter('name',this)">👤 Name</button>
+      <button class="filter-btn" id="fPhone2" onclick="setFilter('phone',this)">📱 Mobile</button>
+      <button class="filter-btn" id="fBio2" onclick="setFilter('bio',this)">👁 Biometric</button>
+    </div>
+    <div class="ph">Issued Cards <span id="cardCountLbl" style="color:var(--blue);margin-left:6px;font-size:8px">0 CARDS</span></div>
+    <div style="flex:1;overflow-y:auto;padding:10px">
+      <div class="card-list-grid" id="cardGrid"></div>
+      <div id="emptyState" style="padding:48px;text-align:center;font-size:10px;font-family:'JetBrains Mono',monospace;color:rgba(100,140,170,.35)">No cards issued yet — use the form on the left to create the first card.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DOOR DEFINITIONS (matches twin/index.html GATE_DATA) ──
+const DOORS=[
+  {id:'G1', nm:'Gate 1 · East Main',     fl:'GF'},
+  {id:'G2', nm:'Gate 2 · West Entry',    fl:'GF'},
+  {id:'G3', nm:'Gate 3 · VIP Access',    fl:'GF'},
+  {id:'G4', nm:'Gate 4 · South',         fl:'GF'},
+  {id:'G5', nm:'Gate 5 · Service',       fl:'GF'},
+  {id:'G6', nm:'Gate 6 · Emergency',     fl:'GF'},
+  {id:'G7', nm:'B1 Parking Entry',       fl:'B1'},
+  {id:'G8', nm:'B2 Parking Entry',       fl:'B2'},
+  {id:'D1', nm:'VIP Lounge · L1',        fl:'L1'},
+  {id:'D2', nm:'Security Ops Room',      fl:'GF'},
+  {id:'D3', nm:'Server Room',            fl:'GF'},
+  {id:'D4', nm:'Staff Entry',            fl:'GF'},
+  {id:'D5', nm:'Retail Staff L2',        fl:'L2'},
+  {id:'D6', nm:'Control Room B1',        fl:'B1'},
+  {id:'B4', nm:'Bay 4 · Service',        fl:'GF'},
+];
+
+const ACC_COLORS={FULL:'#38d96a',TIME:'#c8a820',SUP:'#c8920a',DENY:'#d64040'};
+const ACC_LABELS={FULL:'FULL',TIME:'TIME',SUP:'SUP',DENY:'DENY'};
+
+// ── STATE ──
+let cardType='name';
+let doorAcc={}; // {doorId: 'FULL'|'TIME'|'SUP'|'DENY'}
+let cards=[];
+let filterType='ALL';
+let cardCounter=1000;
+
+// Init door access defaults (DENY)
+DOORS.forEach(d=>doorAcc[d.id]='DENY');
+
+// ── BUILD DOOR MATRIX ──
+function buildMatrix(){
+  const container=document.getElementById('doorMatrix');
+  container.innerHTML='';
+  DOORS.forEach(d=>{
+    const row=document.createElement('div');
+    row.className='door-row';
+    row.innerHTML=`
+      <span class="dr-id">${d.id}</span>
+      <span class="dr-nm">${d.nm}</span>
+      <span class="dr-floor">${d.fl}</span>
+      <div class="acc-sel" id="sel-${d.id}">
+        <div class="acc-opt ${doorAcc[d.id]==='FULL'?'sel':''}" title="Full Access" style="background:${ACC_COLORS.FULL};color:${ACC_COLORS.FULL}"   onclick="setAcc('${d.id}','FULL')"></div>
+        <div class="acc-opt ${doorAcc[d.id]==='TIME'?'sel':''}" title="Time-Restricted" style="background:${ACC_COLORS.TIME};color:${ACC_COLORS.TIME}" onclick="setAcc('${d.id}','TIME')"></div>
+        <div class="acc-opt ${doorAcc[d.id]==='SUP'?'sel':''}"  title="Supervised"       style="background:${ACC_COLORS.SUP};color:${ACC_COLORS.SUP}"  onclick="setAcc('${d.id}','SUP')"></div>
+        <div class="acc-opt ${doorAcc[d.id]==='DENY'?'sel':''}" title="No Access"        style="background:${ACC_COLORS.DENY};color:${ACC_COLORS.DENY}" onclick="setAcc('${d.id}','DENY')"></div>
+      </div>`;
+    container.appendChild(row);
+  });
+}
+
+function setAcc(doorId, level){
+  doorAcc[doorId]=level;
+  const sel=document.getElementById('sel-'+doorId);
+  sel.querySelectorAll('.acc-opt').forEach((el,i)=>{
+    const levels=['FULL','TIME','SUP','DENY'];
+    el.classList.toggle('sel', levels[i]===level);
+  });
+  updatePreview();
+}
+
+// Quick-set all doors to a level
+function setAllAcc(level){
+  DOORS.forEach(d=>{doorAcc[d.id]=level;});
+  buildMatrix();
+  updatePreview();
+}
+
+// ── CARD TYPE ──
+function setType(t){
+  cardType=t;
+  ['name','phone','bio'].forEach(k=>{
+    document.getElementById('tb'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('act',k===t);
+  });
+  document.getElementById('phoneRow').style.display=t==='phone'?'flex':'none';
+  document.getElementById('bioRow').style.display=t==='bio'?'flex':'none';
+  updatePreview();
+}
+
+// ── PREVIEW ──
+function updatePreview(){
+  const first=document.getElementById('fFirst').value.trim();
+  const last=document.getElementById('fLast').value.trim();
+  const role=document.getElementById('fRole').value.trim();
+  const name=first||last?`${first} ${last}`.trim():'Full Name';
+  document.getElementById('prevName').textContent=name;
+  document.getElementById('prevRole').textContent=role||'Role / Department';
+  // Card ID
+  const prefix={name:'DSQ-ID',phone:'DSQ-NFC',bio:'DSQ-BIO'}[cardType];
+  document.getElementById('prevId').textContent=`${prefix}-${cardCounter}`;
+  // QR placeholder
+  document.getElementById('prevQR').textContent='⬛';
+  // Chips — show up to 5 granted doors
+  const granted=DOORS.filter(d=>doorAcc[d.id]!=='DENY');
+  const chips=document.getElementById('prevChips');
+  chips.innerHTML=granted.slice(0,6).map(d=>{
+    const col=ACC_COLORS[doorAcc[d.id]];
+    return `<div class="chip" style="background:${col}18;border-color:${col}40;color:${col}">${d.id}</div>`;
+  }).join('')+(granted.length>6?`<div class="chip" style="background:rgba(100,140,170,.08);border-color:var(--line2);color:var(--txt2)">+${granted.length-6}</div>`:'');
+  // Dots — top level summary
+  const counts={FULL:0,TIME:0,SUP:0};
+  granted.forEach(d=>{ if(counts[doorAcc[d.id]]!==undefined) counts[doorAcc[d.id]]++; });
+  const dotCols=[ACC_COLORS.FULL, ACC_COLORS.TIME, ACC_COLORS.SUP];
+  const dotVals=[counts.FULL>0,counts.TIME>0,counts.SUP>0];
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById(`prevDot${i}`);
+    const on=dotVals[i-1];
+    el.style.background=on?dotCols[i-1]:'rgba(100,140,170,.15)';
+    el.style.borderColor=on?dotCols[i-1]:'rgba(100,140,170,.2)';
+    el.style.opacity=on?'1':'.3';
+  });
+  // Card stripe color
+  const topType={name:ACC_COLORS.FULL,phone:'#0ab0cc',bio:'#9880e0'}[cardType];
+  document.getElementById('cardPreview').style.setProperty('--stripe',topType);
+  document.querySelector('#cardPreview::before');
+}
+
+// ── ISSUE CARD ──
+function issueCard(){
+  const first=document.getElementById('fFirst').value.trim();
+  const last=document.getElementById('fLast').value.trim();
+  if(!first&&!last){ showToast('⚠ Enter at least a name','error'); return; }
+  const name=`${first} ${last}`.trim();
+  const role=document.getElementById('fRole').value.trim()||'—';
+  const from=document.getElementById('fFrom').value;
+  const to=document.getElementById('fTo').value;
+  const phone=document.getElementById('fPhone').value.trim();
+  const bio=document.getElementById('fBio').value.trim();
+  const cardId=`${{name:'DSQ-ID',phone:'DSQ-NFC',bio:'DSQ-BIO'}[cardType]}-${cardCounter++}`;
+  const acc={...doorAcc};
+  // Determine summary level
+  const levels=Object.values(acc);
+  const dominantLevel=levels.filter(l=>l!=='DENY').length===0?'DENY':
+    levels.includes('FULL')?'FULL':levels.includes('TIME')?'TIME':'SUP';
+  cards.unshift({
+    id:cardId, name, role, type:cardType,
+    phone:phone||null, bio:bio||null,
+    from, to, acc, dominantLevel,
+    issued:new Date().toISOString(), revoked:false
+  });
+  showToast(`✓ Card issued — ${cardId}`,'success');
+  resetForm();
+  renderCards();
+  updateStats();
+}
+
+function resetForm(){
+  ['fFirst','fLast','fRole','fPhone','fBio'].forEach(id=>document.getElementById(id).value='');
+  DOORS.forEach(d=>doorAcc[d.id]='DENY');
+  buildMatrix(); updatePreview();
+}
+
+// ── RENDER CARDS ──
+let filterTypeState='ALL';
+function setFilter(t,btn){
+  filterTypeState=t;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+function renderCards(){
+  const q=document.getElementById('searchInp').value.toLowerCase();
+  let filtered=cards.filter(c=>{
+    const matchQ=!q||c.name.toLowerCase().includes(q)||c.id.toLowerCase().includes(q)||c.role.toLowerCase().includes(q);
+    const matchT=filterTypeState==='ALL'||c.type===filterTypeState;
+    return matchQ&&matchT;
+  });
+  const grid=document.getElementById('cardGrid');
+  const empty=document.getElementById('emptyState');
+  document.getElementById('cardCountLbl').textContent=`${filtered.length} CARD${filtered.length!==1?'S':''}`;
+  if(!filtered.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const typeIcon={name:'👤',phone:'📱',bio:'👁'};
+  const typeLabel={name:'NAME/ID',phone:'MOBILE NFC',bio:'BIOMETRIC'};
+  const typeColor={name:'rgba(10,176,204,.15)',phone:'rgba(61,219,190,.12)',bio:'rgba(152,128,224,.12)'};
+  const typeBorder={name:'rgba(10,176,204,.3)',phone:'rgba(61,219,190,.3)',bio:'rgba(152,128,224,.3)'};
+  const levelColor={FULL:ACC_COLORS.FULL,TIME:ACC_COLORS.TIME,SUP:ACC_COLORS.SUP,DENY:ACC_COLORS.DENY};
+  grid.innerHTML=filtered.map((c,idx)=>{
+    const grantedDoors=DOORS.filter(d=>c.acc[d.id]!=='DENY');
+    const dots=DOORS.slice(0,8).map(d=>{
+      const col=ACC_COLORS[c.acc[d.id]||'DENY'];
+      const on=c.acc[d.id]!=='DENY';
+      return `<div class="ci-dot" style="background:${on?col:'rgba(100,140,170,.12)'}"></div>`;
+    }).join('');
+    return `<div class="card-item" style="border-color:${c.revoked?'rgba(214,64,64,.25)':'var(--line)'};opacity:${c.revoked?.55:1}" data-idx="${cards.indexOf(c)}">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${c.revoked?ACC_COLORS.DENY:levelColor[c.dominantLevel]}"></div>
+      <div class="ci-top">
+        <div class="ci-name">${c.name}</div>
+        <div class="ci-type" style="background:${c.revoked?'rgba(214,64,64,.1)':typeColor[c.type]};border:1px solid ${c.revoked?'rgba(214,64,64,.3)':typeBorder[c.type]};color:${c.revoked?ACC_COLORS.DENY:c.type==='name'?'#0ab0cc':c.type==='phone'?'#3ddbbe':'#9880e0'}">${c.revoked?'REVOKED':typeIcon[c.type]+' '+typeLabel[c.type]}</div>
+      </div>
+      <div class="ci-id">${c.id}</div>
+      <div class="ci-id" style="margin-bottom:5px;color:rgba(100,140,170,.55)">${c.role}</div>
+      <div class="ci-dots" style="margin-bottom:4px">${dots}</div>
+      <div style="font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(100,140,170,.5);margin-bottom:6px">${grantedDoors.length} door${grantedDoors.length!==1?'s':''} granted · valid to ${c.to}</div>
+      <div class="ci-actions">
+        <button class="ci-btn" onclick="editCard(${cards.indexOf(c)})">EDIT</button>
+        <button class="ci-btn" onclick="viewCard(${cards.indexOf(c)})">VIEW</button>
+        <button class="ci-btn ci-del" onclick="revokeCard(${cards.indexOf(c)})">${c.revoked?'RESTORE':'REVOKE'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent=cards.length;
+  document.getElementById('statFull').textContent=cards.filter(c=>!c.revoked&&c.dominantLevel==='FULL').length;
+  document.getElementById('statTime').textContent=cards.filter(c=>!c.revoked&&c.dominantLevel==='TIME').length;
+  document.getElementById('statSup').textContent=cards.filter(c=>!c.revoked&&c.dominantLevel==='SUP').length;
+  document.getElementById('statRev').textContent=cards.filter(c=>c.revoked).length;
+}
+
+function revokeCard(idx){
+  cards[idx].revoked=!cards[idx].revoked;
+  renderCards(); updateStats();
+  showToast(cards[idx].revoked?`⊘ ${cards[idx].id} revoked`:`✓ ${cards[idx].id} restored`, cards[idx].revoked?'error':'success');
+}
+
+function viewCard(idx){
+  const c=cards[idx];
+  const granted=DOORS.filter(d=>c.acc[d.id]!=='DENY');
+  const rows=DOORS.map(d=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(26,52,80,.5)">
+    <div style="font-size:8.5px;font-family:'JetBrains Mono',monospace;color:#0ab0cc;width:24px">${d.id}</div>
+    <div style="font-size:8.5px;font-family:'JetBrains Mono',monospace;color:rgba(170,200,224,.8);flex:1">${d.nm}</div>
+    <div style="font-size:7.5px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:2px;background:${ACC_COLORS[c.acc[d.id]||'DENY']}18;border:1px solid ${ACC_COLORS[c.acc[d.id]||'DENY']}40;color:${ACC_COLORS[c.acc[d.id]||'DENY']}">${c.acc[d.id]||'DENY'}</div>
+  </div>`).join('');
+  const popup=document.createElement('div');
+  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:flex;align-items:center;justify-content:center';
+  popup.innerHTML=`<div style="background:#071b2a;border:1px solid #1a3450;border-radius:6px;padding:20px;max-width:420px;width:90%;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#0ab0cc;letter-spacing:1px">${c.id}</div>
+      <button onclick="this.closest('[style*=inset]').remove()" style="background:transparent;border:1px solid #1a3450;color:#6a90b0;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:10px">✕</button>
+    </div>
+    <div style="font-size:18px;font-weight:600;color:#e6f4fc;margin-bottom:2px">${c.name}</div>
+    <div style="font-size:9px;font-family:'JetBrains Mono',monospace;color:#6a90b0;margin-bottom:12px">${c.role}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:rgba(10,30,48,.5);padding:8px;border-radius:3px;border:1px solid #1a3450">
+        <div style="font-size:7px;color:#6a90b0;margin-bottom:3px;font-family:'JetBrains Mono',monospace;letter-spacing:.8px">TYPE</div>
+        <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#aac8e0">${{name:'👤 Name/ID',phone:'📱 Mobile NFC',bio:'👁 Biometric'}[c.type]}</div>
+      </div>
+      <div style="background:rgba(10,30,48,.5);padding:8px;border-radius:3px;border:1px solid #1a3450">
+        <div style="font-size:7px;color:#6a90b0;margin-bottom:3px;font-family:'JetBrains Mono',monospace;letter-spacing:.8px">VALID</div>
+        <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#aac8e0">${c.from} → ${c.to}</div>
+      </div>
+      <div style="background:rgba(10,30,48,.5);padding:8px;border-radius:3px;border:1px solid #1a3450">
+        <div style="font-size:7px;color:#6a90b0;margin-bottom:3px;font-family:'JetBrains Mono',monospace;letter-spacing:.8px">DOORS GRANTED</div>
+        <div style="font-size:14px;font-weight:600;color:#38d96a">${granted.length} / ${DOORS.length}</div>
+      </div>
+      <div style="background:rgba(10,30,48,.5);padding:8px;border-radius:3px;border:1px solid #1a3450">
+        <div style="font-size:7px;color:#6a90b0;margin-bottom:3px;font-family:'JetBrains Mono',monospace;letter-spacing:.8px">STATUS</div>
+        <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:${c.revoked?'#d64040':'#38d96a'}">${c.revoked?'REVOKED':'ACTIVE'}</div>
+      </div>
+    </div>
+    <div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:#6a90b0;letter-spacing:1px;margin-bottom:8px">DOOR ACCESS MATRIX</div>
+    ${rows}
+  </div>`;
+  document.body.appendChild(popup);
+  popup.addEventListener('click',e=>{ if(e.target===popup) popup.remove(); });
+}
+
+function editCard(idx){
+  const c=cards[idx];
+  const [first,...rest]=c.name.split(' ');
+  document.getElementById('fFirst').value=first;
+  document.getElementById('fLast').value=rest.join(' ');
+  document.getElementById('fRole').value=c.role==='—'?'':c.role;
+  setType(c.type);
+  if(c.phone) document.getElementById('fPhone').value=c.phone;
+  if(c.bio)   document.getElementById('fBio').value=c.bio;
+  doorAcc={...c.acc};
+  buildMatrix(); updatePreview();
+  cards.splice(idx,1);
+  renderCards(); updateStats();
+  showToast('Card loaded for editing — re-issue when done.','info');
+}
+
+// ── TOAST ──
+function showToast(msg, type='success'){
+  const t=document.getElementById('toast');
+  const cols={success:'rgba(56,217,106,.4)',error:'rgba(214,64,64,.4)',info:'rgba(10,176,204,.3)'};
+  const tc={success:'#38d96a',error:'#d64040',info:'#0ab0cc'};
+  t.style.borderColor=cols[type]||cols.success;
+  t.style.color=tc[type]||tc.success;
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ── SEED DEMO CARDS ──
+function seedDemoCards(){
+  const demos=[
+    {first:'Ahmed',last:'Al-Rashidi',role:'Security Director',type:'bio',
+     acc:{G1:'FULL',G2:'FULL',G3:'FULL',G4:'FULL',G5:'FULL',G6:'FULL',G7:'FULL',G8:'FULL',D1:'FULL',D2:'FULL',D3:'FULL',D4:'FULL',D5:'FULL',D6:'FULL',B4:'FULL'}},
+    {first:'Sara',last:'Al-Mansouri',role:'VIP Lounge Manager',type:'name',
+     acc:{G1:'FULL',G2:'FULL',G3:'FULL',G4:'TIME',G5:'DENY',G6:'DENY',G7:'DENY',G8:'DENY',D1:'FULL',D2:'DENY',D3:'DENY',D4:'TIME',D5:'TIME',D6:'DENY',B4:'DENY'}},
+    {first:'James',last:'Patterson',role:'IT / Server Admin',type:'bio',
+     acc:{G1:'FULL',G2:'FULL',G3:'DENY',G4:'TIME',G5:'TIME',G6:'DENY',G7:'DENY',G8:'DENY',D1:'DENY',D2:'SUP',D3:'FULL',D4:'FULL',D5:'DENY',D6:'TIME',B4:'DENY'}},
+    {first:'Fatima',last:'Khalid',role:'Retail Supervisor · L2',type:'phone',
+     acc:{G1:'FULL',G2:'FULL',G3:'DENY',G4:'FULL',G5:'DENY',G6:'DENY',G7:'DENY',G8:'DENY',D1:'DENY',D2:'DENY',D3:'DENY',D4:'FULL',D5:'FULL',D6:'DENY',B4:'DENY'}},
+    {first:'Mohammed',last:'Al-Hamdan',role:'Operations Manager',type:'name',
+     acc:{G1:'FULL',G2:'FULL',G3:'FULL',G4:'FULL',G5:'FULL',G6:'DENY',G7:'FULL',G8:'FULL',D1:'TIME',D2:'FULL',D3:'SUP',D4:'FULL',D5:'FULL',D6:'FULL',B4:'FULL'}},
+    {first:'Lisa',last:'Chen',role:'Guest Services · GF',type:'phone',
+     acc:{G1:'FULL',G2:'FULL',G3:'DENY',G4:'FULL',G5:'DENY',G6:'DENY',G7:'DENY',G8:'DENY',D1:'DENY',D2:'DENY',D3:'DENY',D4:'FULL',D5:'DENY',D6:'DENY',B4:'DENY'}},
+  ];
+  demos.forEach(d=>{
+    const levels=Object.values(d.acc).filter(l=>l!=='DENY');
+    const dominant=levels.length===0?'DENY':levels.includes('FULL')?'FULL':levels.includes('TIME')?'TIME':'SUP';
+    cards.push({
+      id:`${{name:'DSQ-ID',phone:'DSQ-NFC',bio:'DSQ-BIO'}[d.type]}-${cardCounter++}`,
+      name:`${d.first} ${d.last}`, role:d.role, type:d.type,
+      phone:null, bio:null, from:'2026-01-01', to:'2027-01-01',
+      acc:d.acc, dominantLevel:dominant, issued:new Date().toISOString(), revoked:false
+    });
+  });
+}
+
+// ── INIT ──
+buildMatrix();
+updatePreview();
+seedDemoCards();
+renderCards();
+updateStats();
+</script>
+<script src="/tour.js"></script>
+</body>
+</html>

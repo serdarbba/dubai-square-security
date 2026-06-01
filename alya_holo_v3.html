@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALYA — Human Hologram v3</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+canvas#c{display:block;width:100%;height:100%}
+.hud{position:fixed;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace}
+.hc{position:absolute;width:20px;height:20px;border-color:rgba(0,212,255,.45);border-style:solid}
+.htl{top:18px;left:18px;border-width:1.5px 0 0 1.5px}
+.htr{top:18px;right:18px;border-width:1.5px 1.5px 0 0}
+.hbl{bottom:18px;left:18px;border-width:0 0 1.5px 1.5px}
+.hbr{bottom:18px;right:18px;border-width:0 1.5px 1.5px 0}
+.hl{position:absolute;font-size:9px;color:rgba(0,212,255,.4);letter-spacing:2px}
+.hl-tl{top:12px;left:44px}.hl-tr{top:12px;right:44px;text-align:right}
+.hl-bl{bottom:12px;left:44px}.hl-br{bottom:12px;right:44px;text-align:right}
+.scan{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.015) 2px,rgba(0,212,255,.015) 3px);
+  animation:flk 8s infinite}
+@keyframes flk{0%,100%{opacity:1}94%{opacity:.78}95%{opacity:1}98%{opacity:.9}}
+.hint{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.3);
+  letter-spacing:2px;white-space:nowrap;pointer-events:none}
+.modes{position:fixed;top:18px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;z-index:10}
+.mb{padding:5px 13px;border-radius:12px;border:1px solid rgba(0,212,255,.2);
+  background:rgba(0,212,255,.04);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.mb.on{background:rgba(0,212,255,.18);border-color:#00d4ff;color:#00d4ff}
+.mb:hover{background:rgba(0,212,255,.1);color:#00d4ff}
+/* STATUS PANEL */
+.status-panel{position:fixed;right:22px;top:50%;transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.4);
+  letter-spacing:1px;line-height:2.2;pointer-events:none}
+.sv{color:#64ffda}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud">
+  <div class="hc htl"></div><div class="hc htr"></div>
+  <div class="hc hbl"></div><div class="hc hbr"></div>
+  <div class="hl hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hl hl-tr">ALYA · HOLOGRAM v3</div>
+  <div class="hl hl-bl">ENTITY: <span style="color:#64ffda">ALYA — HUMAN AI</span></div>
+  <div class="hl hl-br" id="fps">-- FPS</div>
+</div>
+<div class="scan"></div>
+<div class="hint">FARE: DÖNDÜR  ·  SCROLL: ZOOM</div>
+<div class="modes">
+  <button class="mb on"  onclick="setStyle(0,this)">HOLOGRAM</button>
+  <button class="mb"     onclick="setStyle(1,this)">SERI</button>
+  <button class="mb"     onclick="setStyle(2,this)">XRAY</button>
+</div>
+<div class="status-panel">
+  <div>MODEL <span class="sv">ALYA-3.1</span></div>
+  <div>LANG  <span class="sv">TR / EN / AR</span></div>
+  <div>MODE  <span class="sv" id="modeLabel">HOLOGRAM</span></div>
+  <div>SYNC  <span class="sv">100%</span></div>
+  <div>UPTIME<span class="sv"> <span id="uptime">0s</span></span></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* ══ RENDERER ══ */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000,1);
+const W=()=>window.innerWidth, H=()=>window.innerHeight;
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, W()/H(), 0.01, 80);
+camera.position.set(0, 0.2, 4.8);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping=true; controls.dampingFactor=0.07;
+controls.minDistance=1.5; controls.maxDistance=12;
+controls.target.set(0, 0.2, 0);
+
+/* ══ ALYA CANVAS PORTRESI ══ */
+function drawAlya(){
+  const W=512, H=1024, cx=256;
+  const cv=document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const c=cv.getContext('2d');
+
+  const x=v=>v*W, y=v=>v*H;
+  const M='#00d4ff', MT='#64ffda', DM='rgba(0,212,255,0.45)';
+  const F='rgba(0,212,255,0.06)', DK='rgba(0,28,48,0.52)';
+
+  function sty(str,fill,lw,blur){
+    c.strokeStyle=str||M; c.fillStyle=fill||'transparent';
+    c.lineWidth=lw||1.5; c.shadowColor=str||M; c.shadowBlur=blur||10;
+  }
+  c.clearRect(0,0,W,H);
+
+  /* ─── SAÇ (hacim + detay) ─── */
+  sty(M,DK,1.5,18);
+  // Sol saç (uzun, omzа kadar)
+  c.beginPath();
+  c.moveTo(cx+x(.13),y(.137));
+  c.bezierCurveTo(cx+x(.17),y(.10),cx+x(.16),y(.035),cx+x(.09),y(.005));
+  c.bezierCurveTo(cx+x(.04),y(-0.01),cx,y(0),cx,y(0));
+  c.bezierCurveTo(cx-x(.04),y(-0.01),cx-x(.09),y(.005),cx-x(.16),y(.035));
+  c.bezierCurveTo(cx-x(.17),y(.10),cx-x(.17),y(.10),cx-x(.13),y(.137));
+  c.bezierCurveTo(cx-x(.16),y(.175),cx-x(.175),y(.24),cx-x(.178),y(.28));
+  c.lineTo(cx-x(.04),y(.28));
+  c.bezierCurveTo(cx-x(.036),y(.245),cx-x(.033),y(.22),cx-x(.03),y(.20));
+  c.bezierCurveTo(cx-x(.03),y(.165),cx-x(.025),y(.145),cx-x(.13),y(.137));
+  c.fill(); c.stroke();
+  // Sağ saç
+  c.beginPath();
+  c.moveTo(cx+x(.13),y(.137));
+  c.bezierCurveTo(cx+x(.16),y(.175),cx+x(.175),y(.24),cx+x(.178),y(.28));
+  c.lineTo(cx+x(.04),y(.28));
+  c.bezierCurveTo(cx+x(.036),y(.245),cx+x(.033),y(.22),cx+x(.03),y(.20));
+  c.bezierCurveTo(cx+x(.03),y(.165),cx+x(.025),y(.145),cx+x(.13),y(.137));
+  c.fillStyle='rgba(0,28,48,0.38)';
+  c.fill(); c.stroke();
+  // Saç parlaklık şeritleri
+  sty(MT,'transparent',0.8,8);
+  [[.25,.28,.45,.48],[.3,.32,.5,.52],[.55,.56,.68,.7]].forEach(([a,b,d,e])=>{
+    c.beginPath();
+    c.moveTo(cx-x(.02+a*.08),y(.01+a*.03));
+    c.bezierCurveTo(cx-x(.05+b*.07),y(.06+b*.07),cx-x(.10+d*.05),y(.12+d*.09),cx-x(.155+e*.02),y(.16+e*.11));
+    c.stroke();
+    c.beginPath();
+    c.moveTo(cx+x(.02+a*.08),y(.01+a*.03));
+    c.bezierCurveTo(cx+x(.05+b*.07),y(.06+b*.07),cx+x(.10+d*.05),y(.12+d*.09),cx+x(.155+e*.02),y(.16+e*.11));
+    c.stroke();
+  });
+
+  /* ─── YÜZÜ ─── */
+  sty(M,F,1.8,14);
+  c.beginPath();
+  c.moveTo(cx,y(.030));
+  c.bezierCurveTo(cx+x(.055),y(.020),cx+x(.135),y(.055),cx+x(.140),y(.102));
+  c.bezierCurveTo(cx+x(.145),y(.148),cx+x(.128),y(.180),cx+x(.060),y(.204));
+  c.bezierCurveTo(cx+x(.022),y(.218),cx,y(.224),cx,y(.224));
+  c.bezierCurveTo(cx-x(.022),y(.218),cx-x(.060),y(.204),cx-x(.128),y(.180));
+  c.bezierCurveTo(cx-x(.145),y(.148),cx-x(.140),y(.102),cx-x(.135),y(.055));
+  c.bezierCurveTo(cx-x(.055),y(.020),cx,y(.030),cx,y(.030));
+  c.fill(); c.stroke();
+
+  /* ─── KULAKLAR & KÜPELER ─── */
+  sty(M,F,1.0,8);
+  c.beginPath(); c.ellipse(cx+x(.148),y(.125),x(.018),y(.025),.1,0,Math.PI*2); c.fill(); c.stroke();
+  c.beginPath(); c.ellipse(cx-x(.148),y(.125),x(.018),y(.025),-.1,0,Math.PI*2); c.fill(); c.stroke();
+  // Küpe (sarkma)
+  sty(MT,'rgba(100,255,218,0.4)',1.0,10);
+  c.beginPath(); c.arc(cx+x(.152),y(.147),x(.006),0,Math.PI*2); c.fill(); c.stroke();
+  c.beginPath(); c.arc(cx-x(.152),y(.147),x(.006),0,Math.PI*2); c.fill(); c.stroke();
+
+  /* ─── GÖZLER ─── */
+  const eY=y(.120), eW=x(.048), eH=y(.022);
+
+  function drawEye(ex, side){
+    sty(M,'rgba(0,212,255,0.07)',1.0,12);
+    c.beginPath();
+    c.moveTo(ex-eW*.52,eY);
+    c.bezierCurveTo(ex-eW*.52,eY-eH,ex+eW*.52,eY-eH,ex+eW*.52,eY);
+    c.bezierCurveTo(ex+eW*.52,eY+eH*.65,ex-eW*.52,eY+eH*.55,ex-eW*.52,eY);
+    c.fill(); c.stroke();
+    c.fillStyle='rgba(0,212,255,0.20)';
+    c.beginPath(); c.arc(ex,eY,x(.018),0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle='rgba(0,22,38,0.88)';
+    c.beginPath(); c.arc(ex,eY,x(.010),0,Math.PI*2); c.fill();
+    c.fillStyle='rgba(200,240,255,0.85)';
+    c.beginPath(); c.arc(ex+side*x(.004),eY-y(.005),x(.003),0,Math.PI*2); c.fill();
+  }
+  drawEye(cx+x(.050), 1);
+  drawEye(cx-x(.050), -1);
+
+  // Üst kirpikler
+  sty(MT,'transparent',1.0,7);
+  for(let i=0;i<6;i++){
+    const lp=cx+x(.026+i*.009); const rp=cx-x(.026+i*.009);
+    c.beginPath(); c.moveTo(lp,eY-eH); c.lineTo(lp+x(.002),eY-eH-y(.009)); c.stroke();
+    c.beginPath(); c.moveTo(rp,eY-eH); c.lineTo(rp-x(.002),eY-eH-y(.009)); c.stroke();
+  }
+
+  /* ─── KAŞLAR ─── */
+  sty(MT,'transparent',2.0,11);
+  c.beginPath(); c.moveTo(cx+x(.018),y(.100)); c.bezierCurveTo(cx+x(.038),y(.090),cx+x(.060),y(.088),cx+x(.082),y(.098)); c.stroke();
+  c.beginPath(); c.moveTo(cx-x(.018),y(.100)); c.bezierCurveTo(cx-x(.038),y(.090),cx-x(.060),y(.088),cx-x(.082),y(.098)); c.stroke();
+
+  /* ─── BURUN ─── */
+  sty(DM,'transparent',1.0,6);
+  c.beginPath(); c.moveTo(cx+x(.016),y(.103)); c.bezierCurveTo(cx+x(.011),y(.140),cx+x(.009),y(.152),cx+x(.015),y(.158)); c.stroke();
+  c.beginPath(); c.moveTo(cx-x(.016),y(.103)); c.bezierCurveTo(cx-x(.011),y(.140),cx-x(.009),y(.152),cx-x(.015),y(.158)); c.stroke();
+  c.beginPath();
+  c.moveTo(cx-x(.024),y(.157));
+  c.bezierCurveTo(cx-x(.018),y(.165),cx-x(.006),y(.168),cx,y(.166));
+  c.bezierCurveTo(cx+x(.006),y(.168),cx+x(.018),y(.165),cx+x(.024),y(.157));
+  c.stroke();
+
+  /* ─── DUDAKLAR ─── */
+  sty(MT,'rgba(100,255,218,0.12)',1.5,13);
+  c.beginPath(); // üst dudak
+  c.moveTo(cx-x(.034),y(.180));
+  c.bezierCurveTo(cx-x(.018),y(.173),cx-x(.007),y(.171),cx,y(.175));
+  c.bezierCurveTo(cx+x(.007),y(.171),cx+x(.018),y(.173),cx+x(.034),y(.180));
+  c.stroke();
+  c.beginPath(); // alt dudak
+  c.moveTo(cx-x(.032),y(.181));
+  c.bezierCurveTo(cx-x(.015),y(.196),cx+x(.015),y(.196),cx+x(.032),y(.181));
+  c.fill(); c.stroke();
+  sty(M,'transparent',0.8,6);
+  c.beginPath(); c.moveTo(cx-x(.031),y(.181)); c.bezierCurveTo(cx-x(.010),y(.183),cx+x(.010),y(.183),cx+x(.031),y(.181)); c.stroke();
+
+  /* ─── BOYUN ─── */
+  sty(M,F,1.5,10);
+  c.beginPath(); c.moveTo(cx-x(.026),y(.224)); c.lineTo(cx-x(.023),y(.270)); c.stroke();
+  c.beginPath(); c.moveTo(cx+x(.026),y(.224)); c.lineTo(cx+x(.023),y(.270)); c.stroke();
+
+  /* ─── OMUZLAR & KOLLAR ─── */
+  sty(M,F,2.0,14);
+  c.beginPath(); c.moveTo(cx-x(.023),y(.270)); c.bezierCurveTo(cx-x(.05),y(.265),cx-x(.12),y(.265),cx-x(.22),y(.282)); c.bezierCurveTo(cx-x(.235),y(.287),cx-x(.242),y(.294),cx-x(.225),y(.300)); c.stroke();
+  c.beginPath(); c.moveTo(cx+x(.023),y(.270)); c.bezierCurveTo(cx+x(.05),y(.265),cx+x(.12),y(.265),cx+x(.22),y(.282)); c.bezierCurveTo(cx+x(.235),y(.287),cx+x(.242),y(.294),cx+x(.225),y(.300)); c.stroke();
+  // Sol kol dış
+  c.beginPath(); c.moveTo(cx-x(.225),y(.300)); c.bezierCurveTo(cx-x(.238),y(.36),cx-x(.242),y(.43),cx-x(.236),y(.495)); c.bezierCurveTo(cx-x(.232),y(.535),cx-x(.217),y(.548),cx-x(.200),y(.550)); c.stroke();
+  // Sol kol iç
+  c.beginPath(); c.moveTo(cx-x(.167),y(.298)); c.bezierCurveTo(cx-x(.175),y(.36),cx-x(.178),y(.43),cx-x(.178),y(.495)); c.bezierCurveTo(cx-x(.176),y(.528),cx-x(.164),y(.548),cx-x(.152),y(.550)); c.stroke();
+  // Sağ kol dış
+  c.beginPath(); c.moveTo(cx+x(.225),y(.300)); c.bezierCurveTo(cx+x(.238),y(.36),cx+x(.242),y(.43),cx+x(.236),y(.495)); c.bezierCurveTo(cx+x(.232),y(.535),cx+x(.217),y(.548),cx+x(.200),y(.550)); c.stroke();
+  // Sağ kol iç
+  c.beginPath(); c.moveTo(cx+x(.167),y(.298)); c.bezierCurveTo(cx+x(.175),y(.36),cx+x(.178),y(.43),cx+x(.178),y(.495)); c.bezierCurveTo(cx+x(.176),y(.528),cx+x(.164),y(.548),cx+x(.152),y(.550)); c.stroke();
+  // Eller
+  c.beginPath(); c.ellipse(cx-x(.176),y(.567),x(.026),y(.020),.15,0,Math.PI*2); c.fillStyle=F; c.fill(); c.stroke();
+  c.beginPath(); c.ellipse(cx+x(.176),y(.567),x(.026),y(.020),-.15,0,Math.PI*2); c.fill(); c.stroke();
+
+  /* ─── GÖVDE / BLAZER ─── */
+  sty(M,F,2.0,14);
+  c.beginPath(); c.moveTo(cx-x(.167),y(.298)); c.bezierCurveTo(cx-x(.155),y(.34),cx-x(.138),y(.39),cx-x(.118),y(.43)); c.bezierCurveTo(cx-x(.098),y(.47),cx-x(.090),y(.51),cx-x(.088),y(.55)); c.lineTo(cx-x(.088),y(.608)); c.stroke();
+  c.beginPath(); c.moveTo(cx+x(.167),y(.298)); c.bezierCurveTo(cx+x(.155),y(.34),cx+x(.138),y(.39),cx+x(.118),y(.43)); c.bezierCurveTo(cx+x(.098),y(.47),cx+x(.090),y(.51),cx+x(.088),y(.55)); c.lineTo(cx+x(.088),y(.608)); c.stroke();
+  c.beginPath(); c.moveTo(cx-x(.088),y(.608)); c.bezierCurveTo(cx-x(.04),y(.614),cx+x(.04),y(.614),cx+x(.088),y(.608)); c.stroke();
+  // Yaka (revers)
+  sty(M,'rgba(0,212,255,0.09)',1.5,12);
+  c.beginPath(); c.moveTo(cx-x(.023),y(.270)); c.bezierCurveTo(cx-x(.042),y(.284),cx-x(.058),y(.315),cx-x(.052),y(.350)); c.lineTo(cx,y(.328)); c.lineTo(cx-x(.023),y(.270)); c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(cx+x(.023),y(.270)); c.bezierCurveTo(cx+x(.042),y(.284),cx+x(.058),y(.315),cx+x(.052),y(.350)); c.lineTo(cx,y(.328)); c.lineTo(cx+x(.023),y(.270)); c.fill(); c.stroke();
+  // Gömlek görünümü
+  sty(MT,'rgba(100,255,218,0.07)',1.0,8);
+  c.beginPath(); c.moveTo(cx-x(.023),y(.270)); c.lineTo(cx-x(.012),y(.325)); c.lineTo(cx,y(.300)); c.lineTo(cx+x(.012),y(.325)); c.lineTo(cx+x(.023),y(.270)); c.fill(); c.stroke();
+  // Bel çizgisi
+  sty(DM,'transparent',1.0,5);
+  c.beginPath(); c.moveTo(cx-x(.098),y(.480)); c.bezierCurveTo(cx-x(.048),y(.485),cx+x(.048),y(.485),cx+x(.098),y(.480)); c.stroke();
+
+  /* ─── BACAKLAR ─── */
+  sty(M,F,1.8,12);
+  c.beginPath(); c.moveTo(cx-x(.088),y(.608)); c.bezierCurveTo(cx-x(.092),y(.66),cx-x(.094),y(.74),cx-x(.093),y(.82)); c.lineTo(cx-x(.093),y(.890)); c.stroke();
+  c.beginPath(); c.moveTo(cx-x(.022),y(.608)); c.bezierCurveTo(cx-x(.024),y(.66),cx-x(.027),y(.74),cx-x(.027),y(.82)); c.lineTo(cx-x(.027),y(.890)); c.stroke();
+  c.beginPath(); c.moveTo(cx+x(.088),y(.608)); c.bezierCurveTo(cx+x(.092),y(.66),cx+x(.094),y(.74),cx+x(.093),y(.82)); c.lineTo(cx+x(.093),y(.890)); c.stroke();
+  c.beginPath(); c.moveTo(cx+x(.022),y(.608)); c.bezierCurveTo(cx+x(.024),y(.66),cx+x(.027),y(.74),cx+x(.027),y(.82)); c.lineTo(cx+x(.027),y(.890)); c.stroke();
+  c.beginPath(); c.moveTo(cx-x(.022),y(.608)); c.bezierCurveTo(cx-x(.006),y(.624),cx+x(.006),y(.624),cx+x(.022),y(.608)); c.stroke();
+
+  /* ─── AYAKKABI / TOPUK ─── */
+  sty(MT,'rgba(100,255,218,0.10)',1.6,11);
+  c.beginPath(); c.moveTo(cx-x(.093),y(.890)); c.bezierCurveTo(cx-x(.093),y(.905),cx-x(.098),y(.914),cx-x(.110),y(.913)); c.bezierCurveTo(cx-x(.125),y(.913),cx-x(.102),y(.898),cx-x(.027),y(.890)); c.closePath(); c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(cx+x(.093),y(.890)); c.bezierCurveTo(cx+x(.093),y(.905),cx+x(.098),y(.914),cx+x(.110),y(.913)); c.bezierCurveTo(cx+x(.125),y(.913),cx+x(.102),y(.898),cx+x(.027),y(.890)); c.closePath(); c.fill(); c.stroke();
+  // Ökçe
+  c.fillStyle='rgba(100,255,218,0.18)';
+  c.fillRect(cx-x(.098),y(.908),x(.013),y(.020)); c.strokeRect(cx-x(.098),y(.908),x(.013),y(.020));
+  c.fillRect(cx+x(.085),y(.908),x(.013),y(.020)); c.strokeRect(cx+x(.085),y(.908),x(.013),y(.020));
+
+  /* ─── VERİ ANOTASYONLARİ ─── */
+  c.shadowBlur=5; c.font='bold 10px monospace';
+  const annots=[
+    {ax:cx-x(.42),ay:y(.10),t:'◈ FACE.RECOG'},
+    {ax:cx-x(.42),ay:y(.31),t:'◈ NEURAL.NET'},
+    {ax:cx-x(.42),ay:y(.53),t:'◈ MOTOR.SYS'},
+    {ax:cx+x(.19),ay:y(.10),t:'ALYA v3.1'},
+    {ax:cx+x(.19),ay:y(.245),t:'AI CORE'},
+    {ax:cx+x(.19),ay:y(.68),t:'MOBILITY'},
+  ];
+  c.fillStyle='rgba(0,212,255,0.32)'; c.strokeStyle='rgba(0,212,255,0.22)'; c.lineWidth=0.7;
+  annots.forEach(a=>{
+    c.fillText(a.t,a.ax,a.ay);
+    const dir=a.ax<cx?1:-1;
+    const lx0=a.ax+(dir>0?c.measureText(a.t).width+4:-4);
+    const lx1=a.ax+(dir>0?c.measureText(a.t).width+30:-30);
+    c.beginPath(); c.moveTo(lx0,a.ay-4); c.lineTo(lx1,a.ay-4); c.stroke();
+  });
+
+  return cv;
+}
+
+/* ══ BILLBOARD SHADER ══ */
+const BVS=`
+varying vec2 vUv;
+varying vec3 vWorldPos;
+void main(){
+  vUv=uv;
+  vWorldPos=(modelMatrix*vec4(position,1.0)).xyz;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+}`;
+const BFS=`
+uniform sampler2D map;
+uniform float uTime;
+uniform float uStyle; /* 0=holo 1=seri 2=xray */
+varying vec2 vUv;
+varying vec3 vWorldPos;
+float rand(float s){return fract(sin(s)*43758.5);}
+void main(){
+  vec2 uv=vUv;
+  /* glitch */
+  float gt=floor(uTime*8.0);
+  float row=floor(uv.y*50.0);
+  float g=step(0.93,rand(gt*3.1+row*0.7))*0.06;
+  uv.x+=g*(rand(gt)-.5);
+  vec4 tex=texture2D(map,uv);
+  if(tex.a<0.02) discard;
+
+  /* scan lines */
+  float scan=mix(1.0, sin(uv.y*600.0*3.14159-uTime*2.5)*.5+.5, 0.12);
+  /* rise band */
+  float band=pow(sin(uv.y*3.2-uTime*.75)*.5+.5,3.0)*.18;
+  /* flicker */
+  float fl=.92+sin(uTime*18.7)*.04+sin(uTime*5.5)*.025;
+
+  vec3 col=tex.rgb;
+  float alpha=tex.a;
+
+  if(uStyle<0.5){
+    /* HOLOGRAM: cyan tint */
+    col.r=col.r*.38+.02; col.g=col.g*.85+.15; col.b=max(col.b,.45);
+    col*=scan*fl; col+=vec3(0.,.08,.14)*band;
+    alpha*=fl*.92;
+  } else if(uStyle<1.5){
+    /* SERİ: pastel */
+    col=mix(col,vec3(.5,1.,.9),.55)*scan*fl;
+    col.r*=.25; alpha*=fl*.85;
+  } else {
+    /* XRAY: sadece kenar */
+    float lum=dot(col,vec3(.299,.587,.114));
+    col=mix(vec3(0.,.9,1.),vec3(.9,1.,1.),lum)*.8;
+    col*=scan*fl; alpha=(1.-lum+.15)*fl*.9*tex.a;
+  }
+  gl_FragColor=vec4(col,alpha);
+}`;
+
+/* ══ SAHNE ══ */
+scene.add(new THREE.AmbientLight(0x112244,.5));
+const pl=new THREE.PointLight(0x00d4ff,4,12); pl.position.set(.8,1.5,3); scene.add(pl);
+const pl2=new THREE.PointLight(0x64ffda,2.5,8); pl2.position.set(-1.5,1,2); scene.add(pl2);
+const pl3=new THREE.PointLight(0x0033aa,1.5,6); pl3.position.set(0,2,-3); scene.add(pl3);
+
+/* Billboard */
+const portraitCanvas=drawAlya();
+const portraitTex=new THREE.CanvasTexture(portraitCanvas);
+const billMat=new THREE.ShaderMaterial({
+  vertexShader:BVS, fragmentShader:BFS,
+  uniforms:{ map:{value:portraitTex}, uTime:{value:0}, uStyle:{value:0} },
+  transparent:true, side:THREE.DoubleSide, depthWrite:false,
+});
+const BILL_W=2.4, BILL_H=4.8;
+const billGeo=new THREE.PlaneGeometry(BILL_W,BILL_H);
+const billboard=new THREE.Mesh(billGeo,billMat);
+billboard.position.y=BILL_H/2-.1;
+scene.add(billboard);
+
+/* İkinci gölge katmanı (derinlik) */
+const shadowMat=billMat.clone();
+shadowMat.uniforms={map:{value:portraitTex},uTime:{value:0},uStyle:{value:0}};
+const shadow2=new THREE.Mesh(billGeo,shadowMat);
+shadow2.position.set(.04,BILL_H/2-.05,-.08);
+shadow2.material.opacity=0.18;
+scene.add(shadow2);
+
+/* Taban halkaları */
+function addRing(r,tube,y,op){
+  const m=new THREE.Mesh(new THREE.TorusGeometry(r,tube,8,80),
+    new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:op}));
+  m.rotation.x=Math.PI/2; m.position.y=y; scene.add(m); return m;
+}
+const r1=addRing(.70,.013,.02,.55);
+const r2=addRing(1.05,.008,.02,.22);
+const r3=addRing(1.50,.004,.02,.10);
+
+/* Projeksiyon konisi */
+const cone=new THREE.Mesh(
+  new THREE.CylinderGeometry(.01,.75,2.2,32,1,true),
+  new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:.032,side:THREE.DoubleSide})
+);
+cone.position.y=-1.08; scene.add(cone);
+
+/* Parçacıklar */
+const PC=600, pGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(PC*3), pPh=[];
+for(let i=0;i<PC;i++){
+  const r=1.3+Math.random()*2.2, t=Math.random()*Math.PI*2, p=(Math.random()-.5)*Math.PI;
+  pPos[i*3]=Math.cos(p)*Math.cos(t)*r;
+  pPos[i*3+1]=Math.sin(p)*r+BILL_H*.45;
+  pPos[i*3+2]=Math.cos(p)*Math.sin(t)*r;
+  pPh.push(Math.random()*Math.PI*2);
+}
+pGeo.setAttribute('position',new THREE.Float32BufferAttribute(pPos,3));
+const particles=new THREE.Points(pGeo,
+  new THREE.PointsMaterial({color:0x00d4ff,size:.024,transparent:true,opacity:.45,depthWrite:false}));
+scene.add(particles);
+
+/* Göz ışık simülatörü */
+const eyeGlow=new THREE.PointLight(0x00ddff,.8,1.5);
+eyeGlow.position.set(0,BILL_H*.77,.1); scene.add(eyeGlow);
+
+/* ══ MOD ══ */
+let styleMode=0;
+function setStyle(s,btn){
+  styleMode=s;
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  billMat.uniforms.uStyle.value=s;
+  shadowMat.uniforms.uStyle.value=s;
+  const labels=['HOLOGRAM','SERİ','XRAY'];
+  document.getElementById('modeLabel').textContent=labels[s];
+}
+
+/* ══ RENDER LOOP ══ */
+let t=0,fpsT=performance.now(),fpsF=0;
+const startT=Date.now();
+
+function animate(){
+  requestAnimationFrame(animate);
+  t+=.016; fpsF++;
+  if(performance.now()-fpsT>1000){
+    document.getElementById('fps').textContent=fpsF+' FPS';
+    fpsF=0; fpsT=performance.now();
+  }
+  const up=Math.floor((Date.now()-startT)/1000);
+  document.getElementById('uptime').textContent=up<60?up+'s':Math.floor(up/60)+'m';
+
+  controls.update();
+  billMat.uniforms.uTime.value=t;
+  shadowMat.uniforms.uTime.value=t;
+
+  /* hafif yüzer */
+  billboard.position.y=BILL_H/2-.1+Math.sin(t*.6)*.025;
+  shadow2.position.y=billboard.position.y+.05;
+
+  /* parçacıklar */
+  particles.rotation.y=t*.04;
+  const pp=pGeo.attributes.position.array;
+  for(let i=0;i<PC;i++){
+    pp[i*3+1]+=Math.sin(pPh[i]+t)*.0014;
+    pPh[i]+=.007;
+  }
+  pGeo.attributes.position.needsUpdate=true;
+
+  /* halka nabzı */
+  const rs=1+Math.sin(t*1.55)*.045;
+  r1.scale.set(rs,rs,rs); r1.material.opacity=.38+Math.sin(t*1.55)*.2;
+  r2.scale.set(1/rs,1/rs,1/rs);
+
+  /* ışık hareketi */
+  pl.position.x=Math.sin(t*.32)*1.5; pl.position.z=2.8+Math.cos(t*.25)*.8;
+
+  /* koni titreme */
+  cone.material.opacity=.022+Math.sin(t*2)*.012;
+
+  /* göz nabzı */
+  eyeGlow.intensity=.7+Math.sin(t*2.4)*.3;
+
+  renderer.setSize(W(),H(),false);
+  camera.aspect=W()/H();
+  camera.updateProjectionMatrix();
+  renderer.render(scene,camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{renderer.setSize(W(),H(),false);camera.aspect=W()/H();camera.updateProjectionMatrix();});
+</script>
+</body>
+</html>

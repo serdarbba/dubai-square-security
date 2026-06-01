@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALYA — AI Hologram v6 (Mixamo Ready)</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+canvas#c{display:block;width:100%;height:100%}
+
+/* HUD köşeleri */
+.hud{position:fixed;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace}
+.hc{position:absolute;width:22px;height:22px;border-color:rgba(0,212,255,.5);border-style:solid}
+.htl{top:20px;left:20px;border-width:2px 0 0 2px}
+.htr{top:20px;right:20px;border-width:2px 2px 0 0}
+.hbl{bottom:20px;left:20px;border-width:0 0 2px 2px}
+.hbr{bottom:20px;right:20px;border-width:0 2px 2px 0}
+.hl{position:absolute;font-size:9px;color:rgba(0,212,255,.45);letter-spacing:2px}
+.hl-tl{top:14px;left:48px}
+.hl-tr{top:14px;right:48px;text-align:right}
+.hl-bl{bottom:14px;left:48px}
+.hl-br{bottom:14px;right:48px;text-align:right}
+
+/* Scan çizgileri arka plan */
+.scan{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.011) 2px,rgba(0,212,255,.011) 3px);
+  animation:flk 9s infinite}
+@keyframes flk{0%,100%{opacity:1}93%{opacity:.68}95%{opacity:1}}
+
+/* Mod butonları üst orta */
+.modes{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
+.mb{padding:6px 16px;border-radius:14px;border:1px solid rgba(0,212,255,.22);
+  background:rgba(0,212,255,.05);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1.5px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.mb.on{background:rgba(0,212,255,.2);border-color:#00d4ff;color:#fff;text-shadow:0 0 10px #00d4ff}
+.mb:hover{background:rgba(0,212,255,.12);color:#00d4ff}
+
+/* Yükleme ekranı */
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:#000;z-index:99;transition:opacity .8s;display:none}
+#loading.show{display:flex}
+#loading.done{opacity:0;pointer-events:none}
+.ld-ring{width:52px;height:52px;border:2px solid rgba(0,212,255,.15);
+  border-top-color:#00d4ff;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-txt{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,212,255,.6);
+  letter-spacing:3px;text-align:center;line-height:2}
+
+/* Talimat paneli */
+#guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:rgba(2,8,20,.97);border:1px solid rgba(0,212,255,.28);
+  border-radius:14px;padding:32px 40px;z-index:200;font-family:'JetBrains Mono',monospace;
+  color:#00d4ff;text-align:center;max-width:480px;width:90%}
+#guide h2{font-size:14px;letter-spacing:3px;margin-bottom:8px;color:#64ffda}
+#guide .sub{font-size:9px;color:rgba(0,212,255,.4);letter-spacing:2px;margin-bottom:22px}
+#guide .steps{text-align:left;font-size:10px;color:rgba(0,212,255,.6);line-height:2.2;margin-bottom:22px}
+#guide .steps b{color:#64ffda}
+#guide .steps .warn{color:#ff6b6b;font-size:9px}
+#guide .sep{border:none;border-top:1px solid rgba(0,212,255,.12);margin:18px 0}
+.gBtn{width:100%;padding:11px;border:1px solid rgba(0,212,255,.35);
+  background:rgba(0,212,255,.08);color:#00d4ff;font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:2px;cursor:pointer;border-radius:7px;transition:all .2s;margin-bottom:8px}
+.gBtn:hover{background:rgba(0,212,255,.2);border-color:#00d4ff}
+.gBtn.green{border-color:rgba(100,255,218,.3);color:#64ffda;background:rgba(100,255,218,.06)}
+.gBtn.green:hover{background:rgba(100,255,218,.15)}
+#fileIn{display:none}
+
+/* Sağ bilgi paneli */
+.side{position:fixed;right:28px;top:50%;transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.38);
+  letter-spacing:1px;line-height:2.6;pointer-events:none;
+  border-left:1px solid rgba(0,212,255,.12);padding-left:14px}
+.sv{color:#64ffda;font-weight:700}
+
+/* Sol animasyon paneli */
+.anims{position:fixed;left:24px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:6px;z-index:10;max-height:70vh;overflow-y:auto}
+.aLabel{font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,212,255,.3);letter-spacing:1px;margin-bottom:4px}
+.ab{padding:5px 12px;border:1px solid rgba(0,212,255,.2);border-radius:10px;
+  background:rgba(0,212,255,.04);color:rgba(0,212,255,.45);font-size:9px;
+  letter-spacing:1px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.ab.on{background:rgba(0,212,255,.15);border-color:#00d4ff;color:#00d4ff}
+.ab:hover{background:rgba(0,212,255,.1)}
+/* Idle butonu özel stili — yeşil, sürekli aktif */
+.ab.idle-btn{border-color:rgba(100,255,218,.4);color:rgba(100,255,218,.65);background:rgba(100,255,218,.06)}
+.ab.idle-btn.on{background:rgba(100,255,218,.16);border-color:#64ffda;color:#64ffda;
+  box-shadow:0 0 10px rgba(100,255,218,.2)}
+/* Aktif tek seferlik animasyon — sarı */
+.ab.playing{border-color:rgba(255,200,0,.5);color:#ffc800;background:rgba(255,200,0,.08);
+  animation:abPulse 1s ease-in-out infinite}
+@keyframes abPulse{0%,100%{opacity:1}50%{opacity:.6}}
+/* Durum çubuğu altta */
+#stateBar{position:fixed;bottom:58px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:rgba(100,255,218,.45);pointer-events:none;text-align:center}
+
+.hint{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.22);
+  letter-spacing:2px;white-space:nowrap;pointer-events:none}
+
+/* Alt butonlar */
+#openGuide{position:fixed;bottom:32px;right:32px;padding:7px 16px;
+  border:1px solid rgba(0,212,255,.2);border-radius:10px;
+  background:rgba(0,212,255,.05);color:rgba(0,212,255,.45);font-size:9px;
+  letter-spacing:1.5px;cursor:pointer;font-family:'JetBrains Mono',monospace;
+  transition:all .2s;z-index:10;display:none}
+#openGuide:hover{background:rgba(0,212,255,.12);color:#00d4ff}
+#openGuide.show{display:block}
+
+/* Animasyon ekleme popup */
+#animGuide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:rgba(2,8,20,.97);border:1px solid rgba(100,255,218,.25);
+  border-radius:14px;padding:28px 36px;z-index:300;font-family:'JetBrains Mono',monospace;
+  color:#64ffda;text-align:center;max-width:460px;width:90%;display:none}
+#animGuide.show{display:block}
+#animGuide h3{font-size:13px;letter-spacing:3px;margin-bottom:6px}
+#animGuide .asub{font-size:9px;color:rgba(100,255,218,.4);letter-spacing:2px;margin-bottom:18px}
+#animGuide table{width:100%;border-collapse:collapse;margin-bottom:18px;text-align:left}
+#animGuide td{font-size:9px;padding:5px 8px;border-bottom:1px solid rgba(0,212,255,.08);
+  color:rgba(0,212,255,.65);line-height:1.8}
+#animGuide td:first-child{color:#64ffda;font-weight:700;white-space:nowrap}
+#animGuide .anote{font-size:9px;color:rgba(255,180,0,.7);margin-bottom:16px;line-height:1.8;text-align:left}
+#animGuide .anote b{color:#ffb400}
+#addAnimBtn{position:fixed;left:24px;bottom:32px;padding:7px 14px;
+  border:1px solid rgba(100,255,218,.25);border-radius:10px;
+  background:rgba(100,255,218,.06);color:rgba(100,255,218,.5);font-size:9px;
+  letter-spacing:1.5px;cursor:pointer;font-family:'JetBrains Mono',monospace;
+  transition:all .2s;z-index:10;display:none}
+#addAnimBtn:hover{background:rgba(100,255,218,.14);color:#64ffda}
+#addAnimBtn.show{display:block}
+#animFileIn{display:none}
+</style>
+</head>
+<body>
+
+<!-- Model yükleme talimatları -->
+<div id="guide">
+  <h2>ALYA 3D MODEL YÜKLE</h2>
+  <div class="sub">GERÇEKÇİ KADIN KARAKTERİ GEREKLİ</div>
+  <div class="steps">
+    <b>MİXAMO'DAN ÜCRETSİZ İNDİR:</b><br>
+    1. <b>mixamo.com</b>'a git (ücretsiz)<br>
+    2. Google veya Adobe ile giriş yap<br>
+    3. Üstte <b>"Characters"</b> sekmesine tıkla<br>
+    4. Arama kutusuna <b>"Sophie"</b> yaz veya scroll et<br>
+    &nbsp;&nbsp;&nbsp;<span class="warn">⚠ X Bot / Y Bot SEÇME — robot görünümlü</span><br>
+    5. Sophie / Amy / Jolleen seç (gerçek ciltli kadın)<br>
+    6. Üstte <b>"Animations"</b> sekmesine tıkla<br>
+    7. Arama kutusuna <b>"breathing idle"</b> yaz<br>
+    8. Animasyonu seç → <b>"DOWNLOAD"</b> düğmesi<br>
+    9. Format: <b>FBX for Unity</b>, Skin: <b>With Skin</b><br>
+    10. İndirilen .fbx dosyasını aşağıdan yükle
+  </div>
+  <hr class="sep">
+  <button class="gBtn" onclick="document.getElementById('fileIn').click()">
+    📂 MODEL DOSYASI SEÇ &nbsp;(.fbx veya .glb)
+  </button>
+  <input type="file" id="fileIn" accept=".glb,.gltf,.fbx" onchange="loadFile(this)">
+  <button class="gBtn green" onclick="loadDefault()">
+    GEÇİCİ DEMO — mevcut modeli kullan
+  </button>
+</div>
+
+<div id="loading"><div class="ld-ring"></div><div class="ld-txt" id="ldtxt">MODEL YÜKLENİYOR...</div></div>
+<canvas id="c"></canvas>
+
+<div class="hud">
+  <div class="hc htl"></div><div class="hc htr"></div>
+  <div class="hc hbl"></div><div class="hc hbr"></div>
+  <div class="hl hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hl hl-tr">ALYA · v6 · 3D HOLOGRAM</div>
+  <div class="hl hl-bl">DURUM: <span style="color:#64ffda">ONLINE</span></div>
+  <div class="hl hl-br" id="fps">-- FPS</div>
+</div>
+<div class="scan"></div>
+
+<div class="modes">
+  <button class="mb on"  onclick="setMode(0,this)">HOLOGRAM</button>
+  <button class="mb"     onclick="setMode(1,this)">ALTIN</button>
+  <button class="mb"     onclick="setMode(2,this)">XRAY</button>
+  <button class="mb"     onclick="setMode(3,this)">GERÇEK</button>
+</div>
+
+<div class="anims" id="animPanel">
+  <div class="aLabel">ANİMASYON</div>
+</div>
+
+<div class="side">
+  <div>MODEL   <span class="sv" id="mName">—</span></div>
+  <div>MOD     <span class="sv" id="mLbl">HOLOGRAM</span></div>
+  <div>ANİM    <span class="sv" id="mAnim">—</span></div>
+  <div>KEMIK   <span class="sv" id="mBone">—</span></div>
+  <div>SÜRE    <span class="sv"><span id="upt">0s</span></span></div>
+</div>
+
+<div id="stateBar">BEKLENIYOR</div>
+<div class="hint">FARE: DÖNDÜR &nbsp;·&nbsp; SCROLL: ZOOM &nbsp;·&nbsp; SOL: HAREKETİ TETİKLE</div>
+<!-- Animasyon ekleme butonu (sol alt, model yüklenince çıkar) -->
+<button id="addAnimBtn" onclick="document.getElementById('animGuide').classList.add('show')">
+  + ANİMASYON EKLE
+</button>
+<input type="file" id="animFileIn" accept=".fbx" onchange="addAnimFile(this)">
+
+<!-- Animasyon rehberi popup -->
+<div id="animGuide">
+  <h3>ANİMASYON EKLE</h3>
+  <div class="asub">MİXAMO'DAN AYRI ANİMASYON İNDİR</div>
+  <table>
+    <tr><td>Durma</td><td>Mixamo: <b>Breathing Idle</b></td></tr>
+    <tr><td>Selamlama</td><td>Mixamo: <b>Waving</b></td></tr>
+    <tr><td>Konuşma</td><td>Mixamo: <b>Talking</b></td></tr>
+    <tr><td>Yönlendirme</td><td>Mixamo: <b>Pointing Forward</b></td></tr>
+    <tr><td>Bakınma</td><td>Mixamo: <b>Looking Around</b></td></tr>
+    <tr><td>Onay</td><td>Mixamo: <b>Head Nod</b></td></tr>
+    <tr><td>Yürüme</td><td>Mixamo: <b>Walking</b></td></tr>
+  </table>
+  <div class="anote">
+    Mixamo'da aynı karakteri seç → animasyonu seç → Download<br>
+    Format: <b>FBX for Unity</b> &nbsp;/&nbsp; Skin: <b>Without Skin</b> ← önemli!<br>
+    Her animasyon için ayrı indirip buradan yükle.
+  </div>
+  <button class="gBtn" onclick="document.getElementById('animFileIn').click()">
+    📂 ANİMASYON DOSYASI SEÇ (.fbx)
+  </button>
+  <button class="gBtn green" onclick="document.getElementById('animGuide').classList.remove('show')" style="margin-top:4px">
+    KAPAT
+  </button>
+</div>
+
+<button id="openGuide" onclick="document.getElementById('guide').style.display='block';this.classList.remove('show')">
+  MODEL DEĞİŞTİR
+</button>
+
+<!-- Three.js r167 ES modules -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.167.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.167.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader }     from 'three/addons/loaders/FBXLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ─── RENDERER ─── */
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 1);
+renderer.shadowMap.enabled = true;
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, W() / H(), 0.01, 60);
+camera.position.set(0, 1.4, 4.5);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.minDistance   = 0.6;
+controls.maxDistance   = 16;
+controls.target.set(0, 1.0, 0);
+
+/* ─── HOLOGRAM SHADER (skinning destekli) ─── */
+const VS = /* glsl */`
+#include <common>
+#include <uv_pars_vertex>
+#include <skinning_pars_vertex>
+
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+varying vec2 vUv;
+
+void main(){
+  vUv = uv;
+
+  /* Three.js skinning chunks — SkinnedMesh ise bone transform uygular */
+  #include <beginnormal_vertex>
+  #include <skinbase_vertex>
+  #include <skinnormal_vertex>
+  #include <begin_vertex>
+  #include <skinning_vertex>
+
+  vNormal    = normalize(normalMatrix * objectNormal);
+  vWorldPos  = (modelMatrix * vec4(transformed, 1.0)).xyz;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+}`;
+
+const FS = /* glsl */`
+uniform float     uTime;
+uniform vec3      uColor;
+uniform float     uOpacity;
+uniform float     uGlitch;
+uniform float     uRim;
+uniform float     uMode;
+uniform sampler2D uMap;
+uniform float     uHasMap;
+uniform float     uTexBlend;
+
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+varying vec2 vUv;
+
+float rand(float s){ return fract(sin(s)*43758.5); }
+
+void main(){
+  vec3  vd   = normalize(cameraPosition - vWorldPos);
+  float fr   = pow(1.0 - abs(dot(vd, vNormal)), 1.6) * uRim;
+
+  float scan = pow(sin(vWorldPos.y * 22.0 - uTime * 3.2) * 0.5 + 0.5, 0.5);
+  float line = step(0.975, sin(vWorldPos.y * 140.0 - uTime * 2.0)) * 0.38;
+  float swp  = pow(sin(vWorldPos.x * 3.0 + uTime * 1.2) * 0.5 + 0.5, 4.0) * 0.22;
+  float gt   = floor(uTime * 9.0);
+  float gl   = floor(vWorldPos.y * 16.0);
+  float glch = step(1.0 - uGlitch, rand(gt + gl)) * rand(gt * 2.3) * 0.5;
+
+  vec3  col;
+  float alpha;
+
+  /* ── GERÇEK mod ── */
+  if(uMode > 2.5){
+    if(uHasMap > 0.5){
+      vec4 t = texture2D(uMap, vUv);
+      col   = t.rgb;
+      alpha = t.a * (fr * 0.4 + 0.85);
+    } else {
+      col   = uColor * 0.85;
+      alpha = (fr * 0.8 + scan * 0.25 + line + swp) * uOpacity;
+    }
+    gl_FragColor = vec4(col, alpha);
+    return;
+  }
+
+  /* ── HOLOGRAM / ALTIN / XRAY modlar ── */
+  if(uHasMap > 0.5){
+    vec4 tex = texture2D(uMap, vUv);
+    vec3 tinted;
+    if(uMode < 0.5){
+      /* Cyan hologram */
+      tinted = mix(tex.rgb, tex.rgb * vec3(0.30, 0.80, 1.0) + uColor * 0.28, uTexBlend);
+    } else if(uMode < 1.5){
+      /* Altın */
+      float l = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
+      tinted  = vec3(l * 0.95 + 0.06, l * 0.70, l * 0.06);
+    } else {
+      /* X-Ray */
+      float l = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
+      tinted  = mix(tex.rgb, vec3(0.0, 0.9, 1.0), l);
+    }
+    col   = tinted * (0.70 + scan * 0.30) + vec3(0.9, 1.0, 1.0) * fr * 0.6;
+    col   = mix(col, vec3(0.55, 1.0, 0.9), line * 0.75);
+    col   = mix(col, vec3(1.0) * 0.95, glch * 0.5);
+    float fill = tex.a * 0.82;
+    alpha = clamp(fill + (fr * 0.9 + scan * 0.18 + line + swp) * 0.38 + glch, 0.0, 1.0) * uOpacity;
+  } else {
+    col   = uColor * (0.62 + scan * 0.45) + vec3(1.0) * fr * 0.42;
+    col   = mix(col, vec3(0.55, 1.0, 0.9), line);
+    col   = mix(col, vec3(1.0) * 0.9, glch * 0.5);
+    alpha = clamp((fr * 0.85 + scan * 0.25 + line + swp) * uOpacity + glch, 0.0, 1.0);
+  }
+  gl_FragColor = vec4(col, alpha);
+}`;
+
+/* ─── MATERIAL FABRİKASI ─── */
+const COLORS    = [0x00d4ff, 0xffcc44, 0x64ffda, 0x00d4ff];
+const OPACITIES = [0.92, 0.90, 0.55, 0.88];
+const TEXBLENDS = [0.62, 0.80, 0.40, 0.10];
+const GLITCHES  = [0.012, 0.008, 0.004, 0.012];
+const RIMS      = [1.0, 0.9, 1.8, 1.0];
+const LABELS    = ['HOLOGRAM', 'ALTIN', 'XRAY', 'GERÇEK'];
+
+function makeMat(origMat, m){
+  const hasTex = origMat && origMat.map ? 1.0 : 0.0;
+  return new THREE.ShaderMaterial({
+    vertexShader:   VS,
+    fragmentShader: FS,
+    uniforms: {
+      uTime:    { value: 0 },
+      uColor:   { value: new THREE.Color(COLORS[m]) },
+      uOpacity: { value: OPACITIES[m] },
+      uGlitch:  { value: GLITCHES[m] },
+      uRim:     { value: RIMS[m] },
+      uMode:    { value: m },
+      uMap:     { value: hasTex ? origMat.map : null },
+      uHasMap:  { value: hasTex },
+      uTexBlend:{ value: TEXBLENDS[m] },
+    },
+    transparent: true,
+    side:        THREE.DoubleSide,
+    depthWrite:  false,
+  });
+}
+
+/* ─── IŞIKLAR ─── */
+scene.add(new THREE.AmbientLight(0x112244, 0.8));
+const pl1 = new THREE.PointLight(0x00d4ff, 4, 14);
+pl1.position.set(1.5, 3, 4); scene.add(pl1);
+const pl2 = new THREE.PointLight(0x64ffda, 3, 8);
+pl2.position.set(-2, 2, 2);  scene.add(pl2);
+scene.add(new THREE.PointLight(0x0033aa, 2, 7).position.set(0, 2, -4));
+
+/* ─── DEKOR ─── */
+function ring(r, t, op){
+  const m = new THREE.Mesh(
+    new THREE.TorusGeometry(r, t, 8, 90),
+    new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: op })
+  );
+  m.rotation.x = Math.PI / 2; scene.add(m); return m;
+}
+const r1 = ring(0.72, 0.013, 0.55);
+const r2 = ring(1.12, 0.008, 0.22);
+ring(1.65, 0.004, 0.08);
+
+const cone = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.01, 0.82, 2.4, 32, 1, true),
+  new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.026, side: THREE.DoubleSide })
+);
+cone.position.y = -1.2; scene.add(cone);
+
+const PC   = 700;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(PC * 3);
+const pPh  = [];
+for(let i = 0; i < PC; i++){
+  const rad = 1.3 + Math.random() * 2.8;
+  const a   = Math.random() * Math.PI * 2;
+  const phi = (Math.random() - 0.5) * Math.PI;
+  pPos[i*3]   = Math.cos(phi) * Math.cos(a) * rad;
+  pPos[i*3+1] = Math.sin(phi) * rad + 1.2;
+  pPos[i*3+2] = Math.cos(phi) * Math.sin(a) * rad;
+  pPh.push(Math.random() * Math.PI * 2);
+}
+pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos, 3));
+const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({
+  color: 0x00d4ff, size: 0.022, transparent: true, opacity: 0.40, depthWrite: false
+}));
+scene.add(particles);
+
+/* ─── MODEL SİSTEMİ ─── */
+let model = null, mixer = null, actions = [], curAction = null, idleAction = null, curMode = 0;
+let idleBtn = null; // idle butonuna referans
+const origMats = new Map();
+
+function setState(txt){ document.getElementById('stateBar').textContent = txt; }
+
+/* İki aksiyon arasında akıcı geçiş */
+function crossTo(next, dur = 0.35){
+  if(!next) return;
+  if(curAction && curAction !== next) curAction.crossFadeTo(next, dur, false);
+  else next.reset().play();
+  curAction = next;
+}
+
+/* İDLE'ye geri dön (bir animasyon bitince çağrılır) */
+function returnToIdle(){
+  if(!idleAction) return;
+  crossTo(idleAction, 0.5);
+  idleAction.setLoop(THREE.LoopRepeat, Infinity);
+  /* Panel butonlarını güncelle */
+  document.querySelectorAll('.ab').forEach(b => b.classList.remove('on','playing'));
+  if(idleBtn) idleBtn.classList.add('on');
+  setState('BEKLEMEDE');
+  document.getElementById('mAnim').textContent = 'IDLE';
+}
+
+/* Tek seferlik animasyon oynat → bitince idle'a dön */
+function playOnce(act, btn, label){
+  if(!act) return;
+  act.setLoop(THREE.LoopOnce, 1);
+  act.clampWhenFinished = true;
+  act.reset();
+  crossTo(act, 0.35);
+
+  document.querySelectorAll('.ab').forEach(b => b.classList.remove('on','playing'));
+  btn.classList.add('playing');
+  document.getElementById('mAnim').textContent = label;
+  setState('▶ ' + label);
+
+  const onFinish = (e) => {
+    if(e.action !== act) return;
+    mixer.removeEventListener('finished', onFinish);
+    returnToIdle();
+  };
+  mixer.addEventListener('finished', onFinish);
+}
+
+function applyHoloMode(m){
+  curMode = m;
+  if(!model) return;
+  model.traverse(o => {
+    if(!o.isMesh && !o.isSkinnedMesh) return;
+    if(!origMats.has(o.uuid)) origMats.set(o.uuid, o.material);
+    const orig = origMats.get(o.uuid);
+    if(m === 3){
+      o.material = orig || new THREE.MeshStandardMaterial();
+    } else {
+      o.material = makeMat(orig, m);
+    }
+  });
+}
+
+function normalizeFBX(group){
+  /* Mixamo FBX cm biriminde gelir, ölçeği normalize et */
+  const box = new THREE.Box3().setFromObject(group);
+  const sz  = box.getSize(new THREE.Vector3());
+  const sc  = 2.2 / Math.max(sz.x, sz.y, sz.z);
+  group.scale.setScalar(sc);
+  const box2 = new THREE.Box3().setFromObject(group);
+  group.position.y = -box2.min.y;
+}
+
+function setupModel(scene3d, clips, name){
+  if(model){ scene.remove(model); if(mixer) mixer.stopAllAction(); }
+  origMats.clear(); actions = [];
+
+  model = scene3d;
+
+  /* Normalize boyut ve zemine yerleştir */
+  const box = new THREE.Box3().setFromObject(model);
+  const sz  = box.getSize(new THREE.Vector3());
+  const sc  = 2.2 / Math.max(sz.x, sz.y, sz.z);
+  model.scale.setScalar(sc);
+  const b2  = new THREE.Box3().setFromObject(model);
+  model.position.y = -b2.min.y;
+  scene.add(model);
+
+  /* Kamera konumlandır */
+  const b3  = new THREE.Box3().setFromObject(model);
+  const cen = b3.getCenter(new THREE.Vector3());
+  const h   = b3.max.y - b3.min.y;
+  const dist = (h * 0.65) / Math.tan((camera.fov * Math.PI / 180) * 0.5);
+  controls.target.set(0, cen.y, 0);
+  camera.position.set(0, cen.y, Math.max(dist, 2.2));
+  controls.update();
+
+  /* Hologram uygula */
+  applyHoloMode(curMode);
+
+  /* Kemik sayısı göster */
+  let boneCount = 0;
+  model.traverse(o => { if(o.isBone) boneCount++; });
+  document.getElementById('mBone').textContent = boneCount || '—';
+
+  /* Animasyon sistemi */
+  const panel = document.getElementById('animPanel');
+  panel.querySelectorAll('.ab').forEach(b => b.remove());
+  idleAction = null; idleBtn = null; actions = [];
+
+  if(clips && clips.length){
+    mixer = new THREE.AnimationMixer(model);
+
+    clips.forEach((clip, i) => {
+      const act   = mixer.clipAction(clip);
+      const label = clip.name.toUpperCase().slice(0, 16);
+      const btn   = document.createElement('button');
+      actions.push(act);
+
+      /* İlk animasyon → IDLE (sürekli döngü) */
+      if(i === 0){
+        idleAction = act;
+        idleBtn    = btn;
+        act.setLoop(THREE.LoopRepeat, Infinity);
+        act.play();
+        curAction = act;
+
+        btn.className = 'ab idle-btn on';
+        btn.textContent = '● ' + label + ' (IDLE)';
+        btn.onclick = () => returnToIdle();
+      } else {
+        /* Diğerleri → tek seferlik, bitince idle'a dön */
+        btn.className = 'ab';
+        btn.textContent = label;
+        btn.onclick = () => playOnce(act, btn, label);
+      }
+
+      panel.appendChild(btn);
+    });
+
+    document.getElementById('mAnim').textContent = 'IDLE';
+    setState('BEKLEMEDE');
+  }
+
+  document.getElementById('mName').textContent = name.slice(0, 12);
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('loading').classList.add('done');
+  document.getElementById('openGuide').classList.add('show');
+  document.getElementById('addAnimBtn').classList.add('show');
+}
+
+/* ─── YÜKLEYİCİLER ─── */
+function showLoading(txt){
+  const el = document.getElementById('loading');
+  el.classList.remove('done');
+  el.classList.add('show');
+  document.getElementById('ldtxt').textContent = txt || 'YÜKLENİYOR...';
+  document.getElementById('guide').style.display = 'none';
+}
+
+function progress(p){
+  if(p.total) document.getElementById('ldtxt').textContent =
+    'YÜKLENİYOR ' + Math.round(p.loaded / p.total * 100) + '%...';
+}
+
+function onError(e){
+  document.getElementById('ldtxt').textContent = 'HATA: ' + (e.message || e);
+  console.error(e);
+}
+
+function loadGLB(url, name){
+  showLoading('GLB YÜKLENİYOR...');
+  new GLTFLoader().load(url,
+    gltf => setupModel(gltf.scene, gltf.animations, name),
+    progress, onError
+  );
+}
+
+function loadFBX(url, name){
+  showLoading('FBX YÜKLENİYOR...');
+  new FBXLoader().load(url,
+    group => setupModel(group, group.animations, name),
+    progress, onError
+  );
+}
+
+window.loadFile = function(input){
+  const f = input.files[0];
+  if(!f) return;
+  const url  = URL.createObjectURL(f);
+  const name = f.name.replace(/\.[^.]+$/, '');
+  const ext  = f.name.split('.').pop().toLowerCase();
+  if(ext === 'fbx') loadFBX(url, name);
+  else              loadGLB(url, name);
+};
+
+window.loadDefault = function(){
+  loadGLB('models/michelle.glb', 'MICHELLE');
+};
+
+/* ─── EKSTRA ANİMASYON EKLE ─── */
+window.addAnimFile = function(input){
+  const f = input.files[0];
+  if(!f || !model || !mixer) return;
+  document.getElementById('animGuide').classList.remove('show');
+
+  const url  = URL.createObjectURL(f);
+  const name = f.name.replace(/\.[^.]+$/, '').slice(0, 16).toUpperCase();
+
+  new FBXLoader().load(url, (group) => {
+    if(!group.animations || !group.animations.length){
+      alert('Bu dosyada animasyon bulunamadı.');
+      return;
+    }
+    const panel = document.getElementById('animPanel');
+    group.animations.forEach(clip => {
+      clip.name = name;
+      const act   = mixer.clipAction(clip, model);
+      const label = name;
+      actions.push(act);
+
+      const btn = document.createElement('button');
+      btn.className = 'ab';
+      btn.textContent = label;
+      /* Ekstra animasyonlar → tek seferlik → idle'a dön */
+      btn.onclick = () => playOnce(act, btn, label);
+      panel.appendChild(btn);
+    });
+    /* Dosya input'u sıfırla (aynı dosya tekrar seçilebilsin) */
+    input.value = '';
+  }, null, e => { console.error('Animasyon yükleme hatası:', e); });
+};
+
+/* ─── MOD DEĞİŞTİR ─── */
+window.setMode = function(m, btn){
+  document.querySelectorAll('.mb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('mLbl').textContent = LABELS[m];
+  applyHoloMode(m);
+};
+
+/* ─── RENDER DÖNGÜSÜ ─── */
+let t = 0, fpsT = performance.now(), fpsF = 0;
+const t0 = Date.now();
+
+function animate(){
+  requestAnimationFrame(animate);
+  t += 0.016; fpsF++;
+
+  if(performance.now() - fpsT > 1000){
+    document.getElementById('fps').textContent = fpsF + ' FPS';
+    fpsF = 0; fpsT = performance.now();
+  }
+  const s = Math.floor((Date.now() - t0) / 1000);
+  document.getElementById('upt').textContent = s < 60 ? s + 's' : Math.floor(s/60) + 'm';
+
+  controls.update();
+  if(mixer) mixer.update(0.016);
+
+  /* Shader zamanı güncelle */
+  if(model) model.traverse(o => {
+    if((o.isMesh || o.isSkinnedMesh) && o.material?.uniforms?.uTime)
+      o.material.uniforms.uTime.value = t;
+  });
+
+  /* Hafif yüzen hareket */
+  if(model) model.position.y += Math.sin(t * 0.6) * 0.00022;
+
+  /* Dekor animasyonu */
+  particles.rotation.y = t * 0.04;
+  const pp = pGeo.attributes.position.array;
+  for(let i = 0; i < PC; i++){
+    pp[i*3+1] += Math.sin(pPh[i] + t) * 0.0013;
+    pPh[i]    += 0.006;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+
+  const rs = 1 + Math.sin(t * 1.5) * 0.042;
+  r1.scale.set(rs, rs, rs);
+  r1.material.opacity = 0.42 + Math.sin(t * 1.5) * 0.22;
+  r2.scale.set(1/rs, 1/rs, 1/rs);
+  pl1.position.x = Math.sin(t * 0.30) * 2;
+  pl1.position.z = 3.5 + Math.cos(t * 0.22) * 0.9;
+  cone.material.opacity = 0.018 + Math.sin(t * 1.9) * 0.010;
+
+  renderer.setSize(W(), H(), false);
+  camera.aspect = W() / H();
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  renderer.setSize(W(), H(), false);
+  camera.aspect = W() / H();
+  camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>

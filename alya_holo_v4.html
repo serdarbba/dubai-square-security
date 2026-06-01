@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALYA — Portrait Hologram</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+canvas#c{display:block;width:100%;height:100%}
+
+/* HUD */
+.hud{position:fixed;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace}
+.hc{position:absolute;width:22px;height:22px;border-color:rgba(0,212,255,.5);border-style:solid}
+.htl{top:20px;left:20px;border-width:2px 0 0 2px}
+.htr{top:20px;right:20px;border-width:2px 2px 0 0}
+.hbl{bottom:20px;left:20px;border-width:0 0 2px 2px}
+.hbr{bottom:20px;right:20px;border-width:0 2px 2px 0}
+.hl{position:absolute;font-size:9px;color:rgba(0,212,255,.45);letter-spacing:2px}
+.hl-tl{top:14px;left:48px}
+.hl-tr{top:14px;right:48px;text-align:right}
+.hl-bl{bottom:14px;left:48px}
+.hl-br{bottom:14px;right:48px;text-align:right}
+
+/* Scanline overlay */
+.scan{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 3px);
+  animation:flk 9s infinite}
+@keyframes flk{0%,100%{opacity:1}93%{opacity:1}94%{opacity:.72}95%{opacity:1}98%{opacity:.88}}
+
+/* Mod butonları */
+.modes{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
+.mb{padding:6px 16px;border-radius:14px;border:1px solid rgba(0,212,255,.22);
+  background:rgba(0,212,255,.05);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1.5px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.mb.on{background:rgba(0,212,255,.2);border-color:#00d4ff;color:#fff;text-shadow:0 0 10px #00d4ff}
+.mb:hover{background:rgba(0,212,255,.12);color:#00d4ff}
+
+/* Yükleniyor */
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:#000;z-index:99;transition:opacity .8s}
+#loading.done{opacity:0;pointer-events:none}
+.ld-ring{width:48px;height:48px;border:2px solid rgba(0,212,255,.15);
+  border-top-color:#00d4ff;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:18px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-txt{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,212,255,.6);letter-spacing:3px}
+
+/* Sağ panel */
+.side{position:fixed;right:28px;top:50%;transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:rgba(0,212,255,.38);letter-spacing:1px;line-height:2.4;pointer-events:none;
+  border-left:1px solid rgba(0,212,255,.12);padding-left:14px}
+.sv{color:#64ffda;font-weight:700}
+
+/* hint */
+.hint{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.25);
+  letter-spacing:2px;white-space:nowrap;pointer-events:none}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="ld-ring"></div>
+  <div class="ld-txt">ALYA YÜKLENİYOR...</div>
+</div>
+
+<canvas id="c"></canvas>
+
+<div class="hud">
+  <div class="hc htl"></div><div class="hc htr"></div>
+  <div class="hc hbl"></div><div class="hc hbr"></div>
+  <div class="hl hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hl hl-tr">ALYA · HOLOGRAM</div>
+  <div class="hl hl-bl">DURUM: <span style="color:#64ffda">ONLINE</span></div>
+  <div class="hl hl-br" id="fps">-- FPS</div>
+</div>
+
+<div class="scan"></div>
+
+<div class="modes">
+  <button class="mb on"  onclick="setMode(0,this)">HOLOGRAM</button>
+  <button class="mb"     onclick="setMode(1,this)">ALTIN</button>
+  <button class="mb"     onclick="setMode(2,this)">BEYAZ</button>
+  <button class="mb"     onclick="setMode(3,this)">GERÇEK</button>
+</div>
+
+<div class="side">
+  <div>KİMLİK  <span class="sv">ALYA-3</span></div>
+  <div>DİL     <span class="sv">TR/EN/AR</span></div>
+  <div>MOD     <span class="sv" id="mLbl">HOLOGRAM</span></div>
+  <div>EŞL     <span class="sv">100%</span></div>
+  <div>SÜRE    <span class="sv"><span id="upt">0s</span></span></div>
+</div>
+
+<div class="hint">FARE: DÖNDÜR  ·  SCROLL: ZOOM</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const W=()=>window.innerWidth, H=()=>window.innerHeight;
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000,1);
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(36,W()/H(),.01,60);
+camera.position.set(0,1.5,5.2);
+
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=.08;
+controls.minDistance=1.8; controls.maxDistance=14;
+controls.target.set(0,1.5,0);
+
+/* ══ HOLOGRAM SHADER ══ */
+const VS=`
+varying vec2 vUv;
+varying vec3 vWorldPos;
+void main(){
+  vUv=uv;
+  vWorldPos=(modelMatrix*vec4(position,1.)).xyz;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
+}`;
+
+const FS=`
+uniform sampler2D map;
+uniform float uTime;
+uniform float uGlitch;
+uniform float uMode;   /* 0=cyan 1=gold 2=white 3=real */
+varying vec2 vUv;
+
+float rand(float s){return fract(sin(s)*43758.5);}
+
+void main(){
+  vec2 uv=vUv;
+
+  /* Glitch bozulması */
+  float gt=floor(uTime*7.);
+  float row=floor(uv.y*90.);
+  float g=step(.955,rand(gt*3.1+row*.7))*uGlitch;
+  uv.x+=g*(rand(gt+1.)-.5)*.028;
+  uv=clamp(uv,0.,1.);
+
+  vec4 tex=texture2D(map,uv);
+  vec3 col=tex.rgb;
+  float lum=dot(col,vec3(.299,.587,.114));
+
+  /* GERÇEK mod — orijinal renk */
+  if(uMode>2.5){
+    gl_FragColor=vec4(col, smoothstep(.04,.22,lum));
+    return;
+  }
+
+  /* ── Renk dönüşümü ── */
+  vec3 hc;
+  if(uMode<.5){
+    /* CYAN hologram */
+    hc.r=col.r*.16+col.b*.10;
+    hc.g=col.g*.50+lum*.30;
+    hc.b=col.b*.60+lum*.58;
+    hc=max(hc,vec3(0.,.04,.14)*lum);
+  } else if(uMode<1.5){
+    /* ALTIN */
+    hc=vec3(lum*.92+.08, lum*.72, lum*.08);
+  } else {
+    /* BEYAZ */
+    hc=vec3(lum*.85+.15, lum*.90+.10, lum*.95+.05);
+  }
+  float mx=max(max(hc.r,hc.g),hc.b);
+  if(mx>0.) hc=hc/mx*clamp(lum*1.5+.06,0.,1.);
+
+  /* Tarama bantları */
+  float scan=mix(1., sin(uv.y*700.*3.14159-uTime*2.2)*.5+.5, .075);
+
+  /* Yukarı süpüren parlak bant */
+  float band=pow(fract(uv.y-uTime*.12),10.)*.55;
+
+  /* Keskin veri çizgisi */
+  float dline=step(.992,fract(uv.y*70.-uTime*.7))*.38;
+
+  /* Figür kenarı: karanlık→aydınlık geçişi */
+  float edge=smoothstep(.04,.22,lum)*smoothstep(.98,.50,lum);
+
+  /* Titreme */
+  float fl=.88+sin(uTime*23.1)*.055+sin(uTime*7.7)*.028+sin(uTime*2.9)*.018;
+
+  hc*=scan*fl;
+  hc+=vec3(0.,.55,1.)*band*.28;
+  hc+=vec3(.4,1.,1.)*dline;
+  hc+=vec3(.15,.85,1.)*edge*.45;
+
+  /* Alpha: karanlık arka plan şeffaf, figür görünür */
+  float alpha=smoothstep(.04,.28,lum)*fl;
+  alpha=clamp(alpha*.90+edge*.18+dline*.32+band*.18,0.,1.);
+
+  gl_FragColor=vec4(hc,alpha);
+}`;
+
+/* ══ IŞIKLAR ══ */
+scene.add(new THREE.AmbientLight(0x0d2030,.8));
+const pl1=new THREE.PointLight(0x00ccff,5,14); pl1.position.set(1.2,3,4); scene.add(pl1);
+const pl2=new THREE.PointLight(0x64ffda,3,8); pl2.position.set(-1.8,2,2.5); scene.add(pl2);
+const pl3=new THREE.PointLight(0x0022aa,2,7); pl3.position.set(0,2,-4); scene.add(pl3);
+/* Yüz ışığı */
+const faceL=new THREE.PointLight(0x88ddff,1.2,3); faceL.position.set(0,2.2,.8); scene.add(faceL);
+
+/* ══ TABAN HALKALARI ══ */
+function ring(r,t,op){
+  const m=new THREE.Mesh(new THREE.TorusGeometry(r,t,8,90),
+    new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:op}));
+  m.rotation.x=Math.PI/2; scene.add(m); return m;
+}
+const r1=ring(.70,.013,.60), r2=ring(1.10,.008,.24), r3=ring(1.60,.004,.10);
+
+/* Projeksiyon konisi */
+const cone=new THREE.Mesh(
+  new THREE.CylinderGeometry(.01,.80,2.4,32,1,true),
+  new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:.028,side:THREE.DoubleSide})
+);
+cone.position.y=-1.18; scene.add(cone);
+
+/* Parçacıklar */
+const PC=700, pGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(PC*3), pPh=[];
+for(let i=0;i<PC;i++){
+  const r=1.4+Math.random()*2.6, a=Math.random()*Math.PI*2, p=(Math.random()-.5)*Math.PI;
+  pPos[i*3]=Math.cos(p)*Math.cos(a)*r;
+  pPos[i*3+1]=Math.sin(p)*r+1.5;
+  pPos[i*3+2]=Math.cos(p)*Math.sin(a)*r;
+  pPh.push(Math.random()*Math.PI*2);
+}
+pGeo.setAttribute('position',new THREE.Float32BufferAttribute(pPos,3));
+const particles=new THREE.Points(pGeo,
+  new THREE.PointsMaterial({color:0x00d4ff,size:.022,transparent:true,opacity:.40,depthWrite:false}));
+scene.add(particles);
+
+/* Arka glow disk */
+const glowDisk=new THREE.Mesh(
+  new THREE.PlaneGeometry(3.2,3.2),
+  new THREE.MeshBasicMaterial({color:0x003344,transparent:true,opacity:.18,depthWrite:false})
+);
+glowDisk.position.set(0,1.5,-.25); scene.add(glowDisk);
+
+/* ══ PORTRE YÜKLEYİCİ ══ */
+let billMat=null, billMesh=null, mode=0;
+const mLabels=['HOLOGRAM','ALTIN','BEYAZ','GERÇEK'];
+
+const loader=new THREE.TextureLoader();
+loader.load('alya-portrait.png',
+  (tex)=>{
+    tex.encoding=THREE.sRGBEncoding;
+    /* Görüntü oranı: 1024×1536 = 2:3 */
+    const BW=2.4, BH=3.6;
+    billMat=new THREE.ShaderMaterial({
+      vertexShader:VS, fragmentShader:FS,
+      uniforms:{
+        map:     {value:tex},
+        uTime:   {value:0},
+        uGlitch: {value:.015},
+        uMode:   {value:0},
+      },
+      transparent:true, side:THREE.DoubleSide, depthWrite:false,
+    });
+    billMesh=new THREE.Mesh(new THREE.PlaneGeometry(BW,BH), billMat);
+    billMesh.position.y=BH/2;
+    scene.add(billMesh);
+
+    /* Kamera: tam figürü göster */
+    const dist=(BH*.58)/Math.tan((camera.fov*Math.PI/180)*.5);
+    controls.target.set(0,BH/2,0);
+    camera.position.set(0,BH/2,Math.max(dist,3.2));
+    controls.update();
+
+    document.getElementById('loading').classList.add('done');
+  },
+  undefined,
+  (e)=>{ console.error(e); document.querySelector('.ld-txt').textContent='HATA: '+e.message; }
+);
+
+/* ══ MOD DEĞİŞTİR ══ */
+function setMode(m,btn){
+  mode=m;
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('mLbl').textContent=mLabels[m];
+  if(billMat) billMat.uniforms.uMode.value=m;
+}
+
+/* ══ RENDER LOOP ══ */
+let t=0, fpsT=performance.now(), fpsF=0;
+const t0=Date.now();
+function animate(){
+  requestAnimationFrame(animate);
+  t+=.016; fpsF++;
+  if(performance.now()-fpsT>1000){
+    document.getElementById('fps').textContent=fpsF+' FPS';
+    fpsF=0; fpsT=performance.now();
+  }
+  const sec=Math.floor((Date.now()-t0)/1000);
+  document.getElementById('upt').textContent=sec<60?sec+'s':Math.floor(sec/60)+'m';
+
+  controls.update();
+  if(billMat) billMat.uniforms.uTime.value=t;
+
+  /* Hafif yüzer */
+  if(billMesh){
+    billMesh.position.y=billMesh.geometry.parameters.height/2+Math.sin(t*.55)*.022;
+  }
+
+  /* Parçacıklar */
+  particles.rotation.y=t*.038;
+  const pp=pGeo.attributes.position.array;
+  for(let i=0;i<PC;i++){
+    pp[i*3+1]+=Math.sin(pPh[i]+t)*.0013;
+    pPh[i]+=.006;
+  }
+  pGeo.attributes.position.needsUpdate=true;
+
+  /* Halkalar */
+  const rs=1+Math.sin(t*1.5)*.042;
+  r1.scale.set(rs,rs,rs); r1.material.opacity=.44+Math.sin(t*1.5)*.22;
+  r2.scale.set(1/rs,1/rs,1/rs);
+
+  /* Işıklar */
+  pl1.position.x=Math.sin(t*.30)*1.8; pl1.position.z=3.5+Math.cos(t*.22)*.9;
+  faceL.intensity=1.1+Math.sin(t*2.6)*.3;
+
+  /* Koni */
+  cone.material.opacity=.020+Math.sin(t*1.9)*.010;
+
+  renderer.setSize(W(),H(),false);
+  camera.aspect=W()/H();
+  camera.updateProjectionMatrix();
+  renderer.render(scene,camera);
+}
+animate();
+window.addEventListener('resize',()=>{renderer.setSize(W(),H(),false);camera.aspect=W()/H();camera.updateProjectionMatrix();});
+</script>
+</body>
+</html>

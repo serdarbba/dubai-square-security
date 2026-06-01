@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ALYA — 3D Hologram v5</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+canvas#c{display:block;width:100%;height:100%}
+.hud{position:fixed;inset:0;pointer-events:none;font-family:'JetBrains Mono',monospace}
+.hc{position:absolute;width:22px;height:22px;border-color:rgba(0,212,255,.5);border-style:solid}
+.htl{top:20px;left:20px;border-width:2px 0 0 2px}
+.htr{top:20px;right:20px;border-width:2px 2px 0 0}
+.hbl{bottom:20px;left:20px;border-width:0 0 2px 2px}
+.hbr{bottom:20px;right:20px;border-width:0 2px 2px 0}
+.hl{position:absolute;font-size:9px;color:rgba(0,212,255,.45);letter-spacing:2px}
+.hl-tl{top:14px;left:48px}.hl-tr{top:14px;right:48px;text-align:right}
+.hl-bl{bottom:14px;left:48px}.hl-br{bottom:14px;right:48px;text-align:right}
+.scan{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 3px);
+  animation:flk 9s infinite}
+@keyframes flk{0%,100%{opacity:1}93%{opacity:1}94%{opacity:.72}95%{opacity:1}}
+.modes{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
+.mb{padding:6px 16px;border-radius:14px;border:1px solid rgba(0,212,255,.22);
+  background:rgba(0,212,255,.05);color:rgba(0,212,255,.5);font-size:9px;
+  letter-spacing:1.5px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.mb.on{background:rgba(0,212,255,.2);border-color:#00d4ff;color:#fff;text-shadow:0 0 10px #00d4ff}
+.mb:hover{background:rgba(0,212,255,.12);color:#00d4ff}
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:#000;z-index:99;transition:opacity .8s}
+#loading.done{opacity:0;pointer-events:none}
+.ld-ring{width:52px;height:52px;border:2px solid rgba(0,212,255,.15);
+  border-top-color:#00d4ff;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-txt{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,212,255,.6);letter-spacing:3px}
+.side{position:fixed;right:28px;top:50%;transform:translateY(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.38);
+  letter-spacing:1px;line-height:2.4;pointer-events:none;
+  border-left:1px solid rgba(0,212,255,.12);padding-left:14px}
+.sv{color:#64ffda;font-weight:700}
+.hint{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,.25);
+  letter-spacing:2px;white-space:nowrap;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="loading"><div class="ld-ring"></div><div class="ld-txt" id="ldtxt">3D YÜKLENİYOR...</div></div>
+<canvas id="c"></canvas>
+<div class="hud">
+  <div class="hc htl"></div><div class="hc htr"></div>
+  <div class="hc hbl"></div><div class="hc hbr"></div>
+  <div class="hl hl-tl">DUBAI SQUARE · AI CONCIERGE</div>
+  <div class="hl hl-tr">ALYA · 3D HOLOGRAM</div>
+  <div class="hl hl-bl">DURUM: <span style="color:#64ffda">ONLINE</span></div>
+  <div class="hl hl-br" id="fps">-- FPS</div>
+</div>
+<div class="scan"></div>
+<div class="modes">
+  <button class="mb on"  onclick="setMode(0,this)">HOLOGRAM</button>
+  <button class="mb"     onclick="setMode(1,this)">ALTIN</button>
+  <button class="mb"     onclick="setMode(2,this)">BEYAZ</button>
+  <button class="mb"     onclick="setMode(3,this)">GERÇEK</button>
+</div>
+<div class="side">
+  <div>KİMLİK  <span class="sv">ALYA-3</span></div>
+  <div>MOD     <span class="sv" id="mLbl">HOLOGRAM</span></div>
+  <div>3D      <span class="sv">DERİNLİK AKTİF</span></div>
+  <div>EŞL     <span class="sv">100%</span></div>
+  <div>SÜRE    <span class="sv"><span id="upt">0s</span></span></div>
+</div>
+<div class="hint">FARE: DÖNDÜR (3D)  ·  SCROLL: ZOOM</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const W=()=>window.innerWidth, H=()=>window.innerHeight;
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000,1);
+renderer.shadowMap.enabled=true;
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(36,W()/H(),.01,60);
+camera.position.set(0,1.6,5.0);
+
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=.08;
+controls.minDistance=1.5; controls.maxDistance=12;
+controls.minPolarAngle=Math.PI*.15;
+controls.maxPolarAngle=Math.PI*.78;
+controls.minAzimuthAngle=-Math.PI*.45;
+controls.maxAzimuthAngle= Math.PI*.45;
+controls.target.set(0,1.6,0);
+
+/* ══ HOLOGRAM SHADER ══ */
+const VS=`
+uniform float uBreath;  /* nefes: göğüs yükselir */
+uniform float uSway;    /* sallanma sol-sağ */
+uniform float uBob;     /* baş eğme */
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+void main(){
+  vUv=uv;
+  vec3 pos=position;
+
+  /* Nefes: gövde ortası (uv.y 0.3–0.7) hafifçe yükselir */
+  float chestFactor=smoothstep(.28,.55,uv.y)*smoothstep(.82,.55,uv.y);
+  pos.y+=chestFactor*uBreath*.018;
+
+  /* Baş eğme: üst kısım (uv.y>0.62) sağa-sola */
+  float headFactor=smoothstep(.60,.82,uv.y);
+  pos.x+=headFactor*uBob*.028;
+
+  /* Genel sallanma */
+  pos.x+=uSway*.020*(1.-uv.y*.5);
+
+  vNormal=normalize(normalMatrix*normal);
+  vWorldPos=(modelMatrix*vec4(pos,1.)).xyz;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1.);
+}`;
+
+const FS=`
+uniform sampler2D map;
+uniform float uTime;
+uniform float uGlitch;
+uniform float uMode;
+uniform float uBlink;  /* 0=açık 1=kapalı */
+uniform float uTalk;   /* 0=sessiz 1=konuşuyor */
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+float rand(float s){return fract(sin(s)*43758.5);}
+
+void main(){
+  vec2 uv=vUv;
+
+  /* Glitch */
+  float gt=floor(uTime*7.);
+  float row=floor(uv.y*90.);
+  float g=step(.958,rand(gt*3.1+row*.7))*uGlitch;
+  uv.x+=g*(rand(gt+1.)-.5)*.022;
+
+  /* ── Göz kırpma (UV: v≈0.63-0.68, u≈0.28-0.72) ── */
+  float eyeH=smoothstep(.625,.640,uv.y)*smoothstep(.690,.672,uv.y);
+  float eyeW=smoothstep(.27,.32,uv.x)*smoothstep(.73,.68,uv.x);
+  float blinkMask=eyeH*eyeW*uBlink;
+
+  /* ── Ağız hareketi (UV: v≈0.46-0.52, u≈0.36-0.64) ── */
+  float mH=smoothstep(.455,.470,uv.y)*smoothstep(.525,.510,uv.y);
+  float mW=smoothstep(.355,.380,uv.x)*smoothstep(.645,.620,uv.x);
+  float mouthWave=sin(uTime*9.5)*.5+.5;  /* dudak hareketi */
+  float talkDistort=mH*mW*uTalk*mouthWave*.018;
+  uv.y+=talkDistort; uv.x+=talkDistort*(uv.x-.5)*.4;
+
+  uv=clamp(uv,0.,1.);
+  vec4 tex=texture2D(map,uv);
+  vec3 col=tex.rgb;
+  float lum=dot(col,vec3(.299,.587,.114));
+
+  /* Göz kırpma uygula */
+  col=mix(col,vec3(0.),blinkMask*.95);
+  lum=mix(lum,0.,blinkMask*.95);
+
+  /* Gözlerde hafif hologram yansıması */
+  float eyeShine=eyeH*eyeW*(sin(uTime*3.2)*.5+.5)*.12*(1.-uBlink);
+  col+=vec3(.2,.9,1.)*eyeShine;
+
+  /* Fresnel */
+  vec3 vd=normalize(cameraPosition-vWorldPos);
+  float fresnel=pow(1.-abs(dot(vd,vNormal)),2.0);
+
+  if(uMode>2.5){
+    col+=vec3(.1,.3,.35)*fresnel*.5;
+    gl_FragColor=vec4(col,smoothstep(.04,.25,lum)+fresnel*.3);
+    return;
+  }
+
+  vec3 hc;
+  if(uMode<.5){
+    hc.r=col.r*.15+col.b*.10;
+    hc.g=col.g*.50+lum*.28;
+    hc.b=col.b*.58+lum*.55;
+    hc=max(hc,vec3(0.,.04,.14)*lum);
+  } else if(uMode<1.5){
+    hc=vec3(lum*.92+.08,lum*.72,lum*.08);
+  } else {
+    hc=vec3(lum*.85+.15,lum*.90+.10,lum*.95+.05);
+  }
+  float mx=max(max(hc.r,hc.g),hc.b);
+  if(mx>0.) hc=hc/mx*clamp(lum*1.5+.05,0.,1.);
+
+  float scan=mix(1.,sin(uv.y*700.*3.14159-uTime*2.2)*.5+.5,.07);
+  float band=pow(fract(uv.y-uTime*.11),10.)*.55;
+  float dline=step(.993,fract(uv.y*75.-uTime*.65))*.36;
+  float edge2=smoothstep(.04,.22,lum)*smoothstep(.95,.50,lum);
+  float fl=.88+sin(uTime*22.)*.055+sin(uTime*7.5)*.028+sin(uTime*3.)*.018;
+
+  hc*=scan*fl;
+  hc+=vec3(0.,.55,1.)*band*.28;
+  hc+=vec3(.4,1.,1.)*dline;
+  hc+=vec3(.15,.85,1.)*edge2*.42;
+  hc+=vec3(.1,.7,1.)*fresnel*.65;
+
+  /* Konuşurken ağız bölgesi parlar */
+  hc+=vec3(.2,.9,1.)*mH*mW*uTalk*mouthWave*.55;
+
+  float alpha=smoothstep(.04,.28,lum)*fl;
+  alpha=clamp(alpha*.90+edge2*.18+dline*.30+band*.18+fresnel*.25,0.,1.);
+  gl_FragColor=vec4(hc,alpha);
+}`;
+
+/* ══ IŞIKLAR ══ */
+scene.add(new THREE.AmbientLight(0x0d2030,.7));
+const pl1=new THREE.PointLight(0x00ccff,5,14); pl1.position.set(1.2,3,4); scene.add(pl1);
+const pl2=new THREE.PointLight(0x64ffda,3,8);  pl2.position.set(-1.8,2,2.5); scene.add(pl2);
+const pl3=new THREE.PointLight(0x0022aa,2,7);  pl3.position.set(0,2,-4); scene.add(pl3);
+const faceL=new THREE.PointLight(0x88ddff,1.5,3); faceL.position.set(0,2.2,.6); scene.add(faceL);
+
+/* ══ TABAN HALKALARI ══ */
+function ring(r,t,op){
+  const m=new THREE.Mesh(new THREE.TorusGeometry(r,t,8,90),
+    new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:op}));
+  m.rotation.x=Math.PI/2; scene.add(m); return m;
+}
+const r1=ring(.72,.013,.58), r2=ring(1.15,.008,.22), r3=ring(1.65,.004,.09);
+
+const cone=new THREE.Mesh(
+  new THREE.CylinderGeometry(.01,.82,2.6,32,1,true),
+  new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:.025,side:THREE.DoubleSide})
+);
+cone.position.y=-1.22; scene.add(cone);
+
+const PC=700, pGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(PC*3), pPh=[];
+for(let i=0;i<PC;i++){
+  const r=1.4+Math.random()*2.8, a=Math.random()*Math.PI*2, p=(Math.random()-.5)*Math.PI;
+  pPos[i*3]=Math.cos(p)*Math.cos(a)*r;
+  pPos[i*3+1]=Math.sin(p)*r+1.6;
+  pPos[i*3+2]=Math.cos(p)*Math.sin(a)*r;
+  pPh.push(Math.random()*Math.PI*2);
+}
+pGeo.setAttribute('position',new THREE.Float32BufferAttribute(pPos,3));
+const particles=new THREE.Points(pGeo,
+  new THREE.PointsMaterial({color:0x00d4ff,size:.022,transparent:true,opacity:.38,depthWrite:false}));
+scene.add(particles);
+
+/* ══ 3D DERİNLİK HARITASI ══
+   Portre parlaklığına + Gaussian yüz zarfına göre her vertex'i Z'de yer değiştir.
+   Sonuç: gerçek 3D relief — döndürünce yüzün hacmini görürsün.
+*/
+let faceMat=null, faceMesh=null, mode=0;
+const mLabels=['HOLOGRAM','ALTIN','BEYAZ','GERÇEK'];
+
+function buildDepthMesh(img){
+  document.getElementById('ldtxt').textContent='3D MESH İŞLENİYOR...';
+
+  /* Görüntüyü canvas'a çiz, piksel verisi al */
+  const iW=img.naturalWidth, iH=img.naturalHeight;
+  const tmpC=document.createElement('canvas');
+  tmpC.width=iW; tmpC.height=iH;
+  const ctx=tmpC.getContext('2d');
+  ctx.drawImage(img,0,0);
+  const px=ctx.getImageData(0,0,iW,iH).data;
+
+  /* Mesh segment sayısı: 160×240 = 38 881 vertex → iyi detay, hızlı */
+  const SW=160, SH=240;
+  const BW=2.4, BH=3.6;
+  const geo=new THREE.PlaneGeometry(BW,BH,SW,SH);
+  const pos=geo.attributes.position;
+
+  /* Yüz merkezi tahmini (portre içinde) */
+  const faceU=0.50; // yatay merkez
+  const faceV=0.60; // Three.js UV'de dikey (v=1 üst, v=0 alt → yüz üst %40'ta)
+  const depthScale=0.42; // maksimum derinlik (birim)
+
+  for(let vi=0;vi<pos.count;vi++){
+    const u=(vi%(SW+1))/SW;
+    const v=Math.floor(vi/(SW+1))/SH;
+
+    /* Görüntü piksel koordinatı */
+    const ipx=Math.min(Math.floor(u*(iW-1)),iW-1);
+    const ipy=Math.min(Math.floor((1-v)*(iH-1)),iH-1);
+    const idx=(ipy*iW+ipx)*4;
+    const r=px[idx]/255, g=px[idx+1]/255, b=px[idx+2]/255;
+    const lum=.299*r+.587*g+.114*b;
+
+    /* Gaussian yüz zarfı: yüz merkezi max derinlikte */
+    const du=(u-faceU)*2.2;
+    const dv=(v-faceV)*2.6;
+    const gauss=Math.exp(-(du*du+dv*dv));
+
+    /* Karanlık arka plan geri çekil, parlak yüz öne çık */
+    const depth=(gauss*.60+lum*.40-0.08)*depthScale;
+    pos.setZ(vi,depth);
+  }
+
+  pos.needsUpdate=true;
+  geo.computeVertexNormals();
+
+  /* Texture */
+  const tex=new THREE.Texture(img);
+  tex.encoding=THREE.sRGBEncoding;
+  tex.needsUpdate=true;
+
+  faceMat=new THREE.ShaderMaterial({
+    vertexShader:VS, fragmentShader:FS,
+    uniforms:{
+      map:     {value:tex},
+      uTime:   {value:0},
+      uGlitch: {value:.014},
+      uMode:   {value:0},
+    },
+    transparent:true, side:THREE.FrontSide, depthWrite:false,
+  });
+
+  faceMesh=new THREE.Mesh(geo,faceMat);
+  faceMesh.position.y=BH/2;
+  scene.add(faceMesh);
+
+  /* Kamera */
+  const dist=(BH*.58)/Math.tan((camera.fov*Math.PI/180)*.5);
+  controls.target.set(0,BH/2,0);
+  camera.position.set(0,BH/2,Math.max(dist,3.2));
+  controls.update();
+
+  document.getElementById('loading').classList.add('done');
+}
+
+/* Görüntü yükle */
+const img=new Image();
+img.crossOrigin='anonymous';
+img.onload=()=>buildDepthMesh(img);
+img.onerror=(e)=>{ document.getElementById('ldtxt').textContent='HATA!'; console.error(e); };
+img.src='alya-portrait.png';
+
+/* ══ MOD ══ */
+function setMode(m,btn){
+  mode=m;
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('mLbl').textContent=mLabels[m];
+  if(faceMat) faceMat.uniforms.uMode.value=m;
+}
+
+/* ══ RENDER LOOP ══ */
+let t=0, fpsT=performance.now(), fpsF=0;
+const t0=Date.now();
+function animate(){
+  requestAnimationFrame(animate);
+  t+=.016; fpsF++;
+  if(performance.now()-fpsT>1000){
+    document.getElementById('fps').textContent=fpsF+' FPS';
+    fpsF=0; fpsT=performance.now();
+  }
+  const sec=Math.floor((Date.now()-t0)/1000);
+  document.getElementById('upt').textContent=sec<60?sec+'s':Math.floor(sec/60)+'m';
+
+  controls.update();
+  if(faceMat) faceMat.uniforms.uTime.value=t;
+
+  /* Hafif yüzer */
+  if(faceMesh) faceMesh.position.y=faceMesh.geometry.parameters.height/2+Math.sin(t*.55)*.022;
+
+  /* Parçacıklar */
+  particles.rotation.y=t*.038;
+  const pp=pGeo.attributes.position.array;
+  for(let i=0;i<PC;i++){
+    pp[i*3+1]+=Math.sin(pPh[i]+t)*.0013;
+    pPh[i]+=.006;
+  }
+  pGeo.attributes.position.needsUpdate=true;
+
+  const rs=1+Math.sin(t*1.5)*.042;
+  r1.scale.set(rs,rs,rs); r1.material.opacity=.44+Math.sin(t*1.5)*.22;
+  r2.scale.set(1/rs,1/rs,1/rs);
+
+  pl1.position.x=Math.sin(t*.30)*1.8; pl1.position.z=3.5+Math.cos(t*.22)*.9;
+  faceL.intensity=1.1+Math.sin(t*2.6)*.3;
+  cone.material.opacity=.020+Math.sin(t*1.9)*.010;
+
+  renderer.setSize(W(),H(),false);
+  camera.aspect=W()/H();
+  camera.updateProjectionMatrix();
+  renderer.render(scene,camera);
+}
+animate();
+window.addEventListener('resize',()=>{renderer.setSize(W(),H(),false);camera.aspect=W()/H();camera.updateProjectionMatrix();});
+</script>
+</body>
+</html>

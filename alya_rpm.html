@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Alya Avatar — Ready Player Me</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;font-family:'JetBrains Mono',monospace;color:#00d4ff;
+     display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;background:rgba(2,8,16,.97);
+  border-bottom:1px solid rgba(0,212,255,.15);flex-shrink:0}
+.title{font-size:11px;letter-spacing:3px;color:#64ffda;font-weight:700}
+.step{font-size:9px;color:rgba(0,212,255,.45);letter-spacing:1px}
+
+/* MAIN */
+.main{display:flex;flex:1;overflow:hidden;gap:0}
+
+/* LEFT — iframe */
+.iframe-wrap{flex:1;position:relative;background:#050a14}
+.iframe-wrap iframe{width:100%;height:100%;border:none;display:block}
+.iframe-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:#050a14;flex-direction:column;gap:16px;transition:opacity .5s}
+.iframe-overlay.hidden{opacity:0;pointer-events:none}
+.loading-dot{width:10px;height:10px;border-radius:50%;background:#00d4ff;
+  animation:ldot 1.2s ease-in-out infinite}
+@keyframes ldot{0%,100%{transform:scale(.5);opacity:.3}50%{transform:scale(1.2);opacity:1}}
+.load-txt{font-size:10px;color:rgba(0,212,255,.5);letter-spacing:2px}
+
+/* RIGHT — panel */
+.side-panel{width:320px;display:flex;flex-direction:column;background:rgba(2,8,16,.97);
+  border-left:1px solid rgba(0,212,255,.1)}
+
+.step-block{padding:18px 20px;border-bottom:1px solid rgba(0,212,255,.08)}
+.step-num{font-size:9px;color:rgba(0,212,255,.35);letter-spacing:2px;margin-bottom:6px}
+.step-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:8px}
+.step-desc{font-size:11px;color:rgba(0,212,255,.5);line-height:1.8}
+.step-desc b{color:#64ffda}
+
+.tip-list{list-style:none;padding:0}
+.tip-list li{font-size:10px;color:rgba(0,212,255,.45);padding:4px 0;
+  border-bottom:1px solid rgba(0,212,255,.05);display:flex;align-items:flex-start;gap:8px}
+.tip-list li::before{content:'▸';color:#64ffda;flex-shrink:0}
+
+/* URL result */
+.url-block{padding:18px 20px;border-bottom:1px solid rgba(0,212,255,.08)}
+.url-label{font-size:9px;color:rgba(0,212,255,.4);letter-spacing:2px;margin-bottom:8px}
+.url-box{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);
+  border-radius:6px;padding:10px;font-size:10px;color:#64ffda;
+  word-break:break-all;min-height:40px;line-height:1.6;
+  display:flex;align-items:center}
+.url-box.waiting{color:rgba(0,212,255,.3);font-style:italic}
+
+.copy-btn{width:100%;margin-top:8px;padding:8px;border:1px solid rgba(0,212,255,.3);
+  background:rgba(0,212,255,.07);color:#00d4ff;font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:1px;cursor:pointer;border-radius:5px;transition:all .2s;
+  display:none}
+.copy-btn:hover{background:rgba(0,212,255,.18)}
+.copy-btn.show{display:block}
+
+.next-btn{margin:16px 20px;padding:12px;border:1px solid rgba(100,255,218,.4);
+  background:rgba(100,255,218,.08);color:#64ffda;font-family:'JetBrains Mono',monospace;
+  font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:6px;transition:all .2s;
+  display:none;text-align:center;text-decoration:none}
+.next-btn:hover{background:rgba(100,255,218,.18)}
+.next-btn.show{display:block}
+
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:rgba(0,212,255,.3);margin-right:6px;
+  transition:background .3s}
+.status-dot.active{background:#64ffda;box-shadow:0 0 6px #64ffda}
+
+/* Önizleme */
+.preview-block{flex:1;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.preview-label{font-size:9px;color:rgba(0,212,255,.35);letter-spacing:2px}
+#previewWrap{flex:1;border:1px solid rgba(0,212,255,.12);border-radius:6px;
+  background:rgba(0,212,255,.02);display:flex;align-items:center;justify-content:center;
+  min-height:140px;position:relative;overflow:hidden}
+#previewImg{max-width:100%;max-height:100%;display:none;border-radius:5px;
+  filter:brightness(1.05) saturate(1.2)}
+.preview-placeholder{font-size:10px;color:rgba(0,212,255,.25);text-align:center;line-height:1.8}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">ALYA · 3D AVATAR OLUŞTUR</div>
+  <div class="step"><span class="status-dot" id="statusDot"></span>STEP 1 / 2 — READY PLAYER ME</div>
+</div>
+
+<div class="main">
+  <!-- Ready Player Me iframe -->
+  <div class="iframe-wrap">
+    <div class="iframe-overlay" id="iframeOverlay">
+      <div class="loading-dot"></div>
+      <div class="load-txt">READY PLAYER ME YÜKLENİYOR...</div>
+    </div>
+    <iframe
+      id="rpmFrame"
+      src="https://readyplayer.me/avatar?frameApi&clearCache&gender=female&bodyType=halfbody"
+      allow="camera *; microphone *"
+      title="Ready Player Me">
+    </iframe>
+  </div>
+
+  <!-- Sağ panel -->
+  <div class="side-panel">
+
+    <div class="step-block">
+      <div class="step-num">ADIM 1</div>
+      <div class="step-title">3D Avatar Oluştur</div>
+      <div class="step-desc">
+        Sol taraftaki editörde Alya'ya benzer<br>
+        bir karakter yap:
+      </div>
+      <ul class="tip-list" style="margin-top:10px">
+        <li><b>Cinsiyet:</b> Kadın seç</li>
+        <li><b>Saç:</b> Koyu, düz/dalgalı</li>
+        <li><b>Ten:</b> Orta esmer ton</li>
+        <li><b>Göz:</b> Koyu renk</li>
+        <li><b>Kıyafet:</b> Minimal/modern</li>
+        <li>Bitince <b>"Next"</b> butonuna bas</li>
+      </ul>
+    </div>
+
+    <div class="url-block">
+      <div class="url-label">
+        <span class="status-dot" id="urlDot"></span>
+        AVATAR GLB URL'İ
+      </div>
+      <div class="url-box waiting" id="urlBox">
+        Avatar oluşturulduktan sonra otomatik alınır...
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyUrl()">KOPYALA</button>
+    </div>
+
+    <div class="preview-block">
+      <div class="preview-label">ÖNIZLEME</div>
+      <div id="previewWrap">
+        <div class="preview-placeholder">Avatar hazır olunca<br>burada görünür</div>
+        <img id="previewImg" src="" alt="">
+      </div>
+    </div>
+
+    <a class="next-btn" id="nextBtn" href="alya_3d_gltf.html">
+      STEP 2'YE GEÇ → HOLOGRAM YÜKLEYİCİ ↗
+    </a>
+
+  </div>
+</div>
+
+<script>
+let avatarUrl = '';
+
+// iframe yüklenince overlay'i kaldır
+document.getElementById('rpmFrame').onload = () => {
+  setTimeout(() => {
+    document.getElementById('iframeOverlay').classList.add('hidden');
+    document.getElementById('statusDot').classList.add('active');
+  }, 800);
+};
+
+// Ready Player Me postMessage dinle
+window.addEventListener('message', (event) => {
+  // RPM'den gelen mesajları kabul et
+  const json = parse(event.data);
+  if (!json) return;
+
+  // Kaynak kontrolü
+  if (json.source !== 'readyplayerme') return;
+
+  console.log('RPM event:', json);
+
+  // Subscriber mesajı (iframe hazır)
+  if (json.eventName === 'v1.frame.ready') {
+    // Frame'e subscribe mesajı gönder
+    document.getElementById('rpmFrame').contentWindow.postMessage(
+      JSON.stringify({ target: 'readyplayerme', type: 'subscribe', eventName: 'v1.avatar.exported' }),
+      '*'
+    );
+    return;
+  }
+
+  // Avatar export edildi
+  if (json.eventName === 'v1.avatar.exported') {
+    const url = json.data?.url;
+    if (url) onAvatarReady(url);
+    return;
+  }
+
+  // Eski format
+  if (typeof event.data === 'string' && event.data.startsWith('https://models.readyplayer.me')) {
+    onAvatarReady(event.data);
+  }
+});
+
+function parse(data) {
+  if (typeof data === 'object') return data;
+  try { return JSON.parse(data); } catch { return null; }
+}
+
+function onAvatarReady(url) {
+  avatarUrl = url;
+  console.log('Avatar URL:', url);
+
+  // URL box güncelle
+  const urlBox = document.getElementById('urlBox');
+  urlBox.textContent = url;
+  urlBox.classList.remove('waiting');
+
+  // URL dot
+  document.getElementById('urlDot').classList.add('active');
+
+  // Copy button
+  document.getElementById('copyBtn').classList.add('show');
+
+  // Önizleme (PNG olarak)
+  const previewUrl = url.replace('.glb', '.png') + '?scene=halfbody-portrait-v1&width=240&height=320';
+  const img = document.getElementById('previewImg');
+  img.src = previewUrl;
+  img.style.display = 'block';
+  img.onload = () => {
+    document.querySelector('.preview-placeholder').style.display = 'none';
+  };
+
+  // Step 2 butonu
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.href = `alya_3d_gltf.html?url=${encodeURIComponent(url)}`;
+  nextBtn.classList.add('show');
+
+  // localStorage'a kaydet
+  localStorage.setItem('alya_rpm_url', url);
+}
+
+function copyUrl() {
+  navigator.clipboard.writeText(avatarUrl).then(() => {
+    document.getElementById('copyBtn').textContent = '✓ KOPYALANDI';
+    setTimeout(() => {
+      document.getElementById('copyBtn').textContent = 'KOPYALA';
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>

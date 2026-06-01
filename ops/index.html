@@ -6,980 +6,1314 @@
 <title>BBA Security Intelligence — Operations Center | Dubai Square</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 <style>
-:root{
-  --bg:#02080f; --s1:#04101e; --s2:#061422; --line:#0d2235; --line2:#122d46;
-  --blue:#0ab0cc; --teal:#3ddbbe; --green:#38d96a; --red:#d64040;
-  --amber:#c8920a; --gold:#c8a820; --purple:#9880e0; --pink:#d060a0;
-  --txt:#8aaec8; --txt2:#4a6a84; --white:#d4e8f4;
-}
+:root{--bg:#030d18;--s1:#071b2a;--s2:#0a2035;--line:#1a3450;--line2:#234460;--blue:#0ab0cc;--teal:#3ddbbe;--green:#38d96a;--red:#d64040;--amber:#c8920a;--gold:#c8a820;--purple:#9880e0;--txt:#cce0f4;--txt2:#96bcd6;--white:#f0f8ff;}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif}
-
-/* ── TOPBAR ── */
-.topbar{
-  position:fixed;top:0;left:0;right:0;height:44px;
-  background:var(--s1);border-bottom:1px solid var(--line);
-  display:flex;align-items:center;padding:0 16px;gap:12px;z-index:500;
-}
-.t-logo{font-size:12px;font-weight:600;color:var(--white);display:flex;align-items:center;gap:7px}
-.t-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 7px var(--blue);animation:glow 2s ease infinite}
-@keyframes glow{0%,100%{opacity:1}50%{opacity:.4}}
-.t-div{width:1px;height:16px;background:var(--line2)}
-.t-tag{font-size:9.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace;letter-spacing:.8px}
+.topbar{position:fixed;top:0;left:0;right:0;height:44px;background:var(--s1);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:500}
+.t-logo{font-size:12px;font-weight:600;color:var(--white);display:flex;align-items:center;gap:7px;flex-shrink:0}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:glow 2s ease infinite}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.35}}
+.t-div{width:1px;height:16px;background:var(--line2);flex-shrink:0}
+.t-tag{font-size:9.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace;letter-spacing:.6px;flex-shrink:0}
 .t-sp{flex:1}
-.t-stats{display:flex;gap:18px}
-.t-stat{display:flex;align-items:center;gap:5px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
-.ts-d{width:4px;height:4px;border-radius:50%}
-.ts-v{color:var(--white);font-weight:500;margin-left:1px}
-.t-live{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--red);border:1px solid rgba(214,64,64,.2);padding:3px 9px;border-radius:3px;letter-spacing:1px}
-.t-link{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;border:1px solid var(--line2);padding:3px 10px;border-radius:3px;transition:all .15s}
-.t-link:hover{color:var(--white);border-color:rgba(10,176,204,.35)}
-
-/* ── MAIN LAYOUT ── */
-.ops-body{
-  position:fixed;top:44px;left:0;right:0;bottom:24px;
-  display:grid;grid-template-columns:300px 1fr 220px;
-  overflow:hidden;
-}
-
-/* ── LEFT: DIGITAL TWIN ── */
-.twin-panel{
-  border-right:1px solid var(--line);
-  display:flex;flex-direction:column;overflow:hidden;
-  position:relative;
-}
-.panel-head{
-  padding:8px 12px;border-bottom:1px solid var(--line);
-  font-size:8.5px;font-family:'JetBrains Mono',monospace;
-  color:var(--txt2);letter-spacing:2px;text-transform:uppercase;
-  display:flex;align-items:center;gap:8px;flex-shrink:0;
-}
-.panel-head::before{content:'';width:10px;height:1px;background:var(--blue)}
-#twinCvs{flex:1;overflow:hidden;position:relative}
-#twinCvs canvas{display:block;width:100%!important;height:100%!important}
-
-/* Floor buttons */
-.twin-floors{
-  display:flex;padding:6px 8px;gap:3px;border-top:1px solid var(--line);
-  flex-shrink:0;
-}
-.fl-btn{
-  flex:1;padding:4px 0;border-radius:3px;border:1px solid var(--line);
-  background:transparent;color:var(--txt2);font-size:8.5px;
-  font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s;text-align:center;
-}
-.fl-btn:hover{background:rgba(10,176,204,.06);color:var(--txt)}
-.fl-btn.act{background:rgba(10,176,204,.1);border-color:rgba(10,176,204,.35);color:var(--blue)}
-
-/* ── CENTER: CAMERAS ── */
-.cam-panel{
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.cam-grid{
-  flex:1;display:grid;grid-template-columns:repeat(3,1fr);
-  grid-template-rows:repeat(3,1fr);gap:1px;background:var(--line);
-  padding:1px;
-}
-.cam-wrap{
-  background:#050810;position:relative;overflow:hidden;
-  cursor:pointer;transition:opacity .15s;
-}
-.cam-wrap:hover{opacity:.92}
-.cam-wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
-.cam-hud{
-  position:absolute;top:0;left:0;right:0;z-index:2;
-  display:flex;justify-content:space-between;align-items:flex-start;
-  padding:5px 7px;pointer-events:none;
-  background:linear-gradient(to bottom,rgba(5,8,16,.55) 0%,rgba(5,8,16,0) 100%);
-}
-.cam-id{font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.72);line-height:1;letter-spacing:.4px}
-.cam-badge{
-  font-size:7px;font-family:'JetBrains Mono',monospace;letter-spacing:.8px;
-  padding:1px 5px;border-radius:1px;border:1px solid;
-}
-.cam-bottom{
-  position:absolute;bottom:0;left:0;right:0;z-index:2;
-  display:flex;justify-content:space-between;align-items:flex-end;
-  padding:5px 7px;pointer-events:none;
-  background:linear-gradient(to top,rgba(5,8,16,.55) 0%,rgba(5,8,16,0) 100%);
-}
-.cam-zone{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.42)}
-.cam-ts{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.28)}
-/* Scan line — only CRITICAL cameras */
-.cam-scan{position:absolute;top:0;left:0;right:0;z-index:3;height:1px;background:rgba(214,64,64,.35);animation:scan 8s linear infinite;opacity:0;pointer-events:none}
-.cam-wrap[data-status="CRITICAL"] .cam-scan{opacity:1}
-.cam-wrap[data-status="CRITICAL"]{outline:1px solid rgba(214,64,64,.18)}
-@keyframes scan{0%{top:0;opacity:.5}100%{top:100%;opacity:0}}
-
-/* ── RIGHT: INCIDENTS ── */
-.right-panel{
-  border-left:1px solid var(--line);
-  display:flex;flex-direction:column;overflow:hidden;
-  background:var(--s1);
-}
-.inc-list{flex:1;overflow-y:auto;padding:6px}
-.inc{
-  padding:8px 10px;border-radius:3px;border:1px solid var(--line);
-  background:rgba(2,8,15,.6);margin-bottom:4px;
-}
-.inc-t{font-size:10px;font-weight:500;color:var(--white);display:flex;align-items:center;gap:5px;margin-bottom:2px}
-.inc-d{width:4px;height:4px;border-radius:50%;flex-shrink:0}
-.inc-m{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
-.inc-s{font-size:8.5px;font-family:'JetBrains Mono',monospace;margin-top:3px}
-
-.thr-block{padding:10px 12px;border-top:1px solid var(--line);flex-shrink:0}
-.thr-lbl{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;margin-bottom:6px}
-.thr-bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-bottom:4px}
-.thr-fill{height:100%;border-radius:2px;width:62%;background:linear-gradient(90deg,var(--green),var(--amber))}
-.thr-row{display:flex;justify-content:space-between;font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
-.thr-val{text-align:center;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--amber);letter-spacing:2px;margin-top:6px}
-
-/* AI ACTIONS BLOCK */
-.ai-block{padding:10px 12px;border-top:1px solid var(--line);flex-shrink:0}
-.ai-lbl{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.ai-lbl::before{content:'';width:8px;height:1px;background:var(--blue)}
-.ai-actions{display:flex;flex-direction:column;gap:3px}
-.ai-act{
-  padding:5px 8px;border-radius:3px;border:1px solid var(--line);
-  font-size:9px;font-family:'JetBrains Mono',monospace;
-  cursor:pointer;text-align:left;transition:all .15s;color:var(--txt2);
-  display:flex;align-items:center;gap:6px;background:transparent;
-}
-.ai-act:hover{border-color:rgba(10,176,204,.3);color:var(--white);background:rgba(10,176,204,.04)}
-.ai-act.executing{color:var(--green);border-color:rgba(56,217,106,.3);background:rgba(56,217,106,.04);animation:blink .8s ease infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.6}}
-
-/* ── STATUS BAR ── */
-.statusbar{
-  position:fixed;bottom:0;left:0;right:0;height:24px;
-  background:var(--s1);border-top:1px solid var(--line);
-  display:flex;align-items:center;padding:0 14px;gap:20px;
-  font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);
-  z-index:500;
-}
+.t-kpis{display:flex;gap:0;border:1px solid var(--line2);border-radius:3px;overflow:hidden}
+.t-kpi{padding:0 12px;height:26px;display:flex;align-items:center;gap:5px;font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);border-right:1px solid var(--line2)}
+.t-kpi:last-child{border-right:none}
+.t-kpi-v{color:var(--white);font-weight:600;margin-left:2px}
+.t-kpi-d{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.t-live{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--red);border:1px solid rgba(214,64,64,.2);padding:3px 9px;border-radius:3px;letter-spacing:1px;flex-shrink:0}
+.page-nav{display:flex;gap:0;border:1px solid var(--line2);border-radius:4px;overflow:hidden;flex-shrink:0}
+.pn{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 10px;transition:all .15s;white-space:nowrap}
+.pn:hover{background:rgba(10,176,204,.08);color:var(--white)}
+.pn+.pn{border-left:1px solid var(--line2)}
+.pn-act{background:rgba(10,176,204,.12);color:var(--blue)!important}
+.ops-body{position:fixed;top:44px;left:0;right:0;bottom:22px;display:flex;overflow:hidden}
+.left-panel{width:275px;flex-shrink:0;border-right:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
+.ph{padding:7px 11px;border-bottom:1px solid var(--line);font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ph::before{content:'';width:8px;height:1px;background:var(--blue)}
+.ph-badge{margin-left:auto;font-size:9px;padding:1px 6px;border-radius:2px;background:rgba(214,64,64,.12);border:1px solid rgba(214,64,64,.3);color:var(--red);animation:glow .8s ease infinite}
+.alarm-list{flex:1;overflow-y:auto;padding:5px}
+.alarm{margin-bottom:4px;border-radius:3px;border:1px solid var(--line);background:rgba(2,6,14,.7);overflow:hidden}
+.alarm.p1{border-left:3px solid var(--red)}
+.alarm.p2{border-left:3px solid var(--amber)}
+.alarm.p3{border-left:3px solid var(--blue)}
+.alarm.acked{opacity:.55}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.alm-head{padding:6px 8px 3px;display:flex;align-items:center;gap:5px}
+.alm-p{font-size:9px;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:2px;letter-spacing:.5px;font-weight:700;flex-shrink:0}
+.p1 .alm-p{background:rgba(214,64,64,.15);color:var(--red);border:1px solid rgba(214,64,64,.3)}
+.p2 .alm-p{background:rgba(200,146,10,.12);color:var(--amber);border:1px solid rgba(200,146,10,.25)}
+.p3 .alm-p{background:rgba(10,176,204,.1);color:var(--blue);border:1px solid rgba(10,176,204,.2)}
+.alm-id{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);flex-shrink:0}
+.alm-t{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-left:auto;flex-shrink:0}
+.alm-type{padding:0 8px;font-size:9px;font-weight:600;color:var(--white)}
+.alm-msg{padding:0 8px 5px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt2);line-height:1.45}
+.alm-zone{padding:0 8px 5px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt);display:flex;align-items:center;gap:4px}
+.alm-zone::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+.alm-acts{padding:4px 8px 6px;display:flex;gap:3px}
+.alm-btn{flex:1;padding:3px 0;border-radius:2px;border:1px solid var(--line2);background:none;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.alm-btn:hover{color:var(--white)}
+.alm-btn.ack:hover{border-color:rgba(56,217,106,.35);color:var(--green);background:rgba(56,217,106,.05)}
+.alm-btn.esc:hover{border-color:rgba(214,64,64,.4);color:var(--red);background:rgba(214,64,64,.05)}
+.alm-btn.dis:hover{border-color:rgba(10,176,204,.35);color:var(--blue);background:rgba(10,176,204,.05)}
+.alm-btn.done{border-color:rgba(56,217,106,.3);color:var(--green);background:rgba(56,217,106,.06)}
+.alm-btn.view-cam{border-color:rgba(10,176,204,.28);color:var(--blue)}
+.alm-btn.view-cam:hover{background:rgba(10,176,204,.07)}
+.quick-ops{padding:7px 8px;border-top:1px solid var(--line);flex-shrink:0}
+.qo-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.qo-btn{padding:6px 4px;border-radius:3px;border:1px solid var(--line2);background:rgba(4,12,22,.8);font-size:10px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s;color:var(--txt2);text-align:center;letter-spacing:.3px}
+.qo-btn:hover{color:var(--white);background:rgba(10,176,204,.05)}
+.qo-btn.danger{border-color:rgba(214,64,64,.2);color:rgba(214,64,64,.7)}
+.qo-btn.danger:hover{border-color:rgba(214,64,64,.5);background:rgba(214,64,64,.08);color:var(--red)}
+.qo-btn.warn{border-color:rgba(200,146,10,.2);color:rgba(200,146,10,.7)}
+.qo-btn.warn:hover{border-color:rgba(200,146,10,.45);background:rgba(200,146,10,.07);color:var(--amber)}
+.qo-btn.active-ld{border-color:rgba(214,64,64,.6)!important;background:rgba(214,64,64,.15)!important;color:var(--red)!important;animation:glow .7s ease infinite}
+.qo-btn.active-ev{border-color:rgba(56,217,106,.5)!important;background:rgba(56,217,106,.1)!important;color:var(--green)!important}
+.center-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.cam-toolbar{padding:5px 8px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;flex-shrink:0;background:var(--s1)}
+.cam-tb-title{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.cam-tb-title::before{content:'';width:8px;height:1px;background:var(--blue)}
+.cam-sp{flex:1}
+.cam-filter{display:flex;gap:2px;flex-wrap:wrap}
+.cf-btn{padding:2px 6px;border-radius:2px;border:1px solid var(--line);background:none;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.cf-btn:hover{color:var(--white)}
+.cf-btn.act{background:rgba(10,176,204,.1);border-color:rgba(10,176,204,.3);color:var(--blue)}
+.cam-count{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);flex-shrink:0}
+.cam-grid{flex:1;min-height:0;display:grid;gap:1px;background:#010810;overflow:hidden;padding:1px;grid-template-columns:repeat(4,1fr)}
+.cam-cell{position:relative;background:#02050e;overflow:hidden;cursor:pointer;min-height:80px}
+.cam-cell:hover{outline:1px solid rgba(10,176,204,.35)}
+.cam-cell.st-CRITICAL{outline:1px solid rgba(214,64,64,.6)!important}
+.cam-cell.st-MOTION{outline:1px solid rgba(200,146,10,.4)}
+.cam-cell.st-OFFLINE{opacity:.6}
+.cam-cell canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cam-hud-top{position:absolute;top:0;left:0;right:0;z-index:4;padding:4px 6px 8px;display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(to bottom,rgba(2,5,14,.82) 0%,rgba(2,5,14,.4) 60%,transparent 100%);pointer-events:none}
+.cam-id{font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.85);letter-spacing:.3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px}
+.cam-floor-type{font-size:7px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;margin-top:1px;white-space:nowrap}
+.cam-st-badge{font-size:7.5px;font-family:'JetBrains Mono',monospace;padding:1px 4px;border-radius:1px;border:1px solid;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;margin-left:4px}
+.cam-hud-bot{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:8px 6px 4px;display:flex;justify-content:space-between;align-items:flex-end;background:linear-gradient(to top,rgba(2,5,14,.82) 0%,rgba(2,5,14,.3) 60%,transparent 100%);pointer-events:none}
+.cam-zone-lbl{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.55);max-width:68%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.2}
+.cam-ts{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.3);flex-shrink:0;margin-left:4px}
+.cam-scanline{position:absolute;left:0;right:0;height:1px;background:rgba(214,64,64,.4);z-index:5;pointer-events:none;animation:scanline 6s linear infinite;opacity:0}
+.st-CRITICAL .cam-scanline{opacity:1}
+@keyframes scanline{0%{top:0;opacity:.6}100%{top:100%;opacity:0}}
+.pag-bar{height:28px;border-top:1px solid var(--line);background:var(--s2);display:flex;align-items:center;padding:0 10px;gap:7px;flex-shrink:0}
+.pag-btn{padding:2px 9px;border-radius:2px;border:1px solid var(--line2);background:none;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer;transition:all .15s}
+.pag-btn:hover:not(:disabled){color:var(--white);border-color:rgba(10,176,204,.4)}
+.pag-btn:disabled{opacity:.3;cursor:default}
+.pag-info{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.pag-label{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-left:auto}
+.event-strip{height:108px;border-top:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;flex-shrink:0}
+.es-head{padding:4px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.es-title{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.es-title::before{content:'';width:8px;height:1px;background:var(--teal)}
+.es-list{flex:1;overflow-y:auto;padding:2px 8px}
+.es-row{display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:1px solid rgba(10,30,50,.5);font-size:10px;font-family:'JetBrains Mono',monospace}
+.es-row:last-child{border-bottom:none}
+.es-row.new{animation:slideIn .3s ease}
+.es-t{color:var(--txt2);flex-shrink:0;width:56px}
+.es-cat{flex-shrink:0;width:40px;font-weight:500;font-size:9.5px}
+.es-msg{color:var(--txt);min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1}
+.es-loc{color:var(--txt2);font-size:9px;flex-shrink:0}
+.right-panel{width:262px;flex-shrink:0;border-left:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
+.threat-block{padding:10px 12px;border-bottom:1px solid var(--line);flex-shrink:0}
+.thr-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.thr-label{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;flex:1;display:flex;align-items:center;gap:6px}
+.thr-label::before{content:'';width:8px;height:1px;background:var(--red)}
+.thr-trend{font-size:9px;font-family:'JetBrains Mono',monospace}
+.thr-big{font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--amber);line-height:1;letter-spacing:-1px}
+.thr-level{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--amber);letter-spacing:2px;margin-top:2px}
+.thr-bar-wrap{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin:6px 0 4px}
+.thr-bar{height:100%;border-radius:2px;transition:width 1.5s ease}
+.thr-zones{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:5px}
+.tz{padding:4px 6px;border-radius:2px;border:1px solid var(--line);display:flex;align-items:center;gap:4px;font-size:9.5px;font-family:'JetBrains Mono',monospace}
+.tz-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.tz-nm{color:var(--txt);flex:1;overflow:hidden;white-space:nowrap;font-size:9px}
+.tz-val{font-weight:600;font-size:10px}
+.units-block{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-height:0}
+.unit-section{border-bottom:1px solid var(--line);flex-shrink:0}
+.unit-list{padding:4px 6px;display:flex;flex-direction:column;gap:3px}
+.unit{padding:5px 7px;border-radius:3px;border:1px solid var(--line);background:rgba(2,6,14,.6);display:flex;align-items:center;gap:7px;cursor:pointer;transition:border-color .15s}
+.unit:hover{border-color:rgba(10,176,204,.25)}
+.unit-ico{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.unit-info{flex:1;min-width:0}
+.unit-nm{font-size:9px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.unit-loc{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.unit-st{font-size:9px;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:2px;border:1px solid;letter-spacing:.4px;flex-shrink:0;white-space:nowrap}
+.st-responding{color:var(--red);border-color:rgba(214,64,64,.35);background:rgba(214,64,64,.08);animation:glow .8s ease infinite}
+.st-patrol{color:var(--green);border-color:rgba(56,217,106,.3);background:rgba(56,217,106,.05)}
+.st-standby{color:var(--blue);border-color:rgba(10,176,204,.25);background:rgba(10,176,204,.04)}
+.st-duty{color:var(--teal);border-color:rgba(61,219,190,.25);background:rgba(61,219,190,.04)}
+.st-charging{color:var(--amber);border-color:rgba(200,146,10,.25);background:rgba(200,146,10,.04)}
+.st-active{color:var(--green);border-color:rgba(56,217,106,.35);background:rgba(56,217,106,.07);animation:glow 1.5s ease infinite}
+.drone-bat{display:flex;align-items:center;gap:4px;margin-top:2px}
+.bat-bar-wrap{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px}
+.bat-bar{height:100%;border-radius:2px;transition:width .8s ease}
+.bat-pct{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);flex-shrink:0}
+.vip-strip{padding:6px 7px;border-top:1px solid var(--line);flex-shrink:0}
+.vip-entry{padding:5px 7px;border-radius:3px;border:1px solid rgba(200,168,32,.2);background:rgba(200,168,32,.025);display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.vip-entry:last-child{margin-bottom:0}
+.vip-nm{font-size:10.5px;font-weight:500;color:var(--gold);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.vip-loc{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.vip-act-badge{font-size:8.5px;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:1px;border:1px solid rgba(200,168,32,.3);color:var(--gold);background:rgba(200,168,32,.08)}
+.dispatch-strip{padding:6px 7px;border-top:1px solid var(--line);flex-shrink:0}
+.disp-unit{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:3px;border:1px solid var(--line);background:rgba(2,6,14,.6);margin-bottom:3px;cursor:pointer;transition:all .18s}
+.disp-unit:hover{border-color:rgba(214,64,64,.35)}
+.disp-unit.dispatched{border-color:rgba(56,217,106,.4);background:rgba(56,217,106,.04);animation:glow .9s ease infinite}
+.disp-ico{font-size:14px;flex-shrink:0}
+.disp-info{flex:1;min-width:0}
+.disp-nm{font-size:8.5px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.disp-eta{font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-top:1px}
+.disp-btn{font-size:6.5px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:2px;border:1px solid rgba(214,64,64,.4);background:rgba(214,64,64,.06);color:var(--red);cursor:pointer;letter-spacing:.5px;flex-shrink:0;white-space:nowrap}
+.disp-unit.dispatched .disp-btn{border-color:rgba(56,217,106,.4);background:rgba(56,217,106,.06);color:var(--green)}
+.statusbar{position:fixed;bottom:0;left:0;right:0;height:22px;background:var(--s1);border-top:1px solid var(--line);display:flex;align-items:center;padding:0 12px;gap:18px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);z-index:500}
 .sb-sp{flex:1}
-.sb-dot{width:4px;height:4px;border-radius:50%;display:inline-block;margin-right:4px}
-
-/* ── CAMERA MODAL ── */
-.cam-modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.88);
-  z-index:1000;display:none;align-items:center;justify-content:center;
-  backdrop-filter:blur(6px);
-}
+.sb-dot{width:4px;height:4px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+/* Camera Modal */
+.cam-modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center}
 .cam-modal.open{display:flex}
-.cm-inner{
-  background:var(--s1);border:1px solid var(--line2);
-  border-radius:6px;overflow:hidden;
-  display:grid;grid-template-columns:1fr 280px;
-  width:90vw;max-width:1100px;height:75vh;
-}
-.cm-video{position:relative;overflow:hidden;background:var(--bg)}
-.cm-video canvas{width:100%!important;height:100%!important;display:block}
-.cm-scan{position:absolute;top:0;left:0;right:0;height:1px;background:rgba(10,176,204,.6);animation:scan 4s linear infinite}
-.cm-hud-tl{position:absolute;top:10px;left:12px;font-size:11px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.85)}
-.cm-hud-ts{position:absolute;top:10px;right:12px;font-size:10px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.55)}
-.cm-hud-br{position:absolute;bottom:10px;left:12px;font-size:10px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.5)}
-.cm-hud-pc{position:absolute;bottom:10px;right:12px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--teal)}
-.cm-corner{position:absolute;width:16px;height:16px;border-color:rgba(10,176,204,.6);border-style:solid}
-.cm-c-tl{top:6px;left:6px;border-width:1px 0 0 1px}
-.cm-c-tr{top:6px;right:6px;border-width:1px 1px 0 0}
-.cm-c-bl{bottom:6px;left:6px;border-width:0 0 1px 1px}
-.cm-c-br{bottom:6px;right:6px;border-width:0 1px 1px 0}
+.cam-modal-box{width:920px;max-width:95vw;background:var(--s1);border:1px solid var(--line2);border-radius:4px;display:flex;flex-direction:column;max-height:88vh;overflow:hidden}
+.cam-modal-hdr{padding:8px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.cam-modal-title{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--white);font-weight:600;flex:1;letter-spacing:.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cam-modal-type{font-size:9px;font-family:'JetBrains Mono',monospace;padding:2px 7px;border-radius:2px;border:1px solid rgba(10,176,204,.3);color:var(--blue);background:rgba(10,176,204,.08);letter-spacing:1px;flex-shrink:0}
+.cam-modal-close{padding:3px 10px;border-radius:2px;border:1px solid var(--line2);background:none;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer;flex-shrink:0}
+.cam-modal-close:hover{border-color:rgba(214,64,64,.5);color:var(--red)}
+.cam-modal-body{display:flex;flex:1;min-height:0}
+.cam-modal-canvas-wrap{flex:1;position:relative;background:#010810;min-height:300px}
+.cam-modal-canvas-wrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cam-modal-sidebar{width:270px;flex-shrink:0;border-left:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto}
+.cms-section{padding:9px 11px;border-bottom:1px solid var(--line)}
+.cms-lbl{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.cms-lbl::before{content:'';width:6px;height:1px;background:var(--blue)}
+.cms-row{display:flex;align-items:baseline;gap:6px;margin-bottom:4px;font-size:9.5px;font-family:'JetBrains Mono',monospace}
+.cms-key{color:var(--txt2);width:72px;flex-shrink:0;font-size:9px}
+.cms-val{color:var(--white);flex:1}
+.cms-ai-row{padding:5px 7px;border-radius:2px;background:rgba(10,176,204,.04);border:1px solid rgba(10,176,204,.12);margin-bottom:4px}
+.cms-ai-lbl{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:.5px}
+.cms-ai-val{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--white);margin-top:2px}
+.cms-evt{padding:4px 0;border-bottom:1px solid rgba(10,30,50,.5);font-size:9px;font-family:'JetBrains Mono',monospace;display:flex;gap:5px}
+.cms-evt-t{color:var(--txt2);flex-shrink:0;width:52px}
+.cms-evt-msg{color:var(--txt);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+/* ── OPERATOR AUTH BADGE ── */
+.op-auth{display:flex;align-items:center;gap:7px;border:1px solid rgba(10,176,204,.22);border-radius:3px;padding:3px 10px;margin-right:6px;background:rgba(10,176,204,.04);flex-shrink:0}
+.op-nm{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--white);font-weight:500}
+.op-role-badge{font-size:7px;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:2px;letter-spacing:.5px;border:1px solid rgba(152,128,224,.35);background:rgba(152,128,224,.08);color:var(--purple)}
+.op-2fa{font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--green);border:1px solid rgba(56,217,106,.3);padding:1px 5px;border-radius:2px;background:rgba(56,217,106,.05)}
+.op-sira{font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--teal);border-left:1px solid var(--line2);padding-left:8px;margin-left:2px}
+/* ── VEHICLE ANALYTICS PANEL ── */
+.va-strip{padding:6px 7px;border-top:1px solid var(--line);flex-shrink:0}
+.va-types{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:5px}
+.va-type{padding:5px 6px;border-radius:2px;border:1px solid var(--line);background:rgba(2,6,14,.6);display:flex;align-items:center;gap:4px}
+.va-ico{font-size:11px;flex-shrink:0}
+.va-nm{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);flex:1;overflow:hidden;white-space:nowrap}
+.va-cnt{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--white);font-weight:600;flex-shrink:0}
+.va-rate{font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--green);flex-shrink:0;margin-left:2px}
+.va-alerts{display:flex;flex-direction:column;gap:2px}
+.va-alert{padding:2px 6px;border-radius:2px;font-size:7.5px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:4px}
+.va-alert.warn{border:1px solid rgba(200,146,10,.3);background:rgba(200,146,10,.06);color:var(--amber)}
+.va-alert.ok{border:1px solid rgba(56,217,106,.25);background:rgba(56,217,106,.05);color:var(--green)}
+.va-alert.crit{border:1px solid rgba(214,64,64,.35);background:rgba(214,64,64,.07);color:var(--red);animation:glow .9s ease infinite}
+/* ── NVR RECORDING PANEL ── */
+.nvr-strip{padding:5px 7px;border-top:1px solid var(--line);flex-shrink:0}
+.nvr-row{display:flex;align-items:center;gap:4px;padding:2px 4px;border-radius:2px;background:rgba(2,6,14,.45);margin-bottom:1px;font-family:'JetBrains Mono',monospace;font-size:7.5px}
+.nvr-id{color:var(--blue);width:44px;flex-shrink:0}
+.nvr-bar-wrap{flex:1;height:3px;background:rgba(10,30,60,.8);border-radius:2px;overflow:hidden}
+.nvr-bar{height:100%;border-radius:2px;transition:width 3s ease}
+.nvr-days{color:var(--txt2);font-size:7px;width:40px;text-align:right;flex-shrink:0}
+.nvr-st{font-size:6.5px;padding:1px 4px;border-radius:2px;flex-shrink:0;letter-spacing:.3px}
+.nvr-ok{border:1px solid rgba(56,217,106,.3);background:rgba(56,217,106,.06);color:var(--green)}
+.nvr-warn{border:1px solid rgba(200,146,10,.3);background:rgba(200,146,10,.06);color:var(--amber)}
+/* ── SYSTEM REDUNDANCY PANEL ── */
+.red-strip{padding:5px 7px;border-top:1px solid var(--line);flex-shrink:0}
+.red-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
+.red-item{padding:3px 5px;border-radius:2px;border:1px solid var(--line);background:rgba(2,6,14,.5);font-family:'JetBrains Mono',monospace}
+.red-lbl{font-size:6.5px;color:var(--txt2);letter-spacing:.2px;margin-bottom:1px}
+.red-val{font-size:8.5px;font-weight:500}
+.red-ok .red-val{color:var(--green)}
+.red-warn .red-val{color:var(--amber)}
+.red-ok{border-color:rgba(56,217,106,.2)}
+.red-warn{border-color:rgba(200,146,10,.25)}
+/* ── AUDIT LOG PANEL ── */
+.audit-strip{padding:5px 7px;border-top:1px solid var(--line);flex-shrink:0}
+.audit-list{max-height:82px;overflow-y:auto}
+.audit-row{display:flex;align-items:baseline;gap:3px;padding:2px 2px;border-bottom:1px solid rgba(10,30,50,.4);font-family:'JetBrains Mono',monospace;font-size:7.5px;overflow:hidden}
+.audit-t{color:var(--txt2);flex-shrink:0;width:46px}
+.audit-user{color:var(--blue);flex-shrink:0;width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audit-role-tag{font-size:6.5px;color:var(--purple);flex-shrink:0;width:30px}
+.audit-act{color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audit-ok{color:var(--green);flex-shrink:0;margin-left:2px}
+.audit-fail{color:var(--red);flex-shrink:0;margin-left:2px}
 
-.cm-info{
-  padding:0;display:flex;flex-direction:column;
-  border-left:1px solid var(--line);overflow-y:auto;
+/* embed mode */
+body.embed-mode .topbar,
+body.embed-mode .left-panel,
+body.embed-mode .right-panel,
+body.embed-mode .page-nav{display:none!important}
+body.embed-mode .ops-body{height:100vh;grid-template-columns:1fr}
+body.embed-mode .center-panel{height:100vh}
+.alm-ai{padding:4px 9px 6px;font-size:9px;font-family:'JetBrains Mono',monospace;color:rgba(61,219,190,.9);line-height:1.5;border-top:1px solid rgba(10,30,50,.5)}
+.alm-ai:empty{display:none;padding:0}
+.alm-ai-thinking{color:var(--txt2);animation:glow 1s ease infinite;font-size:8.5px}
+.alm-ai-tag{font-size:6.5px;padding:1px 4px;border-radius:2px;background:rgba(61,219,190,.1);border:1px solid rgba(61,219,190,.25);color:var(--teal);margin-right:5px;vertical-align:middle;letter-spacing:.3px}
+/* ── RESPONSIVE ── */
+#rpToggleBtn{display:none;position:fixed;top:50px;right:8px;z-index:600;padding:5px 10px;background:rgba(4,14,28,.95);border:1px solid var(--line2);border-radius:3px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer}
+@media(max-width:1100px){
+  .left-panel{width:220px}
+  .right-panel{width:210px}
+  .cam-grid{grid-template-columns:repeat(3,1fr)}
 }
-.cm-info-head{padding:14px 16px;border-bottom:1px solid var(--line)}
-.cm-zone{font-size:15px;font-weight:600;color:var(--white);margin-bottom:4px}
-.cm-id{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue)}
-.cm-rows{padding:12px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
-.cm-row{display:flex;justify-content:space-between;font-size:10.5px}
-.cm-k{color:var(--txt2);font-family:'JetBrains Mono',monospace;font-size:9.5px}
-.cm-v{color:var(--white);font-weight:500}
-
-/* AI ANALYSIS in modal */
-.cm-ai{padding:12px 16px;flex:1}
-.cm-ai-head{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.cm-ai-head::before{content:'';width:8px;height:1px;background:var(--blue)}
-.cm-ai-text{font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--txt);line-height:1.8}
-.cm-ai-text .ok{color:var(--green)}
-.cm-ai-text .warn{color:var(--amber)}
-.cm-ai-text .crit{color:var(--red)}
-.cm-ai-text .act{display:block;margin-top:4px;padding:4px 8px;border-radius:3px;background:rgba(56,217,106,.06);border:1px solid rgba(56,217,106,.15);color:var(--green);font-size:9.5px}
-.cm-ai-text .act::before{content:'→ '}
-
-.cm-close{
-  position:absolute;top:10px;right:10px;
-  width:28px;height:28px;border-radius:4px;
-  background:rgba(4,16,30,.9);border:1px solid var(--line2);
-  color:var(--txt2);font-size:16px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:all .15s;z-index:10;
+@media(max-width:820px){
+  .right-panel{display:none}
+  #rpToggleBtn{display:block}
+  .left-panel{width:190px}
+  .cam-grid{grid-template-columns:repeat(2,1fr)}
 }
-.cm-close:hover{color:var(--white);border-color:var(--blue)}
-.cm-inner{position:relative}
-
-/* DETECT BOX (AI bounding box) */
-.det-box{
-  position:absolute;border:1px solid;pointer-events:none;
-  transition:all .3s;
+@media(max-width:600px){
+  .left-panel{position:fixed;top:44px;bottom:22px;left:-100%;z-index:600;width:80vw!important;max-width:260px;transition:left .25s;background:var(--s0);border-right:1px solid var(--line)}
+  .left-panel.mob-open{left:0}
+  .ops-body{flex-direction:column}
+  .center-panel{flex:1;min-height:0}
+  .pn{display:none}
+  #mobLeftBtn{display:block!important}
+  .cam-grid{grid-template-columns:repeat(2,1fr)}
+  .qo-grid{grid-template-columns:1fr}
+  .page-nav::before{content:'OPS';color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:9px}
 }
+#mobLeftBtn{display:none;position:fixed;bottom:30px;left:8px;z-index:600;padding:6px 12px;background:rgba(4,14,28,.95);border:1px solid var(--line2);border-radius:3px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer}
 </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
 <div class="topbar">
   <div class="t-logo"><div class="t-dot"></div><span style="color:var(--blue)">BBA</span>&nbsp;Security Intelligence</div>
   <div class="t-div"></div>
-  <span class="t-tag">DUBAI SQUARE · OPERATIONS CENTER</span>
+  <span class="t-tag">DUBAI SQUARE · OPERATIONS CENTER · SOC LEVEL 3</span>
   <div class="t-sp"></div>
-  <div class="t-stats">
-    <div class="t-stat"><div class="ts-d" style="background:var(--green)"></div>Cameras <span class="ts-v">898/900</span></div>
-    <div class="t-stat"><div class="ts-d" style="background:var(--amber);animation:glow 1.5s ease infinite"></div>Incidents <span class="ts-v" style="color:var(--amber)">2</span></div>
-    <div class="t-stat"><div class="ts-d" style="background:var(--teal)"></div>Drones <span class="ts-v" style="color:var(--teal)">3</span></div>
-    <div class="t-stat"><div class="ts-d" style="background:var(--green)"></div>Visitors <span class="ts-v" id="vcnt">94,847</span></div>
+  <div class="op-auth">
+    <span class="op-nm">Hassan Al Marzooqi</span>
+    <span class="op-role-badge">OPERATOR</span>
+    <span class="op-2fa">2FA ✓</span>
+    <span class="op-sira">SIRA-LIC: SIR-2024-0847</span>
   </div>
-  <div class="t-live"><div class="ts-d" style="background:var(--red);animation:glow .8s ease infinite"></div>LIVE</div>
-  <div style="display:flex;gap:0;border:1px solid var(--line2);border-radius:4px;overflow:hidden;margin-left:4px">
-    <a href="../" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 12px;transition:all .15s;border-right:1px solid var(--line2)" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--txt2)'">Proposal</a>
-    <a href="../ops/" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--blue);background:rgba(10,176,204,.12);text-decoration:none;padding:4px 12px;transition:all .15s;border-right:1px solid var(--line2)">Ops Center</a>
-    <a href="../twin/" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 12px;transition:all .15s;border-right:1px solid var(--line2)" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--txt2)'">Digital Twin</a>
-    <a href="../demo/" style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 12px;transition:all .15s" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--txt2)'">AI Operator</a>
+  <div class="t-kpis">
+    <div class="t-kpi"><div class="t-kpi-d" style="background:var(--green)"></div>Cameras<span class="t-kpi-v" id="hdr-cams">793/800</span></div>
+    <div class="t-kpi"><div class="t-kpi-d" style="background:var(--red);animation:glow .9s ease infinite"></div>Alarms<span class="t-kpi-v" style="color:var(--red)" id="hdr-alarms">3</span></div>
+    <div class="t-kpi"><div class="t-kpi-d" style="background:var(--teal)"></div>Guards<span class="t-kpi-v">6</span></div>
+    <div class="t-kpi"><div class="t-kpi-d" style="background:var(--blue)"></div>Drones<span class="t-kpi-v">3</span></div>
+    <div class="t-kpi"><div class="t-kpi-d" style="background:var(--amber)"></div>Threat<span class="t-kpi-v" style="color:var(--amber)" id="hdr-threat">62 ELEVATED</span></div>
+  </div>
+  <div class="t-live"><div class="t-kpi-d" style="background:var(--red);animation:glow .8s ease infinite"></div>LIVE</div>
+  <div class="page-nav">
+    <a href="../" class="pn">Proposal</a>
+    <a href="../ops/" class="pn pn-act">Ops Center</a>
+    <a href="../twin/" class="pn">Digital Twin</a>
+    <a href="../access/" class="pn">Access Intel</a>
+    <a href="../graph/" class="pn">Entity Graph</a>
+    <a href="../demo/" class="pn">AI Operator</a>
+    <a href="../cards/" class="pn">Card Mgmt</a>
   </div>
 </div>
 
-<!-- MAIN BODY -->
 <div class="ops-body">
-
-  <!-- LEFT: DIGITAL TWIN -->
-  <div class="twin-panel">
-    <div class="panel-head">Digital Twin · Live 3D</div>
-    <div id="twinCvs"></div>
-    <div class="twin-floors" id="floorBtns">
-      <button class="fl-btn act" onclick="selFl('ALL',this)">ALL</button>
-      <button class="fl-btn" onclick="selFl('L3',this)">L3</button>
-      <button class="fl-btn" onclick="selFl('L2',this)">L2</button>
-      <button class="fl-btn" onclick="selFl('L1',this)">L1</button>
-      <button class="fl-btn" onclick="selFl('GF',this)">GF</button>
-      <button class="fl-btn" onclick="selFl('B1',this)">B1</button>
+  <div class="left-panel">
+    <div class="ph">Active Alarms<span class="ph-badge" id="alarmCount">3 ACTIVE</span></div>
+    <div class="alarm-list" id="alarmList"></div>
+    <div class="quick-ops">
+      <div class="ph" style="padding:0 0 6px;border:none;margin-bottom:5px">Quick Operations</div>
+      <div class="qo-grid">
+        <button class="qo-btn danger" id="ldBtn" onclick="trigLockdown(this)">🔒 LOCKDOWN</button>
+        <button class="qo-btn warn" id="evBtn" onclick="trigEvac(this)">⬆ EVACUATE C</button>
+        <button class="qo-btn" onclick="dispatchGuard()">👮 DISPATCH GUARD</button>
+        <button class="qo-btn" onclick="deployDrone()">🚁 DEPLOY DRONE</button>
+        <button class="qo-btn" onclick="callPolice()">🚔 POLICE NOTIFY</button>
+        <button class="qo-btn" onclick="triggerPA()">📢 PA ANNOUNCE</button>
+      </div>
     </div>
   </div>
 
-  <!-- CENTER: CAMERA FEEDS -->
-  <div class="cam-panel">
-    <div class="panel-head">Camera Feeds · 9 of 900</div>
+  <div class="center-panel">
+    <div class="cam-toolbar">
+      <div class="cam-tb-title">Camera Matrix</div>
+      <div class="cam-sp"></div>
+      <div class="cam-filter" id="zoneFilter">
+        <button class="cf-btn act" onclick="filterCam('ALL',this)">ALL <span id="cnt-ALL"></span></button>
+        <button class="cf-btn" onclick="filterCam('ALERT',this)" style="color:rgba(214,64,64,.75);border-color:rgba(214,64,64,.22)">⚠ <span id="cnt-ALERT"></span></button>
+        <button class="cf-btn" onclick="filterCam('B1',this)">B1 <span id="cnt-B1"></span></button>
+        <button class="cf-btn" onclick="filterCam('GF',this)">GF <span id="cnt-GF"></span></button>
+        <button class="cf-btn" onclick="filterCam('L1',this)">L1 <span id="cnt-L1"></span></button>
+        <button class="cf-btn" onclick="filterCam('L2',this)">L2 <span id="cnt-L2"></span></button>
+        <button class="cf-btn" onclick="filterCam('L3',this)">L3 <span id="cnt-L3"></span></button>
+        <button class="cf-btn" onclick="filterCam('L4',this)">L4 <span id="cnt-L4"></span></button>
+        <button class="cf-btn" onclick="filterCam('ROOF',this)">ROOF <span id="cnt-ROOF"></span></button>
+        <button class="cf-btn" onclick="filterCam('EXT',this)">EXT <span id="cnt-EXT"></span></button>
+      </div>
+      <span class="cam-count" style="margin-left:8px" id="camCount"></span>
+    </div>
     <div class="cam-grid" id="camGrid"></div>
+    <div class="pag-bar">
+      <button class="pag-btn" id="pagPrev" onclick="changePage(-1)">&#8249;</button>
+      <span class="pag-info" id="pagInfo">1 / 1</span>
+      <button class="pag-btn" id="pagNext" onclick="changePage(1)">&#8250;</button>
+      <span class="pag-label" id="pagLabel"></span>
+    </div>
+    <div class="event-strip">
+      <div class="es-head">
+        <div class="es-title">Event Stream</div>
+        <div class="cam-sp"></div>
+        <span style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)" id="evtCount">128 events today</span>
+      </div>
+      <div class="es-list" id="eventList"></div>
+    </div>
   </div>
 
-  <!-- RIGHT: INCIDENTS -->
   <div class="right-panel">
-    <div class="panel-head">Active Incidents</div>
-    <div class="inc-list">
-      <div class="inc">
-        <div class="inc-t"><div class="inc-d" style="background:var(--red)"></div>Crowd Surge — Zone C</div>
-        <div class="inc-m">14:32 · CAM-C01 · West Atrium</div>
-        <div class="inc-s" style="color:var(--amber)">4.2 p/m² · Guards alerted</div>
+    <div class="threat-block">
+      <div class="thr-header">
+        <div class="thr-label">AI Threat Analysis</div>
+        <span class="thr-trend" id="thrTrend" style="color:var(--amber)">↑ +4</span>
       </div>
-      <div class="inc">
-        <div class="inc-t"><div class="inc-d" style="background:var(--amber)"></div>ACS Alert — Bay 4</div>
-        <div class="inc-m">14:14 · Badge #2847 denied</div>
-        <div class="inc-s" style="color:var(--txt2)">Investigating</div>
-      </div>
-      <div class="inc" style="opacity:.55">
-        <div class="inc-t"><div class="inc-d" style="background:var(--gold)"></div>VIP Protocol — Gate 3</div>
-        <div class="inc-m">13:58 · Route cleared</div>
-        <div class="inc-s" style="color:var(--green)">✓ Completed</div>
-      </div>
-      <div class="inc" style="opacity:.4">
-        <div class="inc-t"><div class="inc-d" style="background:var(--txt2)"></div>Loitering — Store #247</div>
-        <div class="inc-m">14:02 · West Wing</div>
-        <div class="inc-s" style="color:var(--green)">✓ Guard dispatched</div>
+      <div class="thr-big" id="thrScore">62</div>
+      <div class="thr-level" id="thrLevel">ELEVATED</div>
+      <div class="thr-bar-wrap"><div class="thr-bar" id="thrBar" style="width:62%;background:linear-gradient(90deg,var(--green),var(--amber))"></div></div>
+      <div style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-bottom:5px">Zone breakdown</div>
+      <div class="thr-zones">
+        <div class="tz"><div class="tz-dot" style="background:var(--red)"></div><span class="tz-nm">Zone C</span><span class="tz-val" style="color:var(--red)">CRIT</span></div>
+        <div class="tz"><div class="tz-dot" style="background:var(--amber)"></div><span class="tz-nm">Zone A</span><span class="tz-val" style="color:var(--amber)">HIGH</span></div>
+        <div class="tz"><div class="tz-dot" style="background:var(--amber)"></div><span class="tz-nm">Zone E</span><span class="tz-val" style="color:var(--amber)">HIGH</span></div>
+        <div class="tz"><div class="tz-dot" style="background:var(--green)"></div><span class="tz-nm">Zone B</span><span class="tz-val" style="color:var(--green)">NORM</span></div>
+        <div class="tz"><div class="tz-dot" style="background:var(--green)"></div><span class="tz-nm">Zone D</span><span class="tz-val" style="color:var(--green)">NORM</span></div>
+        <div class="tz"><div class="tz-dot" style="background:var(--teal)"></div><span class="tz-nm">VIP</span><span class="tz-val" style="color:var(--teal)">CLR</span></div>
       </div>
     </div>
-
-    <div class="thr-block">
-      <div class="thr-lbl">Threat Level</div>
-      <div class="thr-bar"><div class="thr-fill"></div></div>
-      <div class="thr-row"><span>LOW</span><span>MED</span><span>HIGH</span><span>CRIT</span></div>
-      <div class="thr-val">ELEVATED</div>
+    <div class="units-block">
+      <div class="unit-section">
+        <div class="ph" style="font-size:9.5px">Guard Deployment <span style="margin-left:auto;color:var(--txt2);font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:0">6 units</span></div>
+        <div class="unit-list" id="guardList"></div>
+      </div>
+      <div class="unit-section">
+        <div class="ph" style="font-size:9.5px">Drone Operations <span style="margin-left:auto;color:var(--txt2);font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:0">DSQ fleet</span></div>
+        <div class="unit-list" id="droneList"></div>
+      </div>
     </div>
+    <div class="vip-strip">
+      <div class="ph" style="padding:0 0 5px;border:none;margin-bottom:4px;font-size:9.5px">VIP Protocol Active</div>
+      <div class="vip-entry">
+        <span style="font-size:14px">👑</span>
+        <div style="flex:1;min-width:0">
+          <div class="vip-nm">H.E. Abdullah Al Maktoum</div>
+          <div class="vip-loc">Gate 1 → L2 VIP Lounge · SEC-019 escort</div>
+        </div>
+        <span class="vip-act-badge">ACTIVE</span>
+      </div>
+      <div class="vip-entry" style="border-color:rgba(200,168,32,.1);opacity:.65">
+        <span style="font-size:14px">🎖</span>
+        <div style="flex:1;min-width:0">
+          <div class="vip-nm">Fahad Al Gergawi, EMAAR</div>
+          <div class="vip-loc">Scheduled 16:30 GST · Gate 3</div>
+        </div>
+        <span class="vip-act-badge" style="opacity:.5">SCHED</span>
+      </div>
+    </div>
+    <div class="va-strip">
+      <div class="ph" style="padding:0 0 5px;border:none;margin-bottom:4px;font-size:7.5px">Vehicle Analytics <span style="margin-left:auto;font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1px">SIRA §17.5.6</span></div>
+      <div class="va-types" id="vaTypes"></div>
+      <div class="va-alerts" id="vaAlerts"></div>
+    </div>
+    <div class="nvr-strip">
+      <div class="ph" style="padding:0 0 4px;border:none;margin-bottom:3px;font-size:7.5px">NVR Recording <span style="margin-left:auto;font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1px">SIRA §17.10.9 · 31d min</span></div>
+      <div id="nvrList"></div>
+    </div>
+    <div class="red-strip">
+      <div class="ph" style="padding:0 0 4px;border:none;margin-bottom:3px;font-size:7.5px">System Redundancy <span style="margin-left:auto;font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1px">IFC §17.12</span></div>
+      <div class="red-grid" id="redGrid"></div>
+    </div>
+    <div class="audit-strip">
+      <div class="ph" style="padding:0 0 4px;border:none;margin-bottom:3px;font-size:7.5px">Operator Audit Log <span style="margin-left:auto;font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1px">Arvato Q10 · 365d</span></div>
+      <div class="audit-list" id="auditList"></div>
+    </div>
+    <div class="dispatch-strip">
+      <div class="ph" style="padding:0 0 5px;border:none;margin-bottom:4px;font-size:7.5px">Emergency Services <span style="margin-left:auto;font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1px">IFC §17.18</span></div>
+      <div id="dispatchList"></div>
+    </div>
+  </div>
+</div>
 
-    <div class="ai-block">
-      <div class="ai-lbl">AI Recommended Actions</div>
-      <div class="ai-actions" id="aiActions">
-        <button class="ai-act" onclick="execAction(this,'Dispatch guard to Zone C')">👮 Dispatch guard → Zone C</button>
-        <button class="ai-act" onclick="execAction(this,'Close east entrance gates')">🚧 Throttle Zone C entry</button>
-        <button class="ai-act" onclick="execAction(this,'Deploy DSQ-03 drone overhead')">🚁 Deploy DSQ-03 overhead</button>
-        <button class="ai-act" onclick="execAction(this,'PA announcement Zone C')">📢 PA: Zone C dispersal</button>
-        <button class="ai-act" onclick="execAction(this,'Notify Dubai Police')">🚔 Notify Dubai Police</button>
+<!-- Camera Modal -->
+<div class="cam-modal" id="camModal" onclick="if(event.target===this)closeModal()">
+  <div class="cam-modal-box">
+    <div class="cam-modal-hdr">
+      <span class="cam-modal-title" id="modalTitle">—</span>
+      <span class="cam-modal-type" id="modalType">—</span>
+      <button class="cam-modal-close" onclick="closeModal()">✕ CLOSE</button>
+    </div>
+    <div class="cam-modal-body">
+      <div class="cam-modal-canvas-wrap" id="modalCanvasWrap">
+        <canvas id="modalCanvas" width="2" height="2"></canvas>
+      </div>
+      <div class="cam-modal-sidebar">
+        <div class="cms-section">
+          <div class="cms-lbl">Camera Info</div>
+          <div class="cms-row"><span class="cms-key">ID</span><span class="cms-val" id="mi-id">—</span></div>
+          <div class="cms-row"><span class="cms-key">Floor</span><span class="cms-val" id="mi-floor">—</span></div>
+          <div class="cms-row"><span class="cms-key">Zone</span><span class="cms-val" id="mi-zone">—</span></div>
+          <div class="cms-row"><span class="cms-key">Type</span><span class="cms-val" id="mi-type">—</span></div>
+          <div class="cms-row"><span class="cms-key">Status</span><span class="cms-val" id="mi-st">—</span></div>
+          <div class="cms-row"><span class="cms-key">Resolution</span><span class="cms-val">4K UHD · 30fps</span></div>
+          <div class="cms-row"><span class="cms-key">Storage</span><span class="cms-val">30-day NVR · AES-256</span></div>
+        </div>
+        <div class="cms-section">
+          <div class="cms-lbl">Edge AI Stream</div>
+          <div id="modalAI"></div>
+        </div>
+        <div class="cms-section" style="flex:1">
+          <div class="cms-lbl">Recent Events</div>
+          <div id="modalEvents"></div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- STATUS BAR -->
 <div class="statusbar">
-  <span><span class="sb-dot" style="background:var(--green)"></span>898 cameras online</span>
-  <span><span class="sb-dot" style="background:var(--teal)"></span>312 ACS operational</span>
-  <span><span class="sb-dot" style="background:var(--amber)"></span>2 active incidents</span>
-  <span><span class="sb-dot" style="background:var(--teal)"></span>DSQ-02 patrol active</span>
+  <span><span class="sb-dot" style="background:var(--green)"></span>All systems nominal</span>
+  <span><span class="sb-dot" style="background:var(--blue)"></span>PSIM v4.2 · BBA Aerosmart</span>
+  <span><span class="sb-dot" style="background:var(--teal)"></span>BMS · 224 sensors</span>
+  <span><span class="sb-dot" style="background:var(--purple)"></span>Edge AI · 800 feeds</span>
+  <span><span class="sb-dot" style="background:var(--green)"></span>ISO 9001:2015 · MS.1656.3496</span>
+  <span><span class="sb-dot" style="background:var(--teal)"></span>KVKK ✓ · SIRA §Res.13/2025 ✓</span>
   <div class="sb-sp"></div>
-  <span id="clockFull" style="color:var(--txt)"></span>
-  <span>Auth Level 2 — Assist</span>
-</div>
-
-<!-- CAMERA MODAL -->
-<div class="cam-modal" id="camModal" onclick="closeCamModal(event)">
-  <div class="cm-inner" id="cmInner">
-    <div class="cm-video" id="cmVideo">
-      <canvas id="modalCvs"></canvas>
-      <div class="cm-scan"></div>
-      <div class="cm-hud-tl" id="cm-id">CAM-C01</div>
-      <div class="cm-hud-ts" id="cm-ts"></div>
-      <div class="cm-hud-br" id="cm-zone">Zone C · West Atrium</div>
-      <div class="cm-hud-pc" id="cm-pc">42 persons</div>
-      <div class="cm-corner cm-c-tl"></div>
-      <div class="cm-corner cm-c-tr"></div>
-      <div class="cm-corner cm-c-bl"></div>
-      <div class="cm-corner cm-c-br"></div>
-    </div>
-    <div class="cm-info">
-      <div class="cm-info-head">
-        <div class="cm-zone" id="cm-zone-big">Zone C — West Atrium</div>
-        <div class="cm-id" id="cm-cam-id">CAM-C01 · Ground Floor</div>
-      </div>
-      <div class="cm-rows">
-        <div class="cm-row"><span class="cm-k">Density</span><span class="cm-v" id="cm-density">4.2 p/m²</span></div>
-        <div class="cm-row"><span class="cm-k">Persons detected</span><span class="cm-v" id="cm-persons">42</span></div>
-        <div class="cm-row"><span class="cm-k">Status</span><span class="cm-v" id="cm-status">CRITICAL</span></div>
-        <div class="cm-row"><span class="cm-k">Last event</span><span class="cm-v" id="cm-event">14:32 · Surge alert</span></div>
-      </div>
-      <div class="cm-ai">
-        <div class="cm-ai-head">AI Analysis</div>
-        <div class="cm-ai-text" id="cm-ai-text">Analyzing...</div>
-      </div>
-    </div>
-    <button class="cm-close" onclick="closeModal()">✕</button>
-  </div>
+  <span id="sbTime"></span>
+  <span>Dubai Square · EMAAR Development</span>
 </div>
 
 <script>
-// ── CAMERA DEFINITIONS ────────────────────────────────────────
-const CAMS = [
-  {id:'CAM-C01', zone:'Zone C · West Atrium', floor:'GF', status:'CRITICAL',
-   count:26, type:'atrium', density:'4.2 p/m²', event:'14:32 · Crowd surge active',
-   analysis:`<span class="crit">⚠ CRITICAL — Density 4.2 p/m² exceeds 4.0 threshold.</span>\n\n<span class="warn">Movement vectors indicate continued inflow from East corridor.</span>\n\n<span class="act">Recommend immediate guard deployment × 3</span><span class="act">Throttle Zone C entry gates</span><span class="act">PA dispersal announcement</span>`},
-
-  {id:'CAM-C02', zone:'Zone C · West Atrium', floor:'GF', status:'CRITICAL',
-   count:20, type:'corridor', density:'4.2 p/m²', event:'14:32 · Angle 2',
-   analysis:`<span class="crit">Confirming surge — same zone, angle 2.</span>\n\n<span class="warn">Cluster forming near west service exit.</span>\n\n<span class="act">Block service exit: prevents unauthorized egress</span>`},
-
-  {id:'CAM-A01', zone:'Zone A · East Entrance', floor:'GF', status:'ELEVATED',
-   count:16, type:'entrance', density:'2.8 p/m²', event:'14:28 · Normal flow',
-   analysis:`<span class="warn">◆ ELEVATED — 2.8 p/m². Within safe range but trending up.</span>\n\n<span class="ok">Entry flow normal. 3 ANPR matches in last 10 min.</span>\n\n<span class="act">Monitor — no action required yet</span>`},
-
-  {id:'CAM-ANPR1', zone:'ANPR · Gate 1', floor:'GF', status:'OK',
-   count:0, type:'anpr', density:'—', event:'14:29 · 247 plates today',
-   analysis:`<span class="ok">✓ Gate 1 operational. No blacklist hits in last 30 min.</span>\n\n247 vehicles processed today. Avg wait: 8 sec.\n\n<span class="act">ANPR database: current — no action needed</span>`},
-
-  {id:'CAM-B01', zone:'Zone B · Central Atrium', floor:'GF', status:'OK',
-   count:12, type:'atrium', density:'1.9 p/m²', event:'14:31 · Nominal',
-   analysis:`<span class="ok">✓ NORMAL — 1.9 p/m². Well within safe limits.</span>\n\nFountain area clear. Retail activity normal.\n\n<span class="act">No action required</span>`},
-
-  {id:'CAM-L101', zone:'Zone E · Level 1 Retail', floor:'L1', status:'HIGH',
-   count:20, type:'corridor', density:'3.4 p/m²', event:'14:30 · Elevated',
-   analysis:`<span class="warn">▲ HIGH — 3.4 p/m². Food court contributing to L1 overflow.</span>\n\n<span class="warn">Predicted to reach 3.8 p/m² in ~15 min.</span>\n\n<span class="act">Pre-position guard at L1 central junction</span><span class="act">Open escalator B to redirect flow</span>`},
-
-  {id:'CAM-B101', zone:'Parking B1', floor:'B1', status:'OK',
-   count:5, type:'parking', density:'Low', event:'14:20 · Nominal',
-   analysis:`<span class="ok">✓ Parking B1 nominal. 340/480 spaces occupied.</span>\n\nNo incidents. HVM barriers operational × 6.\n\n<span class="act">No action required</span>`},
-
-  {id:'CAM-DR02', zone:'DSQ-02 · North Perimeter', floor:'EXT', status:'PATROL',
-   count:0, type:'aerial', density:'—', event:'14:32 · Patrol active',
-   analysis:`<span class="ok">DSQ-02 operational. Altitude 180m. Battery 74%.</span>\n\nNorth perimeter clear. No anomalies detected.\n\nSouth sweep ETA: 4 min.\n\n<span class="act">Maintain current patrol route</span>`},
-
-  {id:'CAM-VIP', zone:'VIP Route · Gate 3', floor:'GF', status:'VIP',
-   count:1, type:'vip', density:'Secure', event:'13:58 · Route completed',
-   analysis:`<span class="ok">✓ VIP Protocol completed at 13:58.</span>\n\nEscort confirmed. Route 3→Lounge clear.\nNext VIP movement: 16:30 (pending).\n\n<span class="act">Pre-clear Gate 3 corridor at 16:20</span>`},
+if(new URLSearchParams(location.search).has('embed')){
+  document.body.classList.add('embed-mode');
+}
+// ═══════════════════════════════════════════════════════════
+// CAMERA GENERATION — 800 cameras, IFC §17.10 floor spec
+// ═══════════════════════════════════════════════════════════
+var FLOOR_DEFS=[
+  {f:'B1',  label:'Loading Bay',   n:68,  types:['ANPR','ANPR','VA','PTZ'],            zones:['Loading Bay North','Loading Bay South','Service Corridor A','Service Corridor B','Staff Entry Gate','Waste Area','Utility Room B1','Maintenance Bay','Security Post B1','Fire Exit B1']},
+  {f:'GF',  label:'Parking 1',     n:142, types:['ANPR','ANPR','ANPR','FACE','VA','PTZ'],zones:['Main Entrance Gate 1','Main Entrance Gate 2','Gate 3 West','Gate 4 South','Parking GF Entry','Parking GF Exit','ANPR Lane 1','ANPR Lane 2','ANPR Lane 3','Lobby North','Lobby South','Concourse East','Concourse West','Public Plaza','Retail Entrance A','Retail Entrance B']},
+  {f:'L1',  label:'Parking 2',     n:118, types:['ANPR','ANPR','VA','PTZ'],            zones:['Parking L1 Bay A','Parking L1 Bay B','Parking L1 Bay C','ANPR Ramp Entry','ANPR Ramp Exit','Stairwell L1-N','Stairwell L1-S','Lift Lobby L1','Mall Entry L1','Service Corridor L1']},
+  {f:'L2',  label:'Mall GF',       n:187, types:['FACE','FACE','VA','VA','PTZ','THERM'],zones:['Fashion Avenue North','Fashion Avenue South','The Boulevard East','The Boulevard West','Atrium Centre','Food Court A','Food Court B','Luxury Corridor','Retail Zone R-01','Retail Zone R-02','Retail Zone R-03','Event Foyer','The Plaza East','The Plaza West','Pedestrian Bridge','Escalator Bank L2']},
+  {f:'L3',  label:'Mall L1',       n:156, types:['FACE','VA','PTZ'],                   zones:['Gourmet Street A','Gourmet Street B','Entertainment Zone','Lifestyle Avenue','Family Zone','Cinema Foyer','Rooftop Terrace Access','Stairwell L3-N','VIP Lounge Corridor','Penthouse Access','Sky Bridge L3']},
+  {f:'L4',  label:'Mall L2+Event', n:89,  types:['FACE','FACE','VA','PTZ','THERM'],   zones:['Event Hall Main','Event Hall East','Event Hall West','Sky Lounge','Rooftop Restaurant','VIP Event Suite','Conference Level A','Conference Level B','Service Level L4','Helipad Access']},
+  {f:'ROOF',label:'Roof',          n:22,  types:['PTZ','THERM','THERM'],              zones:['Roof Perimeter North','Roof Perimeter South','Roof Perimeter East','Roof Perimeter West','HVAC Zone A','HVAC Zone B','Rooftop Access Door','Helipad Perimeter']},
+  {f:'EXT', label:'External',      n:18,  types:['ANPR','PTZ','THERM'],               zones:['External Perimeter N','External Perimeter S','Service Road Entry','Delivery Bay','Car Park Approach','Landscape Zone A','Landscape Zone B','Waterfront View']},
 ];
 
-// ── CAMERA FEED SIMULATION ────────────────────────────────────
-class CrowdFeed {
-  constructor(canvas, cfg) {
-    this.cv = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.cfg = cfg;
-    this.people = [];
-    this.cars = [];
-    this.t = Math.random() * 100;
-    this.init();
-  }
+var STAT_POOL=['CLEAR','CLEAR','CLEAR','CLEAR','CLEAR','CLEAR','CLEAR','MOTION','MOTION','MOTION','CRITICAL','OFFLINE'];
 
-  init() {
-    const n = this.cfg.count;
-    // People spawn in lower 60% of frame (floor area)
-    for (let i = 0; i < n; i++) {
-      this.people.push({
-        x: 0.05 * this.cv.width + Math.random() * this.cv.width * 0.9,
-        y: this.cv.height * 0.45 + Math.random() * this.cv.height * 0.5,
-        vx: (Math.random() - .5) * .10,
-        vy: (Math.random() - .5) * .08,
-        r: 0.8 + Math.random() * 0.85,
-        phase: Math.random() * Math.PI * 2,
-      });
-    }
-    if (this.cfg.type === 'anpr') {
-      this.cars = [
-        { x: -40, y: 0, lane: 0.42, spd: 0.85, w: 32, h: 15, plate: 'DXB-4401' },
-        { x: -110, y: 0, lane: 0.62, spd: 0.7, w: 30, h: 14, plate: 'SHJ-9904' },
-      ];
-      this.cars.forEach(c => c.y = this.cv.height * c.lane);
-    }
-  }
+function rnd(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function randPlate(){var pre=['DXB','AJM','SHJ','AUH','RAK'];return rnd(pre)+'-'+(1000+Math.random()*8999|0);}
 
-  update() {
-    this.t += .016;
-    this.people.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < p.r) p.vx = Math.abs(p.vx);
-      if (p.x > this.cv.width - p.r) p.vx = -Math.abs(p.vx);
-      if (p.y < this.cv.height * .42) p.vy = Math.abs(p.vy);
-      if (p.y > this.cv.height - p.r) p.vy = -Math.abs(p.vy);
-      p.vx += (Math.random() - .5) * .006;
-      p.vy += (Math.random() - .5) * .005;
-      const spd = Math.hypot(p.vx, p.vy);
-      if (spd > 0.16) { p.vx /= spd / 0.16; p.vy /= spd / 0.16; }
-      if (this.cfg.status === 'CRITICAL') {
-        const cx = this.cv.width * .44, cy = this.cv.height * .62;
-        p.vx += (cx - p.x) * .00010; p.vy += (cy - p.y) * .00010;
+var ALL_CAMS=(function(){
+  var cams=[];
+  FLOOR_DEFS.forEach(function(fd){
+    for(var i=0;i<fd.n;i++){
+      var type=rnd(fd.types);
+      var st=rnd(STAT_POOL);
+      var nP=type==='ANPR'?(1+Math.random()*4|0):type==='THERM'?(1+Math.random()*3|0):(Math.random()*7|0);
+      var zone=fd.zones[i%fd.zones.length];
+      var id='CAM-'+fd.f+'-'+(String(i+1).padStart(3,'0'));
+      var ents=[];
+      for(var j=0;j<nP;j++){
+        ents.push({x:.12+Math.random()*.76,y:.35+Math.random()*.52,vx:(Math.random()-.5)*.00055,vy:(Math.random()-.5)*.00025,sz:.024+Math.random()*.014,phase:Math.random()*Math.PI*2,plateN:randPlate(),conf:.82+Math.random()*.17,temp:34+Math.random()*4});
       }
-    });
-    this.cars.forEach(c => {
-      c.x += c.spd;
-      if (c.x > this.cv.width + 60) { c.x = -(40 + Math.random() * 80); }
-    });
-  }
-
-  drawBg() {
-    const ctx = this.ctx, w = this.cv.width, h = this.cv.height;
-    const type = this.cfg.type, st = this.cfg.status;
-
-    // All cameras: near-black base (real CCTV)
-    ctx.fillStyle = '#050810';
-    ctx.fillRect(0, 0, w, h);
-
-    // Subtle thermal ambience for high-density zones only
-    if (st === 'CRITICAL') {
-      const rg = ctx.createRadialGradient(w*.44,h*.62,0,w*.44,h*.62,w*.55);
-      rg.addColorStop(0,'rgba(160,25,25,.1)'); rg.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
-    } else if (st==='HIGH'||st==='ELEVATED') {
-      const rg=ctx.createRadialGradient(w*.5,h*.6,0,w*.5,h*.6,w*.5);
-      rg.addColorStop(0,'rgba(120,88,12,.07)'); rg.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
-    }
-
-    // Per-type architecture
-    ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=.7;
-
-    if (type==='atrium'||type==='corridor') {
-      // Perspective floor
-      const vpx=w*.5, vpy=h*.34;
-      for(let i=0;i<=8;i++){
-        const bx=(w/8)*i;
-        ctx.beginPath();ctx.moveTo(bx,h);ctx.lineTo(vpx,vpy);ctx.stroke();
-      }
-      for(let j=0;j<=5;j++){
-        const t=j/5, ly=vpy+(h-vpy)*(.06+t*.94);
-        const lx1=vpx-vpx*(.06+t*.94), lx2=vpx+(w-vpx)*(.06+t*.94);
-        ctx.beginPath();ctx.moveTo(lx1,ly);ctx.lineTo(lx2,ly);ctx.stroke();
-      }
-      // Ceiling convergence
-      ctx.strokeStyle='rgba(255,255,255,.022)';
-      for(let i=0;i<=5;i++){
-        ctx.beginPath();ctx.moveTo((w/5)*i,0);ctx.lineTo(vpx,vpy);ctx.stroke();
-      }
-      // Overhead lighting bloom
-      const lg=ctx.createRadialGradient(w*.5,0,0,w*.5,0,h*.6);
-      lg.addColorStop(0,'rgba(150,185,225,.055)'); lg.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=lg; ctx.fillRect(0,0,w,h);
-
-    } else if (type==='parking') {
-      const rowH=h/3;
-      for(let row=0;row<3;row++){
-        const y1=row*rowH+2, y2=y1+rowH*.78;
-        ctx.strokeStyle='rgba(255,255,255,.05)';
-        ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();
-        const bw=w/5;
-        for(let bay=0;bay<=5;bay++){
-          ctx.strokeStyle='rgba(255,255,255,.035)';
-          ctx.beginPath();ctx.moveTo(bay*bw,y1);ctx.lineTo(bay*bw,y2);ctx.stroke();
-        }
-        // Parked car shapes (static)
-        for(let bay=0;bay<5;bay++){
-          if(Math.sin(row*11+bay*7)>-.15){
-            ctx.fillStyle='rgba(255,255,255,.042)';
-            ctx.fillRect(bay*bw+bw*.1,y1+rowH*.07,bw*.8,rowH*.58);
-          }
-        }
-      }
-      // Floor number paint
-      ctx.fillStyle='rgba(255,255,255,.06)';
-      ctx.font='bold '+(h*.35)+'px sans-serif';
-      ctx.textAlign='center'; ctx.fillText('B1',w*.5,h*.55); ctx.textAlign='left';
-
-    } else if (type==='entrance') {
-      const vpx=w*.5, vpy=h*.32;
-      for(let i=0;i<=7;i++){
-        ctx.beginPath();ctx.moveTo((w/7)*i,h);ctx.lineTo(vpx,vpy);ctx.stroke();
-      }
-      for(let j=1;j<=4;j++){
-        const t=j/4, ly=vpy+(h-vpy)*t;
-        ctx.beginPath();ctx.moveTo(0,ly);ctx.lineTo(w,ly);ctx.stroke();
-      }
-      // Glass door panels
-      ctx.strokeStyle='rgba(180,215,255,.1)'; ctx.lineWidth=1;
-      const dw=w*.38, dh=h*.5, dx=(w-dw)*.5, dy=vpy-dh*.04;
-      ctx.strokeRect(dx,dy,dw*.46,dh);
-      ctx.strokeRect(dx+dw*.54,dy,dw*.46,dh);
-      const ggl=ctx.createLinearGradient(dx,0,dx+dw,0);
-      ggl.addColorStop(0,'rgba(180,215,255,.01)');
-      ggl.addColorStop(.5,'rgba(180,215,255,.07)');
-      ggl.addColorStop(1,'rgba(180,215,255,.01)');
-      ctx.fillStyle=ggl; ctx.fillRect(dx,dy,dw,dh);
-
-    } else if (type==='aerial') {
-      const gs=Math.max(w,h)/9;
-      ctx.strokeStyle='rgba(61,219,190,.065)';
-      for(let x=0;x<w+gs;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
-      for(let y=0;y<h+gs;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
-      // Building footprint below
-      ctx.strokeStyle='rgba(255,255,255,.1)'; ctx.lineWidth=1.2;
-      ctx.strokeRect(w*.08,h*.12,w*.84,h*.76);
-      ctx.strokeStyle='rgba(255,255,255,.045)'; ctx.lineWidth=.7;
-      ctx.strokeRect(w*.22,h*.28,w*.56,h*.44);
-
-    } else if (type==='anpr') {
-      // Road surface
-      const rg=ctx.createLinearGradient(0,h*.38,0,h);
-      rg.addColorStop(0,'rgba(48,52,58,.55)'); rg.addColorStop(1,'rgba(18,20,24,.8)');
-      ctx.fillStyle=rg; ctx.fillRect(0,h*.38,w,h*.62);
-      // Lane dividers
-      ctx.strokeStyle='rgba(255,255,220,.12)'; ctx.lineWidth=1;
-      ctx.setLineDash([h*.05,h*.05]);
-      ctx.beginPath();ctx.moveTo(w*.34,h*.38);ctx.lineTo(w*.34,h);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(w*.67,h*.38);ctx.lineTo(w*.67,h);ctx.stroke();
-      ctx.setLineDash([]);
-      // Gate boom
-      ctx.strokeStyle='rgba(220,220,190,.22)'; ctx.lineWidth=1.5;
-      const gy2=h*.4;
-      ctx.beginPath();ctx.moveTo(0,gy2);ctx.lineTo(w*.52,gy2);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(0,gy2-h*.08);ctx.lineTo(0,gy2+h*.04);ctx.stroke();
-      // ANPR infrared beam
-      const bx=w*.35+Math.sin(this.t*.38)*w*.02;
-      const bg3=ctx.createLinearGradient(bx-20,0,bx+20,0);
-      bg3.addColorStop(0,'rgba(10,176,204,0)');
-      bg3.addColorStop(.5,'rgba(10,176,204,.28)');
-      bg3.addColorStop(1,'rgba(10,176,204,0)');
-      ctx.fillStyle=bg3; ctx.fillRect(bx-20,h*.34,40,h*.66);
-
-    } else if (type==='vip') {
-      const vpx=w*.5, vpy=h*.3;
-      ctx.strokeStyle='rgba(200,168,32,.042)'; ctx.lineWidth=.7;
-      for(let i=0;i<=7;i++){
-        ctx.beginPath();ctx.moveTo((w/7)*i,h);ctx.lineTo(vpx,vpy);ctx.stroke();
-      }
-      for(let j=1;j<=3;j++){
-        const t=j/3, ly=vpy+(h-vpy)*t;
-        const lx1=vpx*(1-t*.82), lx2=w-vpx*(1-t*.82);
-        ctx.beginPath();ctx.moveTo(lx1,ly);ctx.lineTo(lx2,ly);ctx.stroke();
-      }
-      ctx.strokeStyle='rgba(200,168,32,.09)'; ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(0,h*.22);ctx.lineTo(vpx,vpy+1);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(w,h*.22);ctx.lineTo(vpx,vpy+1);ctx.stroke();
-      const wg=ctx.createRadialGradient(w*.5,h*.4,0,w*.5,h*.4,w*.5);
-      wg.addColorStop(0,'rgba(195,138,28,.055)'); wg.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=wg; ctx.fillRect(0,0,w,h);
-    }
-
-    // Scanlines (all cameras) — simulates real interlaced video
-    ctx.fillStyle='rgba(0,0,0,.06)';
-    for(let y=0;y<h;y+=3) ctx.fillRect(0,y,w,1);
-
-    // Vignette
-    const vg=ctx.createRadialGradient(w*.5,h*.5,h*.15,w*.5,h*.5,h*.78);
-    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.38)');
-    ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
-  }
-
-  draw() {
-    const ctx=this.ctx, w=this.cv.width, h=this.cv.height;
-    this.drawBg();
-
-    // Person dot color: near-white with status tint
-    const [dr,dg,db] = this.cfg.status==='CRITICAL' ? [235,150,148] :
-                       this.cfg.status==='HIGH'     ? [228,195,128] :
-                       this.cfg.status==='ELEVATED' ? [210,195,155] :
-                       this.cfg.type==='vip'        ? [195,162,55]  : [185,205,220];
-
-    // People (top half = head, bottom = body)
-    this.people.forEach(p => {
-      const a = .55 + Math.sin(this.t*1.3+p.phase)*.12;
-      ctx.fillStyle=`rgba(${dr},${dg},${db},${a.toFixed(2)})`;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-      // Tiny body indicator below head
-      ctx.fillStyle=`rgba(${dr},${dg},${db},${(a*.6).toFixed(2)})`;
-      ctx.fillRect(p.x-p.r*.5, p.y+p.r*.9, p.r, p.r*2.2);
-    });
-
-    // AI detection boxes per person
-    if (this.cfg.status==='CRITICAL'||this.cfg.status==='HIGH') {
-      const boxC = this.cfg.status==='CRITICAL'?'rgba(210,72,72,.58)':'rgba(188,135,28,.52)';
-      ctx.strokeStyle=boxC; ctx.lineWidth=.65; ctx.setLineDash([]);
-      this.people.forEach(p=>{
-        const bw=Math.max(5,p.r*5.8), bh=Math.max(9,p.r*11);
-        ctx.strokeRect(p.x-bw*.5,p.y-bh*.6,bw,bh);
-      });
-      // Analytics overlay label
-      const lbl = this.cfg.status==='CRITICAL'?'⚠ AI: CROWD DENSITY CRITICAL':'△ AI: ELEVATED — MONITORING';
-      ctx.fillStyle = this.cfg.status==='CRITICAL'?'rgba(210,72,72,.82)':'rgba(188,135,28,.78)';
-      ctx.font='5.5px "JetBrains Mono",monospace';
-      ctx.fillText(lbl, 5, h-8);
-    }
-
-    // ANPR vehicles
-    this.cars.forEach(c=>{
-      const vy = this.cv.height * c.lane;
-      // Car silhouette
-      ctx.fillStyle='rgba(155,165,175,.45)';
-      ctx.fillRect(c.x,vy-c.h*.5,c.w,c.h);
-      // Windshield glass tint
-      ctx.fillStyle='rgba(170,205,245,.22)';
-      ctx.fillRect(c.x+c.w*.52,vy-c.h*.42,c.w*.42,c.h*.72);
-      // Headlights
-      ctx.fillStyle='rgba(255,248,200,.55)';
-      ctx.fillRect(c.x+c.w*.96,vy-c.h*.32,c.w*.04,c.h*.25);
-      ctx.fillRect(c.x+c.w*.96,vy+c.h*.08,c.w*.04,c.h*.25);
-      // License plate detection box
-      ctx.strokeStyle='rgba(10,176,204,.72)'; ctx.lineWidth=.8; ctx.setLineDash([]);
-      ctx.strokeRect(c.x+c.w*.04,vy-c.h*.18,c.w*.38,c.h*.32);
-      ctx.fillStyle='rgba(10,176,204,.65)'; ctx.font='4.5px "JetBrains Mono",monospace';
-      ctx.fillText(c.plate,c.x+c.w*.05,vy-c.h*.22);
-    });
-
-    // VIP tracking
-    if (this.cfg.type==='vip') {
-      const gx=w*.5+Math.sin(this.t*.44)*w*.22, gy=h*.56;
-      ctx.strokeStyle='rgba(200,168,32,.42)'; ctx.lineWidth=1;
-      const pr=13+Math.sin(this.t*2.2)*2;
-      ctx.beginPath();ctx.arc(gx,gy,pr,0,Math.PI*2);ctx.stroke();
-      ctx.strokeStyle='rgba(200,168,32,.18)';
-      ctx.beginPath();ctx.arc(gx,gy,pr+9,0,Math.PI*2);ctx.stroke();
-      ctx.beginPath();ctx.arc(gx,gy,2.2,0,Math.PI*2);
-      ctx.fillStyle='rgba(200,168,32,.92)';ctx.fill();
-      ctx.fillStyle='rgba(200,168,32,.68)'; ctx.font='5px "JetBrains Mono",monospace';
-      ctx.fillText('VIP-001  TRACKED',gx-34,gy-pr-4);
-    }
-
-    // Drone: reticle + tracking box
-    if (this.cfg.type==='aerial') {
-      const rx=w*.5+Math.sin(this.t*.18)*w*.08, ry=h*.5+Math.cos(this.t*.14)*h*.07;
-      ctx.strokeStyle='rgba(61,219,190,.52)'; ctx.lineWidth=.9;
-      ctx.beginPath();ctx.moveTo(rx-15,ry);ctx.lineTo(rx-5,ry);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(rx+5,ry);ctx.lineTo(rx+15,ry);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(rx,ry-15);ctx.lineTo(rx,ry-5);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(rx,ry+5);ctx.lineTo(rx,ry+15);ctx.stroke();
-      ctx.strokeRect(rx-4.5,ry-4.5,9,9);
-      ctx.fillStyle='rgba(61,219,190,.58)'; ctx.font='5.5px "JetBrains Mono",monospace';
-      ctx.fillText('ALT: 180m',5,13); ctx.fillText('SPD: 8m/s',5,22);
-      ctx.fillText('SECTOR 4',w-46,13);
-    }
-  }
-}
-
-// ── BUILD CAMERA GRID ─────────────────────────────────────────
-const feeds = [];
-const grid = document.getElementById('camGrid');
-
-function statusStyle(s) {
-  if (s==='CRITICAL') return ['#d64040','rgba(214,64,64,.12)'];
-  if (s==='HIGH')     return ['#c8920a','rgba(200,146,10,.1)'];
-  if (s==='ELEVATED') return ['#a0a010','rgba(160,160,16,.1)'];
-  if (s==='PATROL')   return ['#3ddbbe','rgba(61,219,190,.1)'];
-  if (s==='VIP')      return ['#c8a820','rgba(200,168,32,.1)'];
-  return ['#38d96a','rgba(56,217,106,.07)'];
-}
-
-CAMS.forEach((cam, i) => {
-  const [txtC, bgC] = statusStyle(cam.status);
-  const wrap = document.createElement('div');
-  wrap.className = 'cam-wrap';
-  wrap.dataset.status = cam.status;
-  wrap.onclick = () => openCam(i);
-
-  // Canvas first (will be bottom layer)
-  const canvas = document.createElement('canvas');
-  wrap.appendChild(canvas);
-
-  wrap.insertAdjacentHTML('beforeend', `
-    <div class="cam-scan"></div>
-    <div class="cam-hud">
-      <span class="cam-id">${cam.id}</span>
-      <span class="cam-badge" style="color:${txtC};border-color:${txtC}22;background:${bgC}">${cam.status}</span>
-    </div>
-    <div class="cam-bottom">
-      <span class="cam-zone">${cam.zone}</span>
-      <span class="cam-ts clock"></span>
-    </div>`);
-
-  grid.appendChild(wrap);
-
-  const cvs = wrap.querySelector('canvas');
-  feeds.push({feed: new CrowdFeed(cvs, cam), cam});
-});
-
-// ── RESIZE CAMERA FEEDS ───────────────────────────────────────
-function resizeFeeds() {
-  const cells = grid.querySelectorAll('.cam-wrap');
-  cells.forEach((cell, i) => {
-    const cvs = cell.querySelector('canvas');
-    const w = cell.clientWidth, h = cell.clientHeight;
-    if (w > 0 && h > 0) {
-      cvs.width = w; cvs.height = h;
-      if (feeds[i]) {
-        feeds[i].feed.cv = cvs;
-        feeds[i].feed.ctx = cvs.getContext('2d');
-        // Re-init people with new dimensions
-        feeds[i].feed.people = [];
-        feeds[i].feed.cars = [];
-        feeds[i].feed.init();
-      }
+      cams.push({id:id,floor:fd.f,floorLabel:fd.label,type:type,st:st,zone:zone+' · '+fd.f,ents:ents});
     }
   });
-}
-setTimeout(resizeFeeds, 80);
-window.addEventListener('resize', resizeFeeds);
-
-// ── CAMERA MODAL ─────────────────────────────────────────────
-let modalFeed = null, modalRaf = null;
-
-function openCam(i) {
-  const cam = CAMS[i];
-  const modal = document.getElementById('camModal');
-  const mcvs = document.getElementById('modalCvs');
-  const mEl = document.getElementById('cmVideo');
-
-  mcvs.width = mEl.clientWidth || 700;
-  mcvs.height = mEl.clientHeight || 480;
-
-  document.getElementById('cm-id').textContent = cam.id;
-  document.getElementById('cm-zone').textContent = cam.zone;
-  document.getElementById('cm-zone-big').textContent = cam.zone;
-  document.getElementById('cm-cam-id').textContent = `${cam.id} · Floor ${cam.floor}`;
-  document.getElementById('cm-density').textContent = cam.density;
-  document.getElementById('cm-persons').textContent = cam.count > 0 ? cam.count + ' detected' : '—';
-  document.getElementById('cm-status').innerHTML = `<span style="color:${statusColor(cam.status)[1]}">${cam.status}</span>`;
-  document.getElementById('cm-event').textContent = cam.event;
-  document.getElementById('cm-ai-text').innerHTML = cam.analysis.replace(/\n/g,'<br>');
-
-  if (modalFeed) { cancelAnimationFrame(modalRaf); }
-  const bigCam = {...cam, count: cam.count * 2};
-  modalFeed = new CrowdFeed(mcvs, bigCam);
-
-  function loopModal() {
-    modalFeed.update();
-    modalFeed.draw();
-    const now = new Date().toTimeString().slice(0, 8);
-    document.getElementById('cm-ts').textContent = now;
-    document.getElementById('cm-pc').textContent = cam.count > 0 ? `${cam.count} persons` : '—';
-    modalRaf = requestAnimationFrame(loopModal);
-  }
-  loopModal();
-  modal.classList.add('open');
-}
-
-window.closeModal = function() {
-  document.getElementById('camModal').classList.remove('open');
-  if (modalRaf) cancelAnimationFrame(modalRaf);
-};
-window.closeCamModal = function(e) {
-  if (e.target === document.getElementById('camModal')) closeModal();
-};
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-
-// ── AI ACTIONS ───────────────────────────────────────────────
-window.execAction = function(btn, label) {
-  btn.classList.add('executing');
-  btn.textContent = '⟳ Executing: ' + label + '…';
-  setTimeout(() => {
-    btn.classList.remove('executing');
-    btn.style.color = 'var(--green)';
-    btn.style.borderColor = 'rgba(56,217,106,.3)';
-    btn.textContent = '✓ ' + label;
-    btn.disabled = true;
-  }, 2200);
-};
-
-// ── THREE.JS DIGITAL TWIN ─────────────────────────────────────
-(function initTwin() {
-  const el = document.getElementById('twinCvs');
-  const W = el.clientWidth || 300;
-  const H = el.clientHeight || 400;
-
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x02080f);
-  scene.fog = new THREE.FogExp2(0x02080f, 0.012);
-
-  const camera = new THREE.PerspectiveCamera(52, W / H, 0.1, 400);
-  camera.position.set(38, 32, 38);
-  camera.lookAt(0, 4, 0);
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(W, H);
-  el.appendChild(renderer.domElement);
-
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.dampingFactor = .07;
-  controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 8; controls.maxDistance = 80;
-  controls.target.set(0, 4, 0);
-
-  scene.add(new THREE.AmbientLight(0x0a1e30, 1.8));
-  const d1 = new THREE.DirectionalLight(0x3a7a9a, .6); d1.position.set(30,50,30); scene.add(d1);
-  const incPt = new THREE.PointLight(0xd64040, 1.0, 18); incPt.position.set(-13,5,4); scene.add(incPt);
-
-  const FW=36,FD=20,FH=.2,FG=3.2;
-  const FLOORS=[
-    {id:'B2',lv:-2,fc:0x040c18,ec:0x0c1e2e},
-    {id:'B1',lv:-1,fc:0x050e1c,ec:0x0f2238},
-    {id:'GF',lv: 0,fc:0x061624,ec:0x0ab0cc},
-    {id:'L1',lv: 1,fc:0x061422,ec:0x089ab4},
-    {id:'L2',lv: 2,fc:0x061220,ec:0x3ddbbe},
-    {id:'L3',lv: 3,fc:0x05101e,ec:0x9880e0},
-  ];
-
-  const flGrps = {};
-  FLOORS.forEach(fl => {
-    const g = new THREE.Group();
-    const y = fl.lv * FG;
-    const geo = new THREE.BoxGeometry(FW, FH, FD);
-    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({color:fl.fc,transparent:true,opacity:fl.lv<0?.5:.7}));
-    m.position.y = y; g.add(m);
-    const em = new THREE.LineBasicMaterial({color:fl.ec,transparent:true,opacity:fl.lv<0?.08:.28});
-    const el2 = new THREE.LineSegments(new THREE.EdgesGeometry(geo), em);
-    el2.position.y = y; g.add(el2);
-    if (fl.lv >= 0) {
-      const wg = new THREE.BoxGeometry(14, FH, 10);
-      const wm = new THREE.Mesh(wg, new THREE.MeshLambertMaterial({color:fl.fc,transparent:true,opacity:.6}));
-      wm.position.set(3,y,-(FD/2+5)); g.add(wm);
-      const we = new THREE.LineSegments(new THREE.EdgesGeometry(wg), em.clone());
-      we.position.set(3,y,-(FD/2+5)); g.add(we);
-    }
-    scene.add(g); flGrps[fl.id] = g;
-  });
-
-  // Atrium
-  const aG=new THREE.BoxGeometry(10,FG*4,7);
-  const atr=new THREE.Mesh(aG,new THREE.MeshLambertMaterial({color:0x0ab0cc,transparent:true,opacity:.025,side:THREE.DoubleSide}));
-  atr.position.set(1,FG*1.5,2); scene.add(atr);
-  const aEl=new THREE.LineSegments(new THREE.EdgesGeometry(aG),new THREE.LineBasicMaterial({color:0x0ab0cc,transparent:true,opacity:.15}));
-  aEl.position.set(1,FG*1.5,2); scene.add(aEl);
-
-  // Zone C density
-  const zC=new THREE.Mesh(new THREE.PlaneGeometry(10,7),new THREE.MeshBasicMaterial({color:0xd64040,transparent:true,opacity:.38,side:THREE.DoubleSide}));
-  zC.rotation.x=-Math.PI/2; zC.position.set(-12,FH/2+.01,3); scene.add(zC);
-
-  // Incident marker
-  const inc=new THREE.Mesh(new THREE.SphereGeometry(.45,12,12),new THREE.MeshBasicMaterial({color:0xd64040}));
-  inc.position.set(-12,FH/2+1.3,3); scene.add(inc);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(.6,.8,28),new THREE.MeshBasicMaterial({color:0xd64040,transparent:true,opacity:.5,side:THREE.DoubleSide}));
-  ring.rotation.x=-Math.PI/2; ring.position.set(-12,FH/2+.1,3); scene.add(ring);
-  const ring2=ring.clone(); ring2.material=ring.material.clone(); scene.add(ring2);
-
-  // Drone
-  const drn=new THREE.Mesh(new THREE.OctahedronGeometry(.32,0),new THREE.MeshBasicMaterial({color:0x3ddbbe}));
-  drn.position.set(14,10,0); scene.add(drn);
-  const trail=new THREE.Mesh(new THREE.TorusGeometry(16,.04,8,48),new THREE.MeshBasicMaterial({color:0x3ddbbe,transparent:true,opacity:.1}));
-  trail.rotation.x=Math.PI/2; trail.position.y=10; scene.add(trail);
-
-  // VIP dot
-  const vip=new THREE.Mesh(new THREE.SphereGeometry(.28,12,12),new THREE.MeshBasicMaterial({color:0xc8a820}));
-  const vipPath=[new THREE.Vector3(FW/2-1,FH/2+.4,3),new THREE.Vector3(8,FH/2+.4,1),new THREE.Vector3(0,FH/2+.4,-1),new THREE.Vector3(-8,FH/2+.4,1),new THREE.Vector3(-14,FH/2+.4,3)];
-  const vCurve=new THREE.CatmullRomCurve3(vipPath,false);
-  scene.add(vip);
-  const vLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(vCurve.getPoints(50)),new THREE.LineBasicMaterial({color:0xc8a820,transparent:true,opacity:.3}));
-  scene.add(vLine);
-
-  // Grid
-  const grid3=new THREE.GridHelper(100,36,0x07182a,0x05101e);
-  grid3.position.y=-2*FG-.5; scene.add(grid3);
-
-  // Floor selector
-  window.selFl = function(id, btn) {
-    document.querySelectorAll('.fl-btn').forEach(b=>b.classList.remove('act'));
-    btn.classList.add('act');
-    FLOORS.forEach(fl=>{ flGrps[fl.id].visible=id==='ALL'||fl.id===id; });
-    if(id!=='ALL'){ const fl=FLOORS.find(f=>f.id===id); if(fl) controls.target.set(0,fl.lv*FG,0); }
-    else controls.target.set(0,4,0);
-  };
-
-  let tt=0, vT=0, dAngle=0;
-  function loopTwin() {
-    requestAnimationFrame(loopTwin);
-    tt+=.016; controls.update();
-    inc.scale.setScalar(1+Math.sin(tt*3.5)*.2);
-    const rExp=(r,ph)=>{ const s=1+((tt*.6+ph)%3)*1.6; r.scale.set(s,s,1); r.material.opacity=Math.max(0,.5-((tt*.6+ph)%3)*.17); };
-    rExp(ring,0); rExp(ring2,1.5);
-    incPt.intensity=.8+Math.sin(tt*2.5)*.4;
-    dAngle+=.28*.016;
-    drn.position.x=Math.cos(dAngle)*16; drn.position.z=Math.sin(dAngle)*16;
-    drn.position.y=10+Math.sin(tt*1.4)*.4; drn.rotation.y+=.02;
-    vT=(vT+.002)%1;
-    const vp=vCurve.getPoint(vT); vip.position.copy(vp);
-    vip.scale.setScalar(1+Math.sin(tt*2.5)*.1);
-    renderer.render(scene, camera);
-  }
-  loopTwin();
-
-  function resizeTwin() {
-    const w=el.clientWidth, h=el.clientHeight;
-    if(w>0&&h>0){ camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
-  }
-  window.addEventListener('resize', resizeTwin);
-  window.camZ = f => camera.position.multiplyScalar(f);
-  window.camRst = () => { camera.position.set(38,32,38); controls.target.set(0,4,0); };
+  return cams;
 })();
 
-// ── MAIN ANIMATION LOOP ───────────────────────────────────────
-function mainLoop() {
-  requestAnimationFrame(mainLoop);
-  feeds.forEach(({feed}) => { feed.update(); feed.draw(); });
+// ═══════════════════════════════════════════════════════════
+// STATE — all declared before any function calls (no TDZ)
+// ═══════════════════════════════════════════════════════════
+var currentFilter='ALL';
+var currentPage=0;
+var PAGE_SIZE=16;
+var pageItems=[];
+var modalState={open:false,cam:null};
+var animT=0;
+
+// ═══════════════════════════════════════════════════════════
+// DRAW FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+function drawVignette(ctx,W,H){
+  var vg=ctx.createRadialGradient(W/2,H/2,H*.12,W/2,H/2,H*.7);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.6)');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
 }
-mainLoop();
-
-// ── CLOCK ─────────────────────────────────────────────────────
-function updateClock() {
-  const now = new Date().toTimeString().slice(0,8);
-  document.getElementById('clockFull').textContent = now + ' GST';
-  document.querySelectorAll('.clock').forEach(el => el.textContent = now);
+function drawOffline(ctx,W,H,id){
+  for(var i=0;i<H;i+=2){ctx.fillStyle='rgba('+(Math.random()*14|0)+','+(Math.random()*14|0)+','+(Math.random()*14|0)+',.98)';ctx.fillRect(0,i,W,2);}
+  ctx.fillStyle='rgba(255,255,255,.28)';ctx.textAlign='center';
+  ctx.font='bold '+(W*.08)+'px JetBrains Mono,monospace';ctx.fillText('NO SIGNAL',W/2,H/2);
+  ctx.font=(W*.05)+'px JetBrains Mono,monospace';ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillText(id,W/2,H/2+W*.065);
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-// ── VISITOR COUNTER ───────────────────────────────────────────
-let vc=94847;
-setInterval(()=>{ vc+=Math.floor(Math.random()*5)-1; document.getElementById('vcnt').textContent=vc.toLocaleString(); },3000);
+function drawANPR(ctx,cs,W,H,t){
+  ctx.fillStyle='rgba(2,8,4,1)';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(20,60,25,.4)';ctx.lineWidth=.5;
+  for(var i=0;i<=6;i++){ctx.beginPath();ctx.moveTo(0,H*(i/6));ctx.lineTo(W,H*(i/6));ctx.stroke();}
+  ctx.strokeStyle='rgba(200,190,100,.15)';ctx.lineWidth=1;ctx.setLineDash([H*.05,H*.08]);
+  ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
+  cs.ents.forEach(function(e,i){
+    e.x+=e.vx*.4;e.y+=e.vy*.25;
+    if(e.x<.08||e.x>.92)e.vx*=-1;if(e.y<.1||e.y>.88)e.vy*=-1;
+    var cx=e.x*W,cy=e.y*H,cw=e.sz*W*2.4,ch=e.sz*H*1.2;
+    var cc=i%3===0?'rgba(80,110,200,.7)':i%3===1?'rgba(180,50,50,.7)':'rgba(140,140,140,.65)';
+    ctx.fillStyle=cc;ctx.beginPath();
+    var r=3;ctx.moveTo(cx-cw/2+r,cy-ch/2);ctx.lineTo(cx+cw/2-r,cy-ch/2);ctx.arcTo(cx+cw/2,cy-ch/2,cx+cw/2,cy-ch/2+r,r);ctx.lineTo(cx+cw/2,cy+ch/2-r);ctx.arcTo(cx+cw/2,cy+ch/2,cx+cw/2-r,cy+ch/2,r);ctx.lineTo(cx-cw/2+r,cy+ch/2);ctx.arcTo(cx-cw/2,cy+ch/2,cx-cw/2,cy+ch/2-r,r);ctx.lineTo(cx-cw/2,cy-ch/2+r);ctx.arcTo(cx-cw/2,cy-ch/2,cx-cw/2+r,cy-ch/2,r);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(180,220,255,.18)';ctx.fillRect(cx-cw*.28,cy-ch*.45,cw*.56,ch*.3);
+    var plx=cx-cw*.3,ply=cy+ch*.1,plw=cw*.6,plh=ch*.32;
+    if(Math.sin(t*4+i)>.2){
+      ctx.strokeStyle='rgba(56,217,106,.85)';ctx.lineWidth=1.2;ctx.setLineDash([3,2]);ctx.strokeRect(plx,ply,plw,plh);ctx.setLineDash([]);
+      ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(plx,ply,plw,plh);
+      ctx.fillStyle='rgba(56,217,106,.9)';ctx.textAlign='center';ctx.font='bold '+(plh*.65)+'px JetBrains Mono,monospace';ctx.fillText(e.plateN,cx,ply+plh*.78);
+    }
+  });
+  var sw=(t*40)%H,sg=ctx.createLinearGradient(0,sw-4,0,sw+4);
+  sg.addColorStop(0,'rgba(56,217,106,0)');sg.addColorStop(.5,'rgba(56,217,106,.2)');sg.addColorStop(1,'rgba(56,217,106,0)');
+  ctx.fillStyle=sg;ctx.fillRect(0,sw-4,W,8);
+  if(cs.st==='CRITICAL'||cs.st==='MOTION')drawScanAlert(ctx,W,H,t,cs.st);
+  drawVignette(ctx,W,H);
+}
 
-window.addEventListener('resize', () => {
-  setTimeout(resizeFeeds, 50);
-  const mcvs=document.getElementById('modalCvs'), mEl=document.getElementById('cmVideo');
-  if(mcvs&&mEl){ mcvs.width=mEl.clientWidth; mcvs.height=mEl.clientHeight; }
-});
+function drawFACE(ctx,cs,W,H,t){
+  ctx.fillStyle='rgba(3,8,20,1)';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(15,40,70,.35)';ctx.lineWidth=.4;
+  for(var i=0;i<6;i++){var y=H*(.45+i*.1);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();var sx=W/2+(i/5-.5)*W*1.6;ctx.beginPath();ctx.moveTo(sx,H);ctx.lineTo(W/2+(i/5-.5)*W*.2,H*.45);ctx.stroke();}
+  ctx.strokeStyle='rgba(20,50,90,.5)';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(0,H*.45);ctx.lineTo(W,H*.45);ctx.stroke();
+  cs.ents.forEach(function(e,i){
+    e.x+=e.vx;e.y+=e.vy*.5;
+    if(e.x<.08||e.x>.92)e.vx*=-1;if(e.y<.4||e.y>.88)e.vy*=-1;
+    var px=e.x*W,py=e.y*H,bw=e.sz*W,bh=e.sz*H*2.5;
+    var alpha=.7+Math.sin(t*1.1+e.phase)*.12;
+    ctx.fillStyle='rgba(100,155,210,'+alpha+')';
+    ctx.fillRect(px-bw/2,py-bh*.4,bw,bh*.85);
+    ctx.beginPath();ctx.arc(px,py-bh*.4-bw*.6,bw*.7,0,Math.PI*2);ctx.fill();
+    var fx=px-bw*.9,fy=py-bh*.4-bw*1.4,fw=bw*1.8,fh=bw*1.6;
+    var matched=i%3!==0;
+    var fc=matched?'rgba(56,217,106,':'rgba(214,64,64,';
+    var fo=.6+Math.sin(t*3+i)*.25;
+    ctx.strokeStyle=fc+fo+')';ctx.lineWidth=1;ctx.setLineDash([3,2]);ctx.strokeRect(fx,fy,fw,fh);ctx.setLineDash([]);
+    ctx.lineWidth=1.5;ctx.strokeStyle=fc+'1)';
+    [[fx,fy,1,1],[fx+fw,fy,-1,1],[fx,fy+fh,1,-1],[fx+fw,fy+fh,-1,-1]].forEach(function(b){ctx.beginPath();ctx.moveTo(b[0],b[1]+b[3]*5);ctx.lineTo(b[0],b[1]);ctx.lineTo(b[0]+b[2]*5,b[1]);ctx.stroke();});
+    ctx.fillStyle=fc+'.85)';ctx.font=(W*.045)+'px JetBrains Mono,monospace';ctx.textAlign='left';
+    ctx.fillText(matched?(e.conf*100).toFixed(0)+'%':'UNKNWN',fx,fy-2);
+  });
+  if(cs.st==='CRITICAL'||cs.st==='MOTION')drawScanAlert(ctx,W,H,t,cs.st);
+  drawVignette(ctx,W,H);
+}
+
+function drawTHERM(ctx,cs,W,H,t){
+  ctx.fillStyle='rgba(0,2,12,1)';ctx.fillRect(0,0,W,H);
+  var ag=ctx.createLinearGradient(0,0,W,H);ag.addColorStop(0,'rgba(0,10,40,.8)');ag.addColorStop(1,'rgba(0,2,8,.8)');
+  ctx.fillStyle=ag;ctx.fillRect(0,0,W,H);
+  cs.ents.forEach(function(e){
+    e.x+=e.vx*.3;e.y+=e.vy*.3;
+    if(e.x<.1||e.x>.9)e.vx*=-1;if(e.y<.15||e.y>.9)e.vy*=-1;
+    var hx=e.x*W,hy=e.y*H,hr=e.sz*W*3.5;
+    var hg=ctx.createRadialGradient(hx,hy,0,hx,hy,hr);
+    hg.addColorStop(0,'rgba(255,255,100,.55)');hg.addColorStop(.3,'rgba(255,120,0,.4)');hg.addColorStop(.65,'rgba(180,20,0,.25)');hg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=hg;ctx.fillRect(hx-hr,hy-hr,hr*2,hr*2);
+    var bh=e.sz*H*2.2,bw=e.sz*W;
+    var bg=ctx.createLinearGradient(hx,hy-bh*.6,hx,hy+bh*.4);
+    bg.addColorStop(0,'rgba(255,220,80,.85)');bg.addColorStop(.5,'rgba(255,140,20,.75)');bg.addColorStop(1,'rgba(200,60,0,.6)');
+    ctx.fillStyle=bg;ctx.fillRect(hx-bw/2,hy-bh*.5,bw,bh*.8);
+    ctx.beginPath();ctx.arc(hx,hy-bh*.5-bw*.5,bw*.75,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,240,100,.8)';ctx.textAlign='center';ctx.font=(W*.045)+'px JetBrains Mono,monospace';ctx.fillText(e.temp.toFixed(1)+'°C',hx,hy-bh*.5-bw*1.3);
+  });
+  var sx=W*.88,sy=H*.15,sw=W*.04,sh=H*.6;
+  var scG=ctx.createLinearGradient(0,sy,0,sy+sh);
+  scG.addColorStop(0,'rgba(255,255,255,1)');scG.addColorStop(.2,'rgba(255,200,50,1)');scG.addColorStop(.5,'rgba(255,80,0,1)');scG.addColorStop(.75,'rgba(180,0,100,1)');scG.addColorStop(1,'rgba(0,0,60,1)');
+  ctx.fillStyle=scG;ctx.fillRect(sx,sy,sw,sh);
+  ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=.4;ctx.strokeRect(sx,sy,sw,sh);
+  ctx.fillStyle='rgba(255,255,255,.5)';ctx.font=(W*.038)+'px JetBrains Mono,monospace';ctx.textAlign='left';
+  ['42°','36°','30°','24°','18°'].forEach(function(l,i){ctx.fillText(l,sx+sw+2,sy+sh*(i/4)+3);});
+  if(cs.st==='CRITICAL')drawScanAlert(ctx,W,H,t,cs.st);
+  drawVignette(ctx,W,H);
+}
+
+function drawVA(ctx,cs,W,H,t){
+  // Parking / gate cameras → vehicle analytics view
+  var isParking=cs.zone&&(/parking|gate|loading|ramp/i.test(cs.zone));
+  if(isParking){drawParkingVA(ctx,cs,W,H,t);return;}
+  ctx.fillStyle='rgba(2,6,18,1)';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(8,40,65,.22)';ctx.lineWidth=.4;
+  for(var i=0;i<=8;i++){var p=i/8;ctx.beginPath();ctx.moveTo(0,H*(0.45+p*.55));ctx.lineTo(W,H*(0.45+p*.55));ctx.stroke();var sx=W*.5+(p-.5)*W*1.4,tx=W*.5+(p-.5)*W*.15;ctx.beginPath();ctx.moveTo(sx,H);ctx.lineTo(tx,H*.38);ctx.stroke();}
+  cs.ents.forEach(function(e){
+    e.x+=e.vx;e.y+=e.vy;
+    if(e.x<.07||e.x>.93)e.vx*=-1;if(e.y<.32||e.y>.88)e.vy*=-1;
+    var ex=e.x*W,ey=e.y*H,ew=e.sz*W,eh=e.sz*H*2.2;
+    var alpha=.65+Math.sin(t*1.2+e.phase)*.12;
+    ctx.fillStyle='rgba(110,180,220,'+alpha+')';
+    ctx.fillRect(ex-ew/2,ey-eh/2,ew,eh);ctx.beginPath();ctx.arc(ex,ey-eh/2-ew*.5,ew*.55,0,Math.PI*2);ctx.fill();
+  });
+  if(cs.ents.length&&(cs.st==='CRITICAL'||cs.st==='MOTION')){
+    var bxs=cs.ents.map(function(e){return{x:e.x*W-e.sz*W/2-2,y:e.y*H-e.sz*H*2.2/2-e.sz*W-2,x2:e.x*W+e.sz*W/2+2,y2:e.y*H+e.sz*H*1.1+e.sz*W+2};});
+    var bx=Math.min.apply(null,bxs.map(function(b){return b.x;})),by=Math.min.apply(null,bxs.map(function(b){return b.y;}));
+    var bx2=Math.max.apply(null,bxs.map(function(b){return b.x2;})),by2=Math.max.apply(null,bxs.map(function(b){return b.y2;}));
+    var bc=cs.st==='CRITICAL'?'rgba(214,64,64,':'rgba(200,146,10,';
+    var opa=.5+Math.sin(t*5)*.3;
+    ctx.strokeStyle=bc+opa+')';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.strokeRect(bx,by,bx2-bx,by2-by);ctx.setLineDash([]);
+  }
+  var occ=cs.ents.length;
+  var dc=occ>=5?'rgba(214,64,64,.85)':occ>=3?'rgba(200,146,10,.85)':'rgba(56,217,106,.85)';
+  ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,H*.82,W*.32,H*.18);
+  ctx.fillStyle=dc;ctx.font='bold '+(W*.045)+'px JetBrains Mono,monospace';ctx.textAlign='left';ctx.fillText('OCC: '+occ,4,H*.94);
+  if(cs.st==='CRITICAL')drawScanAlert(ctx,W,H,t,cs.st);
+  drawVignette(ctx,W,H);
+}
+// ── PARKING CAMERA — Vehicle Analytics HUD (SIRA §17.5.6) ──
+var VA_CAR_DEFS=[
+  {lbl:'CAR',   col:'rgba(56,217,106,'},
+  {lbl:'SUV',   col:'rgba(100,255,218,'},
+  {lbl:'TRUCK', col:'rgba(255,184,108,'},
+  {lbl:'TAXI',  col:'rgba(241,250,140,'},
+  {lbl:'COACH', col:'rgba(189,147,249,'}
+];
+function _drawCar(ctx,cx,cy,w,h,colBase,alpha,dir){
+  ctx.save();ctx.translate(cx,cy);if(dir<0)ctx.scale(-1,1);
+  ctx.fillStyle=colBase+(alpha*.9)+')';ctx.fillRect(-w/2,-h/2,w,h);
+  ctx.fillStyle=colBase+(alpha*.5)+')';ctx.fillRect(-w*.28,-h/2,w*.56,-h*.4);
+  ctx.fillStyle='rgba(150,210,255,.15)';ctx.fillRect(-w*.22,-h/2+1,w*.44,-h*.32);
+  var hx=w/2-w*.1;
+  ctx.fillStyle='rgba(255,248,200,.95)';ctx.shadowColor='rgba(255,240,150,.7)';ctx.shadowBlur=5;
+  ctx.fillRect(hx-w*.06,-h*.2,w*.12,h*.14);ctx.shadowBlur=0;
+  ctx.restore();
+}
+function drawParkingVA(ctx,cs,W,H,t){
+  ctx.fillStyle='rgba(10,16,26,1)';ctx.fillRect(0,0,W,H);
+  // Perspective grid
+  ctx.strokeStyle='rgba(20,50,80,.3)';ctx.lineWidth=.5;
+  for(var i=0;i<=10;i++){var p=i/10;var sx=W*.5+(p-.5)*W*2.4,tx=W*.5+(p-.5)*W*.1;ctx.beginPath();ctx.moveTo(sx,H);ctx.lineTo(tx,H*.2);ctx.stroke();}
+  for(var j=0;j<=5;j++){var yp=H*.2+j*(H*.8/5);ctx.beginPath();ctx.moveTo(0,yp);ctx.lineTo(W,yp);ctx.stroke();}
+  // Dashed lane lines
+  ctx.strokeStyle='rgba(60,100,140,.3)';ctx.lineWidth=.8;ctx.setLineDash([H*.06,H*.04]);
+  [.33,.67].forEach(function(lx){ctx.beginPath();ctx.moveTo(W*.5+(lx-.5)*W*2.4,H);ctx.lineTo(W*.5+(lx-.5)*W*.1,H*.2);ctx.stroke();});
+  ctx.setLineDash([]);
+  // Static parked vehicles (derived from ents)
+  if(!cs._pkv){
+    cs._pkv=[];
+    var vt=['CAR','CAR','SUV','TAXI','TRUCK'];
+    cs.ents.slice(0,5).forEach(function(e,vi){cs._pkv.push({x:e.x,y:e.y,sz:e.sz,t:vt[vi%vt.length],ph:e.phase});});
+  }
+  cs._pkv.forEach(function(v){
+    var px=v.x*W,py=v.y*H,pw=v.sz*W*3.2,ph=v.sz*H*1.6;
+    var ci=VA_CAR_DEFS.findIndex(function(c){return c.lbl===v.t;});if(ci<0)ci=0;
+    var col=VA_CAR_DEFS[ci].col;var al=.45+Math.sin(t*.4+v.ph)*.07;
+    _drawCar(ctx,px,py,pw,ph,col,al,1);
+    ctx.strokeStyle=col+(al*.6)+')';ctx.lineWidth=.6;ctx.setLineDash([3,2]);
+    ctx.strokeRect(px-pw/2-2,py-ph/2-2,pw+4,ph+4);ctx.setLineDash([]);
+    // type label above box
+    ctx.fillStyle=col+(al+.15)+')';ctx.font=(W*.03)+'px JetBrains Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(v.t,px,py-ph/2-4);
+  });
+  // Moving vehicle (scans across scene, loops)
+  var mvx=((t*.08+.1)%1.25)-.12;var mvy=.42+mvx*.28;
+  if(mvx>.01&&mvx<1.02){
+    var mTypeIdx=Math.floor(t*.18)%VA_CAR_DEFS.length;
+    var mcol=VA_CAR_DEFS[mTypeIdx].col;
+    var mw=W*.13,mh=H*.09;
+    _drawCar(ctx,mvx*W,mvy*H,mw,mh,mcol,.88,1);
+    var fopa=.55+Math.sin(t*6)*.28;
+    ctx.strokeStyle=mcol+fopa+')';ctx.lineWidth=1.1;ctx.setLineDash([4,2]);
+    ctx.strokeRect(mvx*W-mw/2-3,mvy*H-mh/2-3,mw+6,mh+6);ctx.setLineDash([]);
+    // Vehicle class badge (top-left of bbox)
+    var vLbl=VA_CAR_DEFS[mTypeIdx].lbl;
+    var bx=mvx*W-mw/2-3,by=mvy*H-mh/2-14;
+    ctx.fillStyle='rgba(0,0,0,.78)';ctx.fillRect(bx,by,vLbl.length*6+8,12);
+    ctx.fillStyle=mcol+'1)';ctx.font='bold '+(W*.028)+'px JetBrains Mono,monospace';ctx.textAlign='left';
+    ctx.fillText(vLbl,bx+3,by+9);
+    // Dwell time (bottom-right of bbox)
+    var dm=Math.floor((t*.6)%58)+1;var ds=dm<10?'00:0'+dm:'00:'+dm;
+    ctx.fillStyle='rgba(0,0,0,.72)';ctx.fillRect(mvx*W+mw/2-22,mvy*H+mh/2+2,42,11);
+    ctx.fillStyle='rgba(100,255,218,.85)';ctx.font=(W*.024)+'px JetBrains Mono,monospace';ctx.textAlign='left';
+    ctx.fillText(ds,mvx*W+mw/2-20,mvy*H+mh/2+10);
+  }
+  // Wrong-way flash (8s cycle, 1s window)
+  var wwPhase=(t%8);
+  if(typeof VA_STATE!=='undefined'&&VA_STATE.wrongWay>0&&wwPhase<1.2){
+    var wAlpha=(.35+Math.sin(t*5)*.28);
+    ctx.fillStyle='rgba(214,64,64,'+wAlpha+')';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(255,255,255,.95)';ctx.font='bold '+(W*.072)+'px Arial,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('WRONG WAY',W/2,H/2);
+    ctx.font=(W*.036)+'px JetBrains Mono,monospace';ctx.fillStyle='rgba(255,220,220,.75)';
+    ctx.fillText(VA_STATE.wrongWayTime+' · '+VA_STATE.wrongWayGate,W/2,H/2+H*.14);
+    ctx.textBaseline='alphabetic';
+  }
+  // Speed violation banner (12s cycle, 2s window, different offset)
+  var spPhase=(t+6)%12;
+  if(typeof VA_STATE!=='undefined'&&VA_STATE.speedViolations>0&&spPhase<2){
+    ctx.fillStyle='rgba(200,146,10,.88)';ctx.fillRect(0,H*.07,W,H*.14);
+    ctx.fillStyle='rgba(0,0,0,.92)';ctx.font='bold '+(W*.048)+'px Arial,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('SPEED: 38 km/h  ▲ LIMIT',W/2,H*.07+H*.07);
+    ctx.textBaseline='alphabetic';
+  }
+  // Bottom HUD
+  var vCnt=typeof VA_STATE!=='undefined'?VA_STATE.types[0].cnt:148;
+  ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,H*.82,W,H*.18);
+  ctx.fillStyle='rgba(100,255,218,.88)';ctx.font='bold '+(W*.042)+'px JetBrains Mono,monospace';
+  ctx.textAlign='left';ctx.fillText('VA  '+vCnt+' VEH',4,H*.93);
+  ctx.fillStyle='rgba(150,200,255,.5)';ctx.font=(W*.03)+'px JetBrains Mono,monospace';
+  ctx.fillText('SIRA §§17.5.6',4,H*.995);
+  if(cs.st==='CRITICAL')drawScanAlert(ctx,W,H,t,cs.st);
+  drawVignette(ctx,W,H);
+}
+
+function drawPTZ(ctx,cs,W,H,t){
+  ctx.fillStyle='rgba(2,5,15,1)';ctx.fillRect(0,0,W,H);
+  var skyG=ctx.createLinearGradient(0,0,0,H*.4);skyG.addColorStop(0,'rgba(5,15,40,.8)');skyG.addColorStop(1,'rgba(2,5,15,0)');
+  ctx.fillStyle=skyG;ctx.fillRect(0,0,W,H*.4);
+  ctx.strokeStyle='rgba(10,40,70,.2)';ctx.lineWidth=.4;
+  for(var i=0;i<=10;i++){var p=i/10;ctx.beginPath();ctx.moveTo(0,H*(0.5+p*.5));ctx.lineTo(W,H*(0.5+p*.5));ctx.stroke();var sx=W*.5+(p-.5)*W*1.8,tx=W*.5+(p-.5)*W*.08;ctx.beginPath();ctx.moveTo(sx,H);ctx.lineTo(tx,H*.5);ctx.stroke();}
+  ctx.strokeStyle='rgba(10,176,204,.15)';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(0,H*.5);ctx.lineTo(W,H*.5);ctx.stroke();
+  cs.ents.forEach(function(e){
+    e.x+=e.vx;e.y+=e.vy*.4;
+    if(e.x<.05||e.x>.95)e.vx*=-1;if(e.y<.45||e.y>.9)e.vy*=-1;
+    var px=e.x*W,py=e.y*H,pw=e.sz*W,ph=e.sz*H*2;
+    ctx.fillStyle='rgba(100,160,200,.7)';ctx.fillRect(px-pw/2,py-ph*.5,pw,ph*.8);
+    ctx.beginPath();ctx.arc(px,py-ph*.5-pw*.5,pw*.6,0,Math.PI*2);ctx.fill();
+  });
+  var cx2=W/2,cy2=H/2;
+  ctx.strokeStyle='rgba(10,176,204,.5)';ctx.lineWidth=.8;
+  ctx.beginPath();ctx.moveTo(cx2-W*.18,cy2);ctx.lineTo(cx2-8,cy2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx2+8,cy2);ctx.lineTo(cx2+W*.18,cy2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx2,cy2-H*.18);ctx.lineTo(cx2,cy2-8);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx2,cy2+8);ctx.lineTo(cx2,cy2+H*.18);ctx.stroke();
+  ctx.strokeStyle='rgba(10,176,204,.2)';
+  [H*.06,H*.12,H*.2].forEach(function(r){ctx.beginPath();ctx.arc(cx2,cy2,r,0,Math.PI*2);ctx.stroke();});
+  ctx.strokeStyle='rgba(10,176,204,.55)';ctx.lineWidth=1.2;
+  [[3,3,1,1],[W-3,3,-1,1],[3,H-3,1,-1],[W-3,H-3,-1,-1]].forEach(function(b){ctx.beginPath();ctx.moveTo(b[0],b[1]+b[3]*10);ctx.lineTo(b[0],b[1]);ctx.lineTo(b[0]+b[2]*10,b[1]);ctx.stroke();});
+  if(cs.ents.length>0){
+    var te=cs.ents[0],tx=te.x*W,ty=te.y*H,tw=te.sz*W*2.8,th=te.sz*H*3;
+    var to=.5+Math.sin(t*4)*.35;
+    ctx.strokeStyle='rgba(10,176,204,'+to+')';ctx.lineWidth=1.2;ctx.setLineDash([5,3]);ctx.strokeRect(tx-tw/2,ty-th*.6,tw,th);ctx.setLineDash([]);
+    ctx.lineWidth=1.8;ctx.strokeStyle='rgba(10,176,204,1)';
+    [[tx-tw/2,ty-th*.6,1,1],[tx+tw/2,ty-th*.6,-1,1],[tx-tw/2,ty+th*.4,1,-1],[tx+tw/2,ty+th*.4,-1,-1]].forEach(function(b){ctx.beginPath();ctx.moveTo(b[0],b[1]+b[3]*6);ctx.lineTo(b[0],b[1]);ctx.lineTo(b[0]+b[2]*6,b[1]);ctx.stroke();});
+    ctx.fillStyle='rgba(10,176,204,.85)';ctx.font=(W*.043)+'px JetBrains Mono,monospace';ctx.textAlign='left';ctx.fillText('TRACKING',tx-tw/2,ty-th*.6-2);
+  }
+  var panA=(Math.sin(t*.3)*45).toFixed(0),tiltA=(Math.sin(t*.2)*15).toFixed(0),zoomL=(1.5+Math.sin(t*.1)*.5).toFixed(1);
+  ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,H*.82,W,H*.18);
+  ctx.fillStyle='rgba(10,176,204,.65)';ctx.font=(W*.042)+'px JetBrains Mono,monospace';ctx.textAlign='left';ctx.fillText('PAN '+panA+'° TILT '+tiltA+'° ×'+zoomL,4,H*.94);
+  if(cs.st==='CRITICAL'||cs.st==='MOTION')drawScanAlert(ctx,W,H,t,cs.st);
+  drawVignette(ctx,W,H);
+}
+
+function drawScanAlert(ctx,W,H,t,st){
+  if(st==='CRITICAL'){var sy=((t*55)%H),sg=ctx.createLinearGradient(0,sy-5,0,sy+5);sg.addColorStop(0,'rgba(214,64,64,0)');sg.addColorStop(.5,'rgba(214,64,64,.4)');sg.addColorStop(1,'rgba(214,64,64,0)');ctx.fillStyle=sg;ctx.fillRect(0,sy-5,W,10);}
+}
+
+function drawCam(canvas,cs,t){
+  var W=canvas.width,H=canvas.height;
+  if(W<4||H<4)return;
+  var ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  if(cs.st==='OFFLINE'){drawOffline(ctx,W,H,cs.id);return;}
+  if(cs.type==='ANPR')drawANPR(ctx,cs,W,H,t);
+  else if(cs.type==='FACE')drawFACE(ctx,cs,W,H,t);
+  else if(cs.type==='THERM')drawTHERM(ctx,cs,W,H,t);
+  else if(cs.type==='PTZ')drawPTZ(ctx,cs,W,H,t);
+  else drawVA(ctx,cs,W,H,t);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ZONE COUNT BADGES
+// ═══════════════════════════════════════════════════════════
+(function(){
+  ['ALL','ALERT','B1','GF','L1','L2','L3','L4','ROOF','EXT'].forEach(function(z){
+    var el=document.getElementById('cnt-'+z);if(!el)return;
+    var n;
+    if(z==='ALL')n=ALL_CAMS.length;
+    else if(z==='ALERT')n=ALL_CAMS.filter(function(c){return c.st==='CRITICAL'||c.st==='MOTION';}).length;
+    else n=ALL_CAMS.filter(function(c){return c.floor===z;}).length;
+    el.textContent=n?'('+n+')':'';
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════
+// CAMERA GRID + PAGINATION
+// ═══════════════════════════════════════════════════════════
+function getFiltered(){
+  var cams;
+  if(currentFilter==='ALL')cams=ALL_CAMS;
+  else if(currentFilter==='ALERT')cams=ALL_CAMS.filter(function(c){return c.st==='CRITICAL'||c.st==='MOTION';});
+  else cams=ALL_CAMS.filter(function(c){return c.floor===currentFilter;});
+  return [].concat(cams.filter(function(c){return c.st==='CRITICAL';}),cams.filter(function(c){return c.st==='MOTION';}),cams.filter(function(c){return c.st!=='CRITICAL'&&c.st!=='MOTION';}));
+}
+
+function rebuildVisibleCams(){
+  var filtered=getFiltered();
+  var totalPages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  if(currentPage>=totalPages)currentPage=0;
+  var start=currentPage*PAGE_SIZE;
+  pageItems=filtered.slice(start,start+PAGE_SIZE);
+
+  var grid=document.getElementById('camGrid');
+  var n=pageItems.length;
+  var cols=n<=2?2:n<=4?2:n<=6?3:n<=9?3:4;
+  var rows=Math.ceil(n/cols);
+  var cellH=Math.max(80,Math.floor((window.innerHeight-44-22-36-28-108)/rows));
+  grid.style.gridTemplateColumns='repeat('+cols+',1fr)';
+  grid.style.gridAutoRows=cellH+'px';
+
+  var crit=filtered.filter(function(c){return c.st==='CRITICAL';}).length;
+  var mot=filtered.filter(function(c){return c.st==='MOTION';}).length;
+  var off=filtered.filter(function(c){return c.st==='OFFLINE';}).length;
+  var ch=filtered.length+' cameras';
+  if(crit)ch+=' · <span style="color:var(--red)">'+crit+' CRITICAL</span>';
+  if(mot)ch+=' · <span style="color:var(--amber)">'+mot+' MOTION</span>';
+  if(off)ch+=' · <span style="color:var(--txt2)">'+off+' OFFLINE</span>';
+  document.getElementById('camCount').innerHTML=ch;
+
+  var fd=FLOOR_DEFS.find(function(f){return f.f===currentFilter;});
+  var flbl=currentFilter==='ALL'?'All Floors':currentFilter==='ALERT'?'Alert Cameras':fd?fd.label:currentFilter;
+  document.getElementById('pagInfo').textContent=(currentPage+1)+' / '+totalPages;
+  document.getElementById('pagLabel').textContent='Showing '+(start+1)+'–'+Math.min(start+PAGE_SIZE,filtered.length)+' of '+filtered.length+' · '+flbl;
+  document.getElementById('pagPrev').disabled=currentPage===0;
+  document.getElementById('pagNext').disabled=currentPage>=totalPages-1;
+
+  var online=ALL_CAMS.filter(function(c){return c.st!=='OFFLINE';}).length;
+  document.getElementById('hdr-cams').textContent=online+'/'+ALL_CAMS.length;
+
+  var stBadge={CRITICAL:'color:#d64040;border-color:rgba(214,64,64,.5);background:rgba(214,64,64,.12)',MOTION:'color:#c8920a;border-color:rgba(200,146,10,.4);background:rgba(200,146,10,.08)',CLEAR:'color:rgba(56,217,106,.6);border-color:rgba(56,217,106,.2);background:rgba(56,217,106,.04)',LOCKED:'color:#0ab0cc;border-color:rgba(10,176,204,.3);background:rgba(10,176,204,.06)',OFFLINE:'color:#6a90b0;border-color:rgba(106,144,176,.25);background:rgba(106,144,176,.04)'};
+  var typeCol={ANPR:'var(--green)',FACE:'var(--blue)',THERM:'var(--amber)',VA:'var(--teal)',PTZ:'var(--purple)'};
+
+  grid.innerHTML='';
+  pageItems.forEach(function(cs,i){
+    var cell=document.createElement('div');
+    cell.className='cam-cell st-'+cs.st;
+    cell.id='cc'+i;
+    cell.style.height=cellH+'px';
+    (function(cam){cell.onclick=function(){openModal(cam);};})(cs);
+    var recDot=cs.st!=='OFFLINE'?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--red);animation:glow .9s ease infinite;flex-shrink:0;margin-top:2px"></span>':'';
+    cell.innerHTML='<canvas id="cnv'+i+'" width="2" height="2"></canvas><div class="cam-scanline"></div><div class="cam-hud-top"><div style="display:flex;align-items:flex-start;gap:4px;min-width:0">'+recDot+'<div style="min-width:0"><div class="cam-id">'+cs.id+'</div><div class="cam-floor-type" style="color:'+(typeCol[cs.type]||'rgba(255,255,255,.4)')+'">'+cs.type+' &middot; '+cs.floor+'</div></div></div><div class="cam-st-badge" style="'+(stBadge[cs.st]||'')+'">'+cs.st+'</div></div><div class="cam-hud-bot"><div class="cam-zone-lbl">'+cs.zone.replace(' · '+cs.floor,'')+'</div><div class="cam-ts" id="cts'+i+'"></div></div>';
+    grid.appendChild(cell);
+  });
+}
+
+window.filterCam=function(f,btn){currentFilter=f;currentPage=0;document.querySelectorAll('.cf-btn').forEach(function(b){b.classList.remove('act');});btn.classList.add('act');rebuildVisibleCams();};
+window.changePage=function(d){currentPage+=d;rebuildVisibleCams();};
+window.addEventListener('resize',function(){rebuildVisibleCams();});
+
+rebuildVisibleCams();
+
+// ═══════════════════════════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════════════════════════
+function animCams(){
+  requestAnimationFrame(animCams);
+  animT+=.016;
+  pageItems.forEach(function(cs,i){
+    var cnv=document.getElementById('cnv'+i);if(!cnv)return;
+    var cell=document.getElementById('cc'+i);if(!cell)return;
+    var w=cell.offsetWidth||cell.clientWidth;
+    var h=cell.offsetHeight||cell.clientHeight||parseInt(cell.style.height)||120;
+    if(w>0&&h>0&&(cnv.width!==w||cnv.height!==h)){cnv.width=w;cnv.height=h;}
+    if(cnv.width>2)drawCam(cnv,cs,animT);
+    var ts=document.getElementById('cts'+i);if(ts)ts.textContent=new Date().toTimeString().slice(0,8);
+  });
+  if(modalState.open&&modalState.cam){
+    var mc=document.getElementById('modalCanvas'),wrap=document.getElementById('modalCanvasWrap');
+    if(mc&&wrap){var mw=wrap.clientWidth||600,mh=wrap.clientHeight||360;if(mc.width!==mw||mc.height!==mh){mc.width=mw;mc.height=mh;}if(mc.width>2)drawCam(mc,modalState.cam,animT);}
+  }
+}
+animCams();
+
+// ═══════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════
+var AI_LBLS={ANPR:['Plate reads (1h)','Denied access','Avg scan time','Active lanes'],FACE:['Faces detected','Unmatched','Avg confidence','VIP alerts'],THERM:['Max temp','Alert threshold','Hotspot zones','Avg body temp'],VA:['Occupancy','Peak (1h)','Avg dwell','Crowd density'],PTZ:['Target track','Pan angle','Tilt angle','Zoom level']};
+
+function getAIVals(cs){
+  switch(cs.type){
+    case 'ANPR':return[(12+Math.random()*120|0)+' events',(Math.random()*5|0)+' vehicles',(0.3+Math.random()*.2).toFixed(2)+'s',(1+Math.random()*3|0)+' lanes'];
+    case 'FACE':return[cs.ents.length+' faces',(Math.random()*4|0)+' unknown',(87+Math.random()*12).toFixed(1)+'%',cs.st==='CRITICAL'?'1 ALERT':'0 alerts'];
+    case 'THERM':var mt=cs.ents.length?Math.max.apply(null,cs.ents.map(function(e){return e.temp;})).toFixed(1)+'°C':'—';return[mt,'38.0°C',cs.ents.length+' active',cs.ents.length?(cs.ents.reduce(function(a,e){return a+e.temp;},0)/cs.ents.length).toFixed(1)+'°C':'—'];
+    case 'VA':return[cs.ents.length+' persons',(cs.ents.length+Math.random()*8|0)+' persons',(1.5+Math.random()*8).toFixed(1)+' min',cs.ents.length>=5?'HIGH':cs.ents.length>=3?'MOD':'LOW'];
+    case 'PTZ':return[cs.ents.length?'ACTIVE':'STANDBY',(Math.sin(animT*.3)*45).toFixed(0)+'°',(Math.sin(animT*.2)*15).toFixed(0)+'°','×'+(1.5+Math.sin(animT*.1)*.5).toFixed(1)];
+    default:return['—','—','—','—'];
+  }
+}
+
+function genEvts(cs){
+  var now=new Date();
+  var pool={ANPR:['Plate read cleared','ANPR scan event','Vehicle denied','Blacklist check OK','ANPR lane processed'],FACE:['Face matched: STAFF','Face unrecognised','Recognition timeout','VIP profile matched','Face detect event'],THERM:['Temperature nominal','Thermal alert cleared','Heat anomaly detect','Body temp scan','THERM calibration OK'],VA:['Occupancy updated','Crowd density normal','Motion detected','Density threshold OK','VA analytic cycle'],PTZ:['PTZ patrol step','Target acquired','Auto-tracking active','PTZ home position','Manual override cleared']};
+  var p=pool[cs.type]||pool.VA;
+  return p.map(function(msg,i){var d=new Date(now-(i*4+Math.random()*3)*60000);return{t:d.toTimeString().slice(0,8),msg:msg+(cs.st==='CRITICAL'&&i===0?' — CRITICAL':cs.st==='MOTION'&&i===0?' — MOTION DETECTED':'')};});
+}
+
+window.openModal=function(cs){
+  modalState={open:true,cam:cs};
+  document.getElementById('camModal').classList.add('open');
+  document.getElementById('modalTitle').textContent=cs.id+' · '+cs.zone;
+  document.getElementById('modalType').textContent=cs.type;
+  document.getElementById('mi-id').textContent=cs.id;
+  document.getElementById('mi-floor').textContent=cs.floor+' — '+cs.floorLabel;
+  document.getElementById('mi-zone').textContent=cs.zone;
+  document.getElementById('mi-type').textContent=cs.type;
+  var stc={CRITICAL:'color:var(--red)',MOTION:'color:var(--amber)',CLEAR:'color:var(--green)',OFFLINE:'color:var(--txt2)',LOCKED:'color:var(--blue)'};
+  document.getElementById('mi-st').innerHTML='<span style="'+(stc[cs.st]||'')+'">'+cs.st+'</span>';
+  var lbls=AI_LBLS[cs.type]||AI_LBLS.VA,vals=getAIVals(cs);
+  document.getElementById('modalAI').innerHTML=lbls.map(function(l,i){return'<div class="cms-ai-row"><div class="cms-ai-lbl">'+l+'</div><div class="cms-ai-val">'+vals[i]+'</div></div>';}).join('');
+  var evts=genEvts(cs);
+  document.getElementById('modalEvents').innerHTML=evts.map(function(e){return'<div class="cms-evt"><span class="cms-evt-t">'+e.t+'</span><span class="cms-evt-msg">'+e.msg+'</span></div>';}).join('');
+  var mc=document.getElementById('modalCanvas');mc.width=2;mc.height=2;
+};
+window.closeModal=function(){modalState={open:false,cam:null};document.getElementById('camModal').classList.remove('open');};
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+
+// ═══════════════════════════════════════════════════════════
+// ALARMS
+// ═══════════════════════════════════════════════════════════
+var ALARMS_DATA=[
+  {id:'ALM-0047',p:1,zone:'Fashion Avenue · L2',  type:'CROWD SURGE',  msg:'Density 4.2 p/m² — threshold exceeded. DSQ-01 dispatched.',t:'14:32:18',acked:false,camId:'CAM-L2-003'},
+  {id:'ALM-0046',p:1,zone:'Service Bay · B1',     type:'UNAUTHORIZED', msg:'SRV-4 door forced — no valid badge. Guard responding.',    t:'14:32:07',acked:false,camId:'CAM-B1-012'},
+  {id:'ALM-0045',p:2,zone:'Gate 1 · ANPR West',   type:'BLACKLIST HIT',msg:'AJM-0018 vehicle denied access. Dubai Police notified.',   t:'14:31:55',acked:false,camId:'CAM-GF-005'},
+  {id:'ALM-0044',p:2,zone:'Gate 2 · ANPR South',  type:'WATCHLIST',   msg:'SHJ-9904 flagged vehicle. Camera tracking active.',        t:'14:31:42',acked:true, camId:'CAM-GF-009'},
+  {id:'ALM-0043',p:3,zone:'Parking GF · Level 1', type:'OCCUPANCY',   msg:'GF parking at 85% capacity. Redirect advisory issued.',    t:'14:30:55',acked:true, camId:'CAM-GF-022'},
+  {id:'ALM-0042',p:3,zone:'Roof Access · L4',     type:'TAILGATE',    msg:'Potential tailgate attempt — reviewing camera feed.',      t:'14:29:38',acked:true, camId:'CAM-ROOF-001'},
+];
+function renderAlarms(){
+  var list=document.getElementById('alarmList');list.innerHTML='';
+  var active=ALARMS_DATA.filter(function(a){return!a.acked;}).length;
+  document.getElementById('alarmCount').textContent=active+' ACTIVE';
+  document.getElementById('hdr-alarms').textContent=active;
+  ALARMS_DATA.forEach(function(a,i){
+    var el=document.createElement('div');
+    el.className='alarm p'+a.p+(a.acked?' acked':'');
+    var aiHtml=a.aiNarrative?(a.aiNarrative==='⟳'?'<div class="alm-ai"><span class="alm-ai-thinking">⟳ AI analyzing…</span></div>':'<div class="alm-ai"><span class="alm-ai-tag">🤖 AI</span>'+a.aiNarrative+'</div>'):'';
+    el.innerHTML='<div class="alm-head"><span class="alm-p">P'+a.p+'</span><span class="alm-id">'+a.id+'</span><span class="alm-t">'+a.t+'</span></div><div class="alm-type">'+a.type+'</div><div class="alm-zone">'+a.zone+'</div><div class="alm-msg">'+a.msg+'</div>'+aiHtml+'<div class="alm-acts"><button class="alm-btn ack'+(a.acked?' done':'')+'" onclick="ackAlarm('+i+')">'+(a.acked?'✓ ACKED':'ACK')+'</button>'+(!a.acked?'<button class="alm-btn esc" onclick="escalate('+i+')">ESC</button><button class="alm-btn dis" onclick="dispatch('+i+')">DISP</button>':'')+'<button class="alm-btn view-cam" onclick="viewAlarmCam('+i+')">&#128247; CAM</button></div>';
+    list.appendChild(el);
+  });
+}
+renderAlarms();
+window.viewAlarmCam=function(i){
+  var a=ALARMS_DATA[i];
+  var cam=ALL_CAMS.find(function(c){return c.id===a.camId;});
+  if(!cam){var fl=a.zone.split('·').pop().trim().split(' ')[0];cam=ALL_CAMS.filter(function(c){return c.floor===fl;})[0]||ALL_CAMS[Math.floor(Math.random()*30)];}
+  if(cam)openModal(cam);
+};
+window.ackAlarm=function(i){ALARMS_DATA[i].acked=true;renderAlarms();addEvent(new Date().toTimeString().slice(0,8),'ACK','#38d96a',ALARMS_DATA[i].id+' acknowledged','OPS');};
+window.escalate=function(i){ALARMS_DATA[i].p=Math.max(1,ALARMS_DATA[i].p-1);addEvent(new Date().toTimeString().slice(0,8),'ESC','#d64040',ALARMS_DATA[i].id+' escalated to P'+ALARMS_DATA[i].p,'OPS');renderAlarms();};
+window.dispatch=function(i){addEvent(new Date().toTimeString().slice(0,8),'DISP','#0ab0cc','Guard dispatched → '+ALARMS_DATA[i].zone,'OPS');renderAlarms();};
+var alarmIdx=47;
+setInterval(function(){
+  if(Math.random()>.72)return;
+  var fd=FLOOR_DEFS[Math.floor(Math.random()*FLOOR_DEFS.length)];
+  var types=[{p:3,type:'LOITERING',msg:'Prolonged stationary detection — monitoring.'},{p:3,type:'SPEED ALERT',msg:'Vehicle exceeding 10 km/h in parking zone.'},{p:2,type:'WATCHLIST',msg:'Known vehicle observed — flags updated.'},{p:2,type:'FACE UNMATCHED',msg:'Unrecognised at restricted entry.'},{p:2,type:'ANPR HIT',msg:'Flagged plate — CAM tracking active.'}];
+  alarmIdx++;
+  var t2=types[Math.floor(Math.random()*types.length)];
+  var cams=ALL_CAMS.filter(function(c){return c.floor===fd.f;});
+  var cam=cams[Math.floor(Math.random()*cams.length)];
+  var autoAlarm={id:'ALM-00'+alarmIdx,p:t2.p,zone:fd.zones[0]+' · '+fd.f,type:t2.type,msg:t2.msg,t:new Date().toTimeString().slice(0,8),acked:false,camId:cam?cam.id:null,aiNarrative:'⟳'};
+  ALARMS_DATA.unshift(autoAlarm);
+  if(ALARMS_DATA.length>10)ALARMS_DATA.pop();
+  renderAlarms();
+  generateAlarmNarrative(autoAlarm.id);
+},22000);
+
+// ═══════════════════════════════════════════════════════════
+// EVENT STREAM
+// ═══════════════════════════════════════════════════════════
+var evtCount=128;
+function addEvent(t2,cat,col,msg,loc){
+  var list=document.getElementById('eventList');
+  var r=document.createElement('div');r.className='es-row new';
+  r.innerHTML='<span class="es-t">'+t2+'</span><span class="es-cat" style="color:'+col+'">'+cat+'</span><span class="es-msg">'+msg+'</span><span class="es-loc" style="background:rgba(255,255,255,.03);padding:1px 4px;border-radius:1px">'+loc+'</span>';
+  list.insertBefore(r,list.firstChild);while(list.children.length>18)list.removeChild(list.lastChild);
+  document.getElementById('evtCount').textContent=(++evtCount)+' events today';
+}
+[{t:'14:32:19',cat:'ALRM',col:'#d64040',msg:'Fashion Ave crowd surge — DSQ-01 dispatched',loc:'L2'},{t:'14:32:14',cat:'ANPR',col:'#d64040',msg:'AJM-0018 blacklist hit — Gate 1 West denied',loc:'GF'},{t:'14:32:08',cat:'ACS',col:'#3ddbbe',msg:'B1 Loading Bay SRV-4 force entry alarm',loc:'B1'},{t:'14:31:55',cat:'VIP',col:'#c8a820',msg:'VIP-001 protocol activated · escort confirmed',loc:'Gate 1'},{t:'14:31:42',cat:'ANPR',col:'#c8920a',msg:'SHJ-9904 watchlist — CAM tracking active',loc:'GF'},{t:'14:31:28',cat:'BMS',col:'#9880e0',msg:'Fashion Ave CO₂ 892ppm · HVAC alerted',loc:'L2'},{t:'14:31:15',cat:'ACS',col:'#3ddbbe',msg:'Parking GF · 12 ANPR events processed',loc:'GF'},{t:'14:30:58',cat:'AI',col:'#0ab0cc',msg:'Crowd density forecast — Gourmet Street rising',loc:'L3'},{t:'14:30:40',cat:'DRONE',col:'#3ddbbe',msg:'DSQ-02 patrol commenced · Perimeter East',loc:'EXT'},{t:'14:30:22',cat:'ACS',col:'#3ddbbe',msg:'VIP Lounge unlocked — escort protocol',loc:'L3'}].forEach(function(e){addEvent(e.t,e.cat,e.col,e.msg,e.loc);});
+var EVT_POOL=[['ACS','#3ddbbe','Parking GF · 3 ANPR vehicle events','GF'],['ANPR','#0ab0cc','Facial recognition cleared · Gate 1','GF'],['BMS','#9880e0','HVAC Gourmet Street L3 nominal','L3'],['AI','#0ab0cc','Crowd prediction — Platinum Zone stable','L3'],['ANPR','#0ab0cc','Plate scan cleared · Gate 2 South','GF'],['AI','#0ab0cc','Edge AI: no anomaly — 12-min window','ALL'],['FACE','#0ab0cc','800-cam face recognition cycle complete','ALL'],['THERM','#c8920a','Thermal patrol L4 — readings nominal','L4'],['VA','#3ddbbe','VA analytics cycle — all floors processed','ALL'],['ACS','#3ddbbe','Staff access event · Service corridor B1','B1']];
+var eIdx=0;
+setInterval(function(){var e=EVT_POOL[eIdx++%EVT_POOL.length];addEvent(new Date().toTimeString().slice(0,8),e[0],e[1],e[2],e[3]);},7200);
+
+// ═══════════════════════════════════════════════════════════
+// GUARDS & DRONES
+// ═══════════════════════════════════════════════════════════
+var GUARDS=[{id:'SEC-047',name:'Hassan Mohammed',zone:'Fashion Avenue · L2',st:'RESPONDING'},{id:'SEC-012',name:'Khalid Rahman',zone:'Gate 1 · West Entrance',st:'ON PATROL'},{id:'SEC-031',name:'Ahmed Al Farsi',zone:'Boulevard · L2 Ground',st:'ON PATROL'},{id:'SEC-055',name:'Omar Jassim',zone:'Parking GF · ANPR Entry',st:'ON PATROL'},{id:'SEC-019',name:'Rashid Al Noor',zone:'Platinum Zone · L3 VIP',st:'VIP ESCORT'},{id:'SEC-028',name:'Tariq Hassan',zone:'Control Room · B1',st:'ON DUTY'}];
+var DRONES=[{id:'DSQ-01',name:'Alpha',zone:'Fashion Ave → Roof L4',bat:78,st:'ACTIVE'},{id:'DSQ-02',name:'Beta',zone:'Perimeter · East Sector',bat:91,st:'PATROL'},{id:'DSQ-03',name:'Gamma',zone:'Drone Bay · B1',bat:43,st:'CHARGING'}];
+var STC={'RESPONDING':'st-responding','ON PATROL':'st-patrol','VIP ESCORT':'st-patrol','ON DUTY':'st-duty','STANDBY':'st-standby','ACTIVE':'st-active','PATROL':'st-patrol','CHARGING':'st-charging'};
+function renderGuards(){var l=document.getElementById('guardList');l.innerHTML='';GUARDS.forEach(function(g){var el=document.createElement('div');el.className='unit';el.innerHTML='<div class="unit-ico">👮</div><div class="unit-info"><div class="unit-nm">'+g.name+'</div><div class="unit-loc">'+g.id+' · '+g.zone+'</div></div><span class="unit-st '+(STC[g.st]||'')+'">'+g.st+'</span>';l.appendChild(el);});}
+function renderDrones(){var l=document.getElementById('droneList');l.innerHTML='';DRONES.forEach(function(d){var bc=d.bat>60?'var(--green)':d.bat>30?'var(--amber)':'var(--red)';var el=document.createElement('div');el.className='unit';el.innerHTML='<div class="unit-ico">🚁</div><div class="unit-info"><div class="unit-nm">'+d.id+' · '+d.name+'</div><div class="unit-loc">'+d.zone+'</div><div class="drone-bat"><div class="bat-bar-wrap"><div class="bat-bar" style="width:'+d.bat+'%;background:'+bc+'"></div></div><span class="bat-pct" style="color:'+bc+'">'+d.bat+'%</span></div></div><span class="unit-st '+(STC[d.st]||'')+'">'+d.st+'</span>';l.appendChild(el);});}
+renderGuards();renderDrones();
+setInterval(function(){DRONES.forEach(function(d){if(d.st==='CHARGING')d.bat=Math.min(100,d.bat+2);else if(d.st!=='STANDBY')d.bat=Math.max(5,d.bat-.5);});renderDrones();},8000);
+
+// ═══════════════════════════════════════════════════════════
+// THREAT SCORE
+// ═══════════════════════════════════════════════════════════
+var thrScore=62;
+function updateThreat(delta){
+  thrScore=Math.max(10,Math.min(95,thrScore+delta));
+  var col='var(--green)',lvl='LOW',bg='var(--green),var(--teal)';
+  if(thrScore>=80){col='var(--red)';lvl='CRITICAL';bg='var(--amber),var(--red)';}
+  else if(thrScore>=60){col='var(--amber)';lvl='ELEVATED';bg='var(--green),var(--amber)';}
+  else if(thrScore>=40){col='var(--amber)';lvl='MODERATE';bg='var(--green),var(--amber)';}
+  document.getElementById('thrScore').style.color=col;document.getElementById('thrScore').textContent=thrScore;
+  document.getElementById('thrLevel').style.color=col;document.getElementById('thrLevel').textContent=lvl;
+  document.getElementById('thrBar').style.width=thrScore+'%';document.getElementById('thrBar').style.background='linear-gradient(90deg,'+bg+')';
+  document.getElementById('hdr-threat').textContent=thrScore+' '+lvl;document.getElementById('hdr-threat').style.color=col;
+  document.getElementById('thrTrend').textContent=delta>=0?'↑ +'+delta:'↓ '+delta;
+  document.getElementById('thrTrend').style.color=delta>=0?'var(--amber)':'var(--green)';
+}
+setInterval(function(){updateThreat(Math.floor((Math.random()-.45)*5));},12000);
+
+// ═══════════════════════════════════════════════════════════
+// QUICK OPS
+// ═══════════════════════════════════════════════════════════
+window.trigLockdown=function(btn){var on=btn.classList.toggle('active-ld');btn.textContent=on?'🔓 CANCEL':'🔒 LOCKDOWN';addEvent(new Date().toTimeString().slice(0,8),'SYS','#d64040',on?'FACILITY LOCKDOWN ACTIVATED':'Lockdown cancelled','ALL');updateThreat(on?12:-10);};
+window.trigEvac=function(btn){var on=btn.classList.toggle('active-ev');btn.textContent=on?'✓ EVAC ACTIVE':'⬆ EVACUATE C';addEvent(new Date().toTimeString().slice(0,8),'EVAC','#38d96a',on?'Zone C evacuation order issued':'Evacuation cancelled','Zone C');};
+window.dispatchGuard=function(){addEvent(new Date().toTimeString().slice(0,8),'DISP','#0ab0cc','Guard dispatched to Zone C','Zone C');GUARDS[0].st='RESPONDING';renderGuards();};
+window.deployDrone=function(){DRONES[2].st='ACTIVE';DRONES[2].zone='Zone C → L3 Approach';renderDrones();addEvent(new Date().toTimeString().slice(0,8),'DRONE','#3ddbbe','DSQ-03 emergency deployment → Zone C','GF');};
+window.callPolice=function(){addEvent(new Date().toTimeString().slice(0,8),'POL','#d64040','Dubai Police notification dispatched · ALM-0047','OPS');};
+window.triggerPA=function(){addEvent(new Date().toTimeString().slice(0,8),'PA','#c8920a','PA announcement · Zone C — Please remain calm','Zone C');};
+
+// ═══════════════════════════════════════════════════════════
+// EMERGENCY DISPATCH — IFC §17.18
+// ═══════════════════════════════════════════════════════════
+var DISPATCH_UNITS=[{id:'DXB-POL',ico:'🚔',nm:'Dubai Police · Rapid Response',agency:'DPMC Unit 4 · Zabeel',eta:'3 min',state:'standby'},{id:'DXB-CDF',ico:'🚒',nm:'Dubai Civil Defence · Fire',agency:'DCD Station 28 · Al Quoz',eta:'5 min',state:'standby'},{id:'DHAM',ico:'🚑',nm:'DHAM Ambulance · Code 1',agency:'Dubai Health Authority · DSQ',eta:'4 min',state:'standby'}];
+function renderDispatch(){var el=document.getElementById('dispatchList');if(!el)return;el.innerHTML=DISPATCH_UNITS.map(function(u){return'<div class="disp-unit'+(u.state==='dispatched'?' dispatched':'')+'" id="dunit-'+u.id+'"><span class="disp-ico">'+u.ico+'</span><div class="disp-info"><div class="disp-nm">'+u.nm+'</div><div class="disp-eta">'+u.agency+' · ETA '+u.eta+'</div></div><button class="disp-btn" onclick="dispatchEmergency(\''+u.id+'\')">'+(u.state==='dispatched'?'EN ROUTE':'DISPATCH')+'</button></div>';}).join('');}
+renderDispatch();
+window.dispatchEmergency=function(id){var u=DISPATCH_UNITS.find(function(d){return d.id===id;});if(!u)return;u.state=u.state==='dispatched'?'standby':'dispatched';renderDispatch();if(u.state==='dispatched')addEvent(new Date().toTimeString().slice(0,8),'EMRG','#d64040',u.nm+' dispatched · ETA '+u.eta,'OPS');};
+
+// ═══════════════════════════════════════════════════════════
+// VEHICLE ANALYTICS — SIRA §17.5.6.1-3
+// ═══════════════════════════════════════════════════════════
+var VA_STATE={
+  types:[
+    {ico:'🚗',nm:'Cars',cnt:148,today:1247,rate:12},
+    {ico:'🚛',nm:'Trucks',cnt:23,today:187,rate:3},
+    {ico:'🛺',nm:'Taxi/RTA',cnt:67,today:543,rate:18},
+    {ico:'🚌',nm:'Coach',cnt:4,today:31,rate:0}
+  ],
+  speedViolations:3,wrongWay:1,wrongWayTime:'14:28',wrongWayGate:'Gate 2',avgDwell:8.3
+};
+function renderVehicleAnalytics(){
+  var te=document.getElementById('vaTypes');var ae=document.getElementById('vaAlerts');
+  if(!te||!ae)return;
+  te.innerHTML=VA_STATE.types.map(function(v){
+    return'<div class="va-type"><span class="va-ico">'+v.ico+'</span><span class="va-nm">'+v.nm+'</span><span class="va-cnt">'+v.cnt+'</span><span class="va-rate">'+(v.rate>0?'↑'+v.rate+'/h':'—')+'</span></div>';
+  }).join('');
+  ae.innerHTML=
+    '<div class="va-alert '+(VA_STATE.speedViolations>0?'warn':'ok')+'">⚡ Speed violations: '+VA_STATE.speedViolations+'</div>'+
+    '<div class="va-alert '+(VA_STATE.wrongWay>0?'crit':'ok')+'">⚠ Wrong-way: '+VA_STATE.wrongWay+' ['+VA_STATE.wrongWayTime+' · '+VA_STATE.wrongWayGate+']</div>'+
+    '<div class="va-alert ok">✓ Avg dwell (loading): '+VA_STATE.avgDwell+' min</div>';
+}
+renderVehicleAnalytics();
+setInterval(function(){
+  VA_STATE.types.forEach(function(v){
+    v.cnt=Math.max(0,v.cnt+(Math.random()>.35?1:-1)|0);
+    v.today+=Math.floor(Math.random()*2);
+    v.rate=Math.max(0,v.rate+((Math.random()-.5)*2|0));
+  });
+  if(Math.random()<.04){VA_STATE.speedViolations++;addAuditEntry('System','SYS','Speed violation detected · Gate '+(1+Math.random()*4|0),true);}
+  renderVehicleAnalytics();
+},5500);
+
+// ═══════════════════════════════════════════════════════════
+// NVR RECORDING STATUS — SIRA §17.5.3 (30-day minimum)
+// ═══════════════════════════════════════════════════════════
+var NVR_NODES=[
+  {id:'NVR-B1',days:30,cap:78},{id:'NVR-GF',days:30,cap:82},
+  {id:'NVR-L1',days:30,cap:75},{id:'NVR-L2',days:30,cap:88},
+  {id:'NVR-L3',days:30,cap:84},{id:'NVR-L4',days:30,cap:71},
+  {id:'NVR-RT',days:30,cap:60},{id:'NVR-RD',days:30,cap:45}
+];
+function renderNVR(){
+  var el=document.getElementById('nvrList');if(!el)return;
+  el.innerHTML=NVR_NODES.map(function(n){
+    var col=n.cap>85?'#d64040':n.cap>70?'#c8920a':'#38d96a';
+    return'<div class="nvr-row"><span class="nvr-id">'+n.id+'</span><div class="nvr-bar-wrap"><div class="nvr-bar" style="width:'+n.cap+'%;background:'+col+'"></div></div><span class="nvr-days">'+n.days+'d·'+n.cap+'%</span><span class="nvr-st '+(n.days>=30?'nvr-ok':'nvr-warn')+'">'+(n.days>=30?'REC':'WARN')+'</span></div>';
+  }).join('');
+}
+renderNVR();
+setInterval(function(){
+  NVR_NODES.forEach(function(n){n.cap=Math.min(99,Math.max(30,n.cap+((Math.random()-.3)*.4|0)));});
+  renderNVR();
+},20000);
+
+// ═══════════════════════════════════════════════════════════
+// SYSTEM REDUNDANCY — IFC §17.12 · UPS / HA
+// ═══════════════════════════════════════════════════════════
+var RED_STATE=[
+  {lbl:'UPS-A Main',val:'98%',ok:true},{lbl:'UPS-B Backup',val:'97%',ok:true},
+  {lbl:'NVR Cluster',val:'Active',ok:true},{lbl:'Failover',val:'Ready',ok:true},
+  {lbl:'Network HA',val:'Dual',ok:true},{lbl:'Generator',val:'Standby',ok:true}
+];
+function renderRedundancy(){
+  var el=document.getElementById('redGrid');if(!el)return;
+  el.innerHTML=RED_STATE.map(function(r){
+    return'<div class="red-item '+(r.ok?'red-ok':'red-warn')+'"><div class="red-lbl">'+r.lbl+'</div><div class="red-val">'+r.val+'</div></div>';
+  }).join('');
+}
+renderRedundancy();
+setInterval(function(){
+  RED_STATE[0].val=(97+Math.random()*2).toFixed(0)+'%';
+  RED_STATE[1].val=(96+Math.random()*2).toFixed(0)+'%';
+  renderRedundancy();
+},16000);
+
+// ═══════════════════════════════════════════════════════════
+// OPERATOR AUDIT LOG — Arvato Q10 · bcrypt/2FA/RBAC · 365d
+// ═══════════════════════════════════════════════════════════
+var AUDIT_LOG=[
+  {t:'14:31:05',user:'H.Marzooqi',role:'OPR',act:'Alarm ACK · ALM-0047 · Zone C',ok:true},
+  {t:'14:28:12',user:'H.Marzooqi',role:'OPR',act:'Guard dispatched → Zone C',ok:true},
+  {t:'14:22:47',user:'F.Al Rashid',role:'OPR',act:'Camera filter: ALERT · 14 cams',ok:true},
+  {t:'14:18:33',user:'K.Ahmed',role:'ADM',act:'User session started · Admin',ok:true},
+  {t:'14:15:09',user:'H.Marzooqi',role:'OPR',act:'PA announce · Zone C',ok:true},
+  {t:'14:09:57',user:'F.Al Rashid',role:'OPR',act:'Camera modal · CAM-GF-012',ok:true},
+  {t:'14:04:21',user:'System',role:'SYS',act:'Threat threshold auto-reset',ok:true},
+  {t:'13:58:44',user:'K.Ahmed',role:'ADM',act:'Guard role update → PATROL',ok:true},
+  {t:'13:52:18',user:'H.Marzooqi',role:'OPR',act:'Login attempt (1/5) — failed',ok:false},
+  {t:'13:47:02',user:'H.Marzooqi',role:'OPR',act:'Login · 2FA ✓ · SIRA-LIC OK',ok:true}
+];
+function renderAuditLog(){
+  var el=document.getElementById('auditList');if(!el)return;
+  el.innerHTML=AUDIT_LOG.slice(0,12).map(function(a){
+    return'<div class="audit-row"><span class="audit-t">'+a.t+'</span><span class="audit-user">'+a.user+'</span><span class="audit-role-tag">'+a.role+'</span><span class="audit-act">'+a.act+'</span><span class="'+(a.ok?'audit-ok':'audit-fail')+'">'+(a.ok?'✓':'✗')+'</span></div>';
+  }).join('');
+}
+renderAuditLog();
+function addAuditEntry(user,role,act,ok){
+  var t=new Date().toTimeString().slice(0,8);
+  AUDIT_LOG.unshift({t:t,user:user,role:role,act:act,ok:ok!==false});
+  if(AUDIT_LOG.length>365)AUDIT_LOG.length=365;
+  renderAuditLog();
+}
+var _origTrigPA=window.triggerPA;
+window.triggerPA=function(){addAuditEntry('H.Marzooqi','OPR','PA announce triggered',true);_origTrigPA.apply(this,arguments);};
+var _origTrigLD=window.trigLockdown;
+window.trigLockdown=function(btn){addAuditEntry('H.Marzooqi','OPR','Lockdown toggle',true);_origTrigLD.apply(this,arguments);};
+var _origDispatch=window.dispatchEmergency;
+window.dispatchEmergency=function(id){addAuditEntry('H.Marzooqi','OPR','Emergency dispatch: '+id,true);_origDispatch.apply(this,arguments);};
+
+// ═══════════════════════════════════════════════════════════
+// AI ALARM NARRATIVE — Gemini Flash per-alarm analysis
+// ═══════════════════════════════════════════════════════════
+async function generateAlarmNarrative(alarmId){
+  var key=localStorage.getItem('bba_demo_key');
+  if(!key)return;
+  var alarm=ALARMS_DATA.find(function(a){return a.id===alarmId;});
+  if(!alarm)return;
+  var ops={},acc={};
+  try{ops=JSON.parse(localStorage.getItem('dsq_ops')||'{}');}catch(e){}
+  try{acc=JSON.parse(localStorage.getItem('dsq_access')||'{}');}catch(e){}
+  var ctx='Dubai Square Mall — EMAAR, Dubai Creek Harbour. Security alarm: '+alarm.type+
+    ' in '+alarm.zone+'. Details: '+alarm.msg+
+    ' Current threat score: '+(ops.threatScore||62)+'/100.'+
+    ' Active alarms: '+(ops.alarmCount||3)+'.'+
+    ' Vehicles inside: '+(acc.insideCount||847)+'.'+
+    ' Time: '+alarm.t+' GST.';
+  try{
+    var res=await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,
+      {method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({
+         system_instruction:{parts:[{text:'You are the AI core of a security operations center at Dubai Square Mall. Write exactly 2 plain sentences: first sentence = brief incident assessment with confidence level; second sentence = one specific recommended action (camera ID, zone, or unit). No bullet points, no markdown, no headers. Max 60 words total.'}]},
+         contents:[{role:'user',parts:[{text:ctx}]}],
+         generationConfig:{maxOutputTokens:80,temperature:0.3}
+       })
+      }
+    );
+    var data=await res.json();
+    var text=data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text||'';
+    if(text.trim()){alarm.aiNarrative=text.trim();renderAlarms();}
+    else{alarm.aiNarrative=null;renderAlarms();}
+  }catch(e){alarm.aiNarrative=null;renderAlarms();}
+}
+
+// ═══════════════════════════════════════════════════════════
+// EVENT BUS — BroadcastChannel cross-page sync
+// ═══════════════════════════════════════════════════════════
+var DSQ_BUS=(function(){
+  try{return new BroadcastChannel('dsq-security');}
+  catch(e){return{postMessage:function(){},onmessage:null};}
+})();
+
+// Dynamic alarm injection (from external events)
+function addAlarm_dynamic(prio,type,col,msg,zone){
+  var existing=ALARMS_DATA[0];
+  var nextId=existing?parseInt(existing.id.replace('ALM-00',''))+1:51;
+  var newAlarm={id:'ALM-00'+nextId,p:prio,zone:zone||'External',
+    type:type,msg:msg,t:new Date().toTimeString().slice(0,8),acked:false,camId:null,aiNarrative:'⟳'};
+  ALARMS_DATA.unshift(newAlarm);
+  if(ALARMS_DATA.length>12)ALARMS_DATA.pop();
+  renderAlarms();
+  addEvent(new Date().toTimeString().slice(0,8),'AUTO',col,type+' — '+msg.slice(0,50),zone||'OPS');
+  updateThreat(prio===1?10:prio===2?5:2);
+  addAuditEntry('System','SYS','Auto-alarm: '+type,true);
+  generateAlarmNarrative(newAlarm.id);
+}
+
+// ── CORRELATION RULES ENGINE ───────────────────────────────
+// Each rule: inbound bus event → OPS action
+DSQ_BUS.onmessage=function(ev){
+  var d=ev.data; if(!d||!d.type)return;
+  switch(d.type){
+    case 'ANPR_DENIED':
+      addAlarm_dynamic(1,'BLACKLIST HIT','#d64040',
+        'Auto-escalation · Plate '+d.plate+' denied at '+d.gate,d.gate+' · ANPR');
+      break;
+    case 'ANPR_WATCH':
+      addAlarm_dynamic(2,'WATCHLIST','#c8920a',
+        'Flagged vehicle at '+d.gate+' · '+d.plate,d.gate+' · ANPR');
+      break;
+    case 'SENSOR_CRIT':
+      addAlarm_dynamic(1,'SENSOR CRITICAL','#d64040',
+        d.sensor+' alert · '+d.zone+': '+d.value,d.zone);
+      break;
+    case 'DWELL_OVERSTAY':
+      addAlarm_dynamic(2,'OVERSTAY','#c8920a',
+        'Vehicle '+d.plate+' inside '+d.hours+'h — investigation required',d.gate+' · Parking');
+      break;
+    case 'VMS_UNREGISTERED':
+      addAlarm_dynamic(3,'UNREGISTERED VEH','#c8920a',
+        'Non-registered vehicle at controlled gate: '+d.plate,d.gate);
+      break;
+  }
+  syncStateToStorage();
+};
+
+// ── LOCALSTORAGE STATE SYNC — feeds AI Operator live data ──
+function syncStateToStorage(){
+  try{
+    localStorage.setItem('dsq_ops',JSON.stringify({
+      threatScore:parseInt(document.getElementById('thrScore').textContent||'62'),
+      alarmCount:ALARMS_DATA.filter(function(a){return!a.acked;}).length,
+      cameras:{online:793,total:800},
+      va:{
+        cars:VA_STATE.types[0].cnt, trucks:VA_STATE.types[1].cnt,
+        taxi:VA_STATE.types[2].cnt, coach:VA_STATE.types[3].cnt,
+        speedViolations:VA_STATE.speedViolations, wrongWay:VA_STATE.wrongWay
+      },
+      nvr:NVR_NODES.filter(function(n){return n.days>=30;}).length+'/'+NVR_NODES.length,
+      redundancy:RED_STATE[0].val+' / '+RED_STATE[1].val,
+      audit:AUDIT_LOG.slice(0,5).map(function(a){
+        return a.t+' ['+a.role+'] '+a.user+': '+a.act+(a.ok?' ✓':' ✗');
+      }),
+      ts:Date.now()
+    }));
+  }catch(e){}
+}
+setInterval(syncStateToStorage,4500);
+syncStateToStorage();
+
+// ═══════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════
+function tick(){var el=document.getElementById('sbTime');if(el)el.textContent=new Date().toTimeString().slice(0,8)+' GST';}
+setInterval(tick,1000);tick();
 </script>
+<script src="/tour.js"></script>
+<button id="mobLeftBtn" onclick="document.querySelector('.left-panel').classList.toggle('mob-open')">☰ Alarms</button>
 </body>
 </html>

@@ -22,10 +22,10 @@
   --red: #ff5555;
   --yellow: #f1fa8c;
   --orange: #ffb86c;
-  --text: #ccd6f6;
-  --muted: #5a7090;
-  --muted2: #8aa0bc;
-  --white: #e8f4ff;
+  --text: #dce8f8;
+  --muted: #8aaac8;
+  --muted2: #b8d0e8;
+  --white: #f0f8ff;
   --glow: rgba(0,212,255,0.15);
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -113,9 +113,9 @@ nav{
 }
 .hero-inner{
   position:relative;z-index:1;
-  max-width:1280px;margin:0 auto;padding:152px 48px 80px;
-  display:grid;grid-template-columns:1fr 1fr;
-  gap:80px;align-items:center;
+  max-width:1360px;margin:0 auto;padding:152px 48px 80px;
+  display:grid;grid-template-columns:1fr 1.25fr;
+  gap:56px;align-items:start;
 }
 .hero-left{}
 .live-badge{
@@ -260,6 +260,107 @@ nav{
   animation:scanline 4s linear infinite;opacity:0.6;
 }
 @keyframes scanline{0%{top:48px}100%{top:100%}}
+
+/* ── DIGITAL TWIN IFRAME FRAME ── */
+.twin-frame-wrap{
+  background:#020810;
+  border:1px solid rgba(0,212,255,0.30);
+  border-radius:16px;overflow:hidden;
+  box-shadow:0 0 60px rgba(0,212,255,0.12),0 20px 60px rgba(0,0,0,0.6);
+  display:flex;flex-direction:column;
+}
+.twin-frame-bar{
+  background:rgba(0,212,255,0.05);
+  border-bottom:1px solid rgba(0,212,255,0.15);
+  padding:12px 18px;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.twin-frame-title{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);margin-left:6px;flex:1;
+}
+.twin-open-btn{
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  color:var(--teal);text-decoration:none;
+  border:1px solid rgba(0,212,255,0.25);
+  padding:3px 10px;border-radius:4px;
+  transition:all .2s;
+}
+.twin-open-btn:hover{background:rgba(0,212,255,0.08);color:#fff}
+.twin-frame-iframe{
+  width:100%;height:460px;border:none;
+  display:block;flex:1;
+  background:#020c18;
+}
+.twin-frame-footer{
+  background:rgba(0,212,255,0.03);
+  border-top:1px solid rgba(0,212,255,0.10);
+  padding:10px 18px;
+  display:flex;align-items:center;gap:14px;
+  font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);
+  flex-shrink:0;
+}
+.twin-tag{color:var(--teal);font-weight:700;letter-spacing:.5px;}
+.twin-ops-link{
+  margin-left:auto;color:var(--blue);text-decoration:none;
+  transition:color .2s;
+}
+.twin-ops-link:hover{color:#fff}
+
+/* ── PLATFORM IN ACTION ── */
+#platform-action{padding:100px 48px;max-width:1280px;margin:0 auto}
+.pia-header{text-align:center;margin-bottom:56px}
+.pia-eyebrow{font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--teal);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px}
+.pia-title{font-size:clamp(1.8rem,3vw,2.6rem);font-weight:700;color:var(--white);margin-bottom:0}
+.pia-title span{color:var(--teal)}
+.pia-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.pia-card{
+  background:#020810;
+  border:1px solid rgba(0,212,255,0.20);
+  border-radius:16px;overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:border-color .3s,box-shadow .3s;
+}
+.pia-card:hover{
+  border-color:rgba(0,212,255,0.45);
+  box-shadow:0 0 40px rgba(0,212,255,0.10);
+}
+.pia-card-bar{
+  background:rgba(0,212,255,0.04);
+  border-bottom:1px solid rgba(0,212,255,0.12);
+  padding:11px 16px;
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.pia-dots{display:flex;gap:5px}
+.pia-dot{width:9px;height:9px;border-radius:50%}
+.pia-card-title{
+  font-size:10px;font-family:'JetBrains Mono',monospace;
+  color:var(--muted);flex:1;text-align:center;
+}
+.pia-card-link{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--teal);text-decoration:none;
+  border:1px solid rgba(0,212,255,0.25);
+  padding:2px 8px;border-radius:3px;
+  transition:all .2s;flex-shrink:0;
+}
+.pia-card-link:hover{background:rgba(0,212,255,0.08);color:#fff}
+.pia-iframe{width:100%;height:280px;border:none;display:block;background:#020c18}
+.pia-card-foot{
+  padding:12px 16px;
+  border-top:1px solid rgba(0,212,255,0.08);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.pia-badge{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  padding:2px 8px;border-radius:3px;font-weight:700;letter-spacing:.4px;
+}
+.pia-badge-teal{background:rgba(0,212,255,0.10);color:var(--teal);border:1px solid rgba(0,212,255,0.25)}
+.pia-badge-blue{background:rgba(100,160,255,0.10);color:var(--blue);border:1px solid rgba(100,160,255,0.25)}
+.pia-badge-green{background:rgba(80,250,123,0.10);color:#50fa7b;border:1px solid rgba(80,250,123,0.25)}
+.pia-desc{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-left:auto}
+@media(max-width:900px){.pia-grid{grid-template-columns:1fr}}
 
 /* ── SCENARIO BAR ── */
 .scenario-bar{
@@ -1314,6 +1415,27 @@ nav{height:58px;backdrop-filter:blur(20px)}
 
 /* AI Statement: more refined */
 .ai-st-title{letter-spacing:-1px}
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .hero-inner{grid-template-columns:1fr;gap:32px;padding:24px 20px}
+  .hero-right{display:none}
+  .hero-title{font-size:clamp(24px,6vw,48px)}
+  .hero-title2{font-size:clamp(20px,5vw,40px)}
+  .hero-stats{grid-template-columns:repeat(2,1fr)}
+  .hero-btns{flex-wrap:wrap;gap:10px}
+  .pia-grid{grid-template-columns:1fr!important}
+  .section,.usecases-wrap,#platform-action{padding:48px 20px}
+  .section{max-width:100%}
+}
+@media(max-width:480px){
+  .hero-inner{padding:16px 14px}
+  .hero-title{font-size:clamp(20px,7vw,32px)}
+  .hero-stats{grid-template-columns:1fr 1fr}
+  .hero-btns a{width:100%;text-align:center}
+  .section,.usecases-wrap,#platform-action{padding:32px 14px}
+  .cmp-table{font-size:9px}
+  .cmp-table th{font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -1414,20 +1536,27 @@ nav{height:58px;backdrop-filter:blur(20px)}
     </div>
 
     <div class="hero-right">
-      <div class="live-screen">
-        <div class="ls-scan"></div>
-        <div class="ls-top">
+      <div class="twin-frame-wrap">
+        <div class="twin-frame-bar">
           <div class="ls-dots">
             <div class="ls-dot" style="background:#ff5555"></div>
             <div class="ls-dot" style="background:#f1fa8c"></div>
             <div class="ls-dot" style="background:#50fa7b"></div>
           </div>
-          <span class="ls-title">BBA Security Intelligence — AI Operator Console</span>
-          <span class="ls-status">OPERATIONAL</span>
+          <span class="twin-frame-title">Dubai Square · Digital Twin — Live 3D</span>
+          <a href="twin/" target="_blank" class="twin-open-btn">⤢ Full Screen</a>
         </div>
-        <div class="ls-body" id="heroTerminal">
-          <div class="terminal-line"><span class="tp">operator@dubai-square</span><span class="to"> ~ </span><span class="tc">$ </span><span id="heroCmd" class="tc"></span><span class="cursor" id="heroCursor"></span></div>
-          <div id="heroOutput"></div>
+        <iframe
+          src="twin/?embed"
+          class="twin-frame-iframe"
+          title="Dubai Square Digital Twin"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+        <div class="twin-frame-footer">
+          <span class="twin-tag">● LIVE</span>
+          <span>900+ Cameras · ACS · Drone Fleet · AI Analytics</span>
+          <a href="ops/" target="_blank" class="twin-ops-link">→ Operations Center</a>
         </div>
       </div>
     </div>
@@ -1446,6 +1575,71 @@ nav{height:58px;backdrop-filter:blur(20px)}
 </section>
 
 <div class="glow-div"></div>
+
+<!-- ══ PLATFORM IN ACTION ══ -->
+<section id="platform-action">
+  <div class="pia-header fade-up">
+    <div class="pia-eyebrow">Live Demonstrations</div>
+    <div class="pia-title">Platform <span>in Action</span></div>
+  </div>
+  <div class="pia-grid">
+
+    <!-- Digital Twin -->
+    <div class="pia-card fade-up">
+      <div class="pia-card-bar">
+        <div class="pia-dots">
+          <div class="pia-dot" style="background:#ff5555"></div>
+          <div class="pia-dot" style="background:#f1fa8c"></div>
+          <div class="pia-dot" style="background:#50fa7b"></div>
+        </div>
+        <span class="pia-card-title">Digital Twin · 3D Site</span>
+        <a href="twin/" target="_blank" class="pia-card-link">⤢ Open</a>
+      </div>
+      <iframe src="twin/?embed" class="pia-iframe" title="Digital Twin" loading="lazy" allowfullscreen></iframe>
+      <div class="pia-card-foot">
+        <span class="pia-badge pia-badge-teal">● LIVE 3D</span>
+        <span class="pia-desc">900+ Cameras · Floor Plans · ACS</span>
+      </div>
+    </div>
+
+    <!-- Operations Center -->
+    <div class="pia-card fade-up">
+      <div class="pia-card-bar">
+        <div class="pia-dots">
+          <div class="pia-dot" style="background:#ff5555"></div>
+          <div class="pia-dot" style="background:#f1fa8c"></div>
+          <div class="pia-dot" style="background:#50fa7b"></div>
+        </div>
+        <span class="pia-card-title">Operations Center · SCR</span>
+        <a href="ops/" target="_blank" class="pia-card-link">⤢ Open</a>
+      </div>
+      <iframe src="ops/?embed" class="pia-iframe" title="Operations Center" loading="lazy" allowfullscreen></iframe>
+      <div class="pia-card-foot">
+        <span class="pia-badge pia-badge-blue">● SCR LIVE</span>
+        <span class="pia-desc">PSIM · Alarms · NVR · Patrol</span>
+      </div>
+    </div>
+
+    <!-- AI Demo -->
+    <div class="pia-card fade-up">
+      <div class="pia-card-bar">
+        <div class="pia-dots">
+          <div class="pia-dot" style="background:#ff5555"></div>
+          <div class="pia-dot" style="background:#f1fa8c"></div>
+          <div class="pia-dot" style="background:#50fa7b"></div>
+        </div>
+        <span class="pia-card-title">AI Analytics · Demo</span>
+        <a href="demo/" target="_blank" class="pia-card-link">⤢ Open</a>
+      </div>
+      <iframe src="demo/" class="pia-iframe" title="AI Analytics Demo" loading="lazy" allowfullscreen></iframe>
+      <div class="pia-card-foot">
+        <span class="pia-badge pia-badge-green">● AI LIVE</span>
+        <span class="pia-desc">Face ID · Crowd · ANPR · Anomaly</span>
+      </div>
+    </div>
+
+  </div>
+</section>
 
 <!-- ══ AI STATEMENT ══ -->
 <div id="ai-statement">
@@ -2165,8 +2359,8 @@ nav{height:58px;backdrop-filter:blur(20px)}
 <div id="modules">
 <div class="mods-inner" style="padding-top:100px;padding-bottom:100px">
   <div class="sec-label">Platform Modules</div>
-  <h2>10 Modules. <span class="hl">One Platform.</span></h2>
-  <p class="sec-sub" style="margin-bottom:48px">Every module purpose-built for EMAAR Dubai Square — and reusable across every future EMAAR property.</p>
+  <h2>12 Modules. <span class="hl">One Platform.</span></h2>
+  <p class="sec-sub" style="margin-bottom:48px">Every module purpose-built for EMAAR Dubai Square — fully aligned with IFC §17 requirements — and reusable across every future EMAAR property.</p>
 
   <div class="mods-grid">
     <div class="mod-card fade-up">
@@ -2238,6 +2432,20 @@ nav{height:58px;backdrop-filter:blur(20px)}
       <h3>BMS & Perimeter Integration</h3>
       <p>Bi-directional BMS integration: HVAC zone lockdown, lighting control, HVM barriers, intercom — all under one security umbrella.</p>
       <div class="mod-tags"><span class="mtag b">BMS</span><span class="mtag t">HVM</span><span class="mtag p">Perimeter</span></div>
+    </div>
+    <div class="mod-card fade-up">
+      <div class="mod-num">MODULE 11</div>
+      <div class="mod-icon">📡</div>
+      <h3>TETRA Radio Integration</h3>
+      <p>NEDAA-authorised TETRA gateway: patrol officer dispatch, alarm-to-radio broadcast, unit status on floor plan. IFC §17.27 compliant.</p>
+      <div class="mod-tags"><span class="mtag t">TETRA</span><span class="mtag b">NEDAA</span><span class="mtag p">IFC §17.27</span></div>
+    </div>
+    <div class="mod-card fade-up">
+      <div class="mod-num">MODULE 12</div>
+      <div class="mod-icon">🛡️</div>
+      <h3>Endpoint Detection & Response</h3>
+      <p>EDR agents on all platform servers and operator workstations. Behavioural threat detection, automatic endpoint isolation, 60-second escalation. IFC §17.15 compliant.</p>
+      <div class="mod-tags"><span class="mtag p">EDR</span><span class="mtag b">Threat Detection</span><span class="mtag t">IFC §17.15</span></div>
     </div>
   </div>
 </div>
@@ -2568,6 +2776,10 @@ nav{height:58px;backdrop-filter:blur(20px)}
           <span class="ts-val">gRPC · REST · WebSocket</span>
         </div>
         <div class="ts-row">
+          <span class="ts-key">TETRA radio</span>
+          <span class="ts-val">NEDAA gateway · IFC §17.27</span>
+        </div>
+        <div class="ts-row">
           <span class="ts-key">Authorities</span>
           <span class="ts-val">Dubai Police API · Civil Defence</span>
         </div>
@@ -2580,7 +2792,19 @@ nav{height:58px;backdrop-filter:blur(20px)}
       <div class="ts-rows">
         <div class="ts-row">
           <span class="ts-key">Regulatory</span>
-          <span class="ts-val"><span class="hl">SIRA</span> full compliance</span>
+          <span class="ts-val"><span class="hl">SIRA</span> · IFC §17 full compliance</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">SCR staffing</span>
+          <span class="ts-val"><span class="hl">12 operators</span> + 2 supervisors (IFC §17.24)</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Endpoint security</span>
+          <span class="ts-val">EDR on all nodes · IFC §17.15</span>
+        </div>
+        <div class="ts-row">
+          <span class="ts-key">Staff comms</span>
+          <span class="ts-val">TETRA · NEDAA · IFC §17.27</span>
         </div>
         <div class="ts-row">
           <span class="ts-key">Incident logging</span>
@@ -3412,7 +3636,7 @@ setInterval(() => {
 // ── AI OPERATOR TERMINAL ──
 const aiQueries = [
   {
-    q: 'Bugün en yoğun saatleri ve risk puanını göster',
+    q: 'Show today\'s peak hours and risk score',
     lines: [
       {cls:'to', text:'Analyzing today\'s 94,000 visitor footfall patterns...'},
       {cls:'tr', text:'Peak Hours:  12:30–14:00 (F&B), 18:00–20:30 (General)'},

@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ALYA — Dubai Square AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#020810;--cyan:#00d4ff;--cyan2:#0098cc;--teal:#64ffda;
+  --text:#cbd5e1;--muted:#475569;--white:#f0f8ff;--card:#06111e;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);overflow:hidden}
+
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:50;height:52px;
+  background:rgba(2,8,16,0.97);border-bottom:1px solid rgba(0,212,255,0.08);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+}
+.logo{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--white)}
+.ndot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.nstatus{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);display:flex;align-items:center;gap:6px}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--teal);animation:pulse 1.4s infinite}
+.lang-btn{padding:3px 9px;border-radius:6px;border:1px solid rgba(0,212,255,0.18);background:rgba(0,212,255,0.03);color:var(--muted);font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s}
+.lang-btn.active{background:rgba(0,212,255,0.18);border-color:var(--cyan);color:var(--cyan)}
+.lang-btn:hover{background:rgba(0,212,255,0.1);color:var(--text)}
+
+.app{position:fixed;inset:0;top:52px;display:grid;grid-template-columns:1fr 400px}
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .chat-panel{height:46vh;border-left:none;border-top:1px solid rgba(0,212,255,0.08)}
+  .stage{height:54vh}
+  .map-overlay{width:100vw!important;left:0!important}
+}
+
+/* ── STAGE ── */
+.stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+#bgc{position:absolute;inset:0}
+.stage-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+.dfloat{position:absolute;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:rgba(0,212,255,0.22);line-height:1.9;letter-spacing:.5px;animation:fdrift 10s linear infinite;pointer-events:none}
+.df1{left:12px;top:15%}.df2{right:12px;top:25%;animation-delay:-4s}
+@keyframes fdrift{0%{opacity:0;transform:translateY(0)}15%{opacity:.5}80%{opacity:.3}100%{opacity:0;transform:translateY(40px)}}
+
+/* ── MAP OVERLAY ── */
+.map-overlay{
+  position:fixed;top:52px;left:0;bottom:0;
+  width:calc(100vw - 400px);
+  background:var(--bg);z-index:9999;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .38s ease, visibility 0s .38s;
+  display:flex;flex-direction:column;
+}
+.map-overlay.visible{
+  opacity:1;visibility:visible;pointer-events:all;
+  transition:opacity .38s ease, visibility 0s 0s;
+}
+.map-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;border-bottom:1px solid rgba(0,212,255,0.12);
+  background:rgba(2,8,16,0.95);flex-shrink:0;
+}
+.map-header-title{font-size:12px;font-weight:600;color:var(--cyan);font-family:'JetBrains Mono',monospace;letter-spacing:2px}
+.map-close-btn{
+  background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);
+  color:var(--cyan);font-size:11px;padding:4px 12px;border-radius:12px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;transition:all .2s;
+}
+.map-close-btn:hover{background:rgba(0,212,255,0.18)}
+.map-twin-btn{
+  background:linear-gradient(135deg,rgba(100,255,218,0.15),rgba(0,212,255,0.08));
+  border:1px solid rgba(100,255,218,0.35);
+  color:var(--teal);font-size:11px;padding:4px 12px;border-radius:12px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;transition:all .2s;margin-right:8px;
+  display:none;
+}
+.map-twin-btn:hover{background:linear-gradient(135deg,rgba(100,255,218,0.3),rgba(0,212,255,0.15))}
+.map-twin-btn.visible{display:inline-flex;align-items:center;gap:5px}
+#twinFrame{position:absolute;inset:0;width:100%;height:100%;border:none;display:none;z-index:10}
+#twinFrame.visible{display:block}
+#mallMap.hidden{display:none}
+/* ── FLOOR PLAN ── */
+#floorTabs{display:flex;gap:5px;padding:8px 14px;background:rgba(2,8,16,0.95);border-bottom:1px solid rgba(0,212,255,0.1);flex-shrink:0;overflow-x:auto}
+.ftab{padding:5px 12px;border-radius:8px;border:1px solid rgba(0,212,255,0.15);background:rgba(0,212,255,0.04);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s;white-space:nowrap}
+.ftab:hover{background:rgba(0,212,255,0.1);color:var(--text)}
+.ftab.active{background:rgba(0,212,255,0.2);border-color:var(--cyan);color:var(--cyan)}
+#floorPlanWrap{flex:1;display:flex;align-items:stretch;padding:0;background:var(--bg);overflow:hidden;position:relative}
+#mallMap{position:absolute;inset:0;width:100%;height:100%;background:var(--bg)}
+/* Leaflet overrides */
+.leaflet-container{background:var(--bg)!important;font-family:'JetBrains Mono',monospace}
+.leaflet-control-zoom{border:1px solid rgba(0,212,255,0.22)!important;background:rgba(2,8,16,0.92)!important;border-radius:6px!important;overflow:hidden}
+.leaflet-control-zoom a{color:var(--cyan)!important;background:transparent!important;border-bottom:1px solid rgba(0,212,255,0.12)!important;font-size:16px!important;line-height:26px!important;width:26px!important;height:26px!important}
+.leaflet-control-zoom a:last-child{border-bottom:none!important}
+.leaflet-control-zoom a:hover{background:rgba(0,212,255,0.12)!important}
+/* Nav path animation (Leaflet SVG renderer adds className to <path>) */
+.l-nav-path,.l-nav-path path{animation:lnavdash 1.6s linear infinite}
+@keyframes lnavdash{to{stroke-dashoffset:-26}}
+/* Destination pulse ring */
+.dest-pulse{animation:destpulse 1.5s ease-in-out infinite}
+@keyframes destpulse{0%,100%{opacity:.2;r:18}50%{opacity:.65;r:26}}
+.mall-outer{fill:rgba(0,212,255,0.018);stroke:rgba(0,212,255,0.45);stroke-width:2}
+.zone-rect{fill:rgba(0,212,255,0.035);stroke:rgba(0,212,255,0.12);stroke-width:1}
+.zone-lbl{fill:rgba(0,212,255,0.42);font-family:'JetBrains Mono',monospace;letter-spacing:.8px;font-size:7px;text-anchor:middle;font-weight:600}
+.corridor-line{stroke:rgba(0,212,255,0.09);stroke-width:1.5;stroke-dasharray:6,4;fill:none}
+/* ── Zone type fills ── */
+.z-retail{fill:rgba(251,191,36,0.045);stroke:rgba(251,191,36,0.28);stroke-width:1.2}
+.z-food{fill:rgba(249,115,22,0.045);stroke:rgba(249,115,22,0.28);stroke-width:1.2}
+.z-luxury{fill:rgba(168,85,247,0.05);stroke:rgba(168,85,247,0.30);stroke-width:1.2}
+.z-entertain{fill:rgba(34,197,94,0.04);stroke:rgba(34,197,94,0.25);stroke-width:1.2}
+.z-service{fill:rgba(56,189,248,0.04);stroke:rgba(56,189,248,0.22);stroke-width:1}
+.z-corridor{fill:rgba(0,212,255,0.008);stroke:rgba(0,212,255,0.06);stroke-width:0.5}
+/* ── Zone header bands ── */
+.zh-retail{fill:rgba(251,191,36,0.14)}
+.zh-food{fill:rgba(249,115,22,0.14)}
+.zh-luxury{fill:rgba(168,85,247,0.15)}
+.zh-entertain{fill:rgba(34,197,94,0.12)}
+.zh-service{fill:rgba(56,189,248,0.11)}
+/* ── Zone labels by type ── */
+.zl-retail{fill:rgba(251,191,36,0.7)!important}
+.zl-food{fill:rgba(249,115,22,0.7)!important}
+.zl-luxury{fill:rgba(168,85,247,0.7)!important}
+.zl-entertain{fill:rgba(34,197,94,0.7)!important}
+.zl-service{fill:rgba(56,189,248,0.65)!important}
+/* ── Shop unit cells by type ── */
+.su-retail{fill:rgba(251,191,36,0.13);stroke:rgba(251,191,36,0.38);stroke-width:1}
+.su-food{fill:rgba(249,115,22,0.13);stroke:rgba(249,115,22,0.38);stroke-width:1}
+.su-luxury{fill:rgba(168,85,247,0.15);stroke:rgba(168,85,247,0.42);stroke-width:1}
+.su-entertain{fill:rgba(34,197,94,0.12);stroke:rgba(34,197,94,0.36);stroke-width:1}
+.su-service{fill:rgba(56,189,248,0.11);stroke:rgba(56,189,248,0.32);stroke-width:1}
+.su-default{fill:rgba(0,212,255,0.1);stroke:rgba(0,212,255,0.28);stroke-width:1}
+/* ── Unit number label ── */
+.unit-num{fill:rgba(0,212,255,0.22);font-family:'JetBrains Mono',monospace;font-size:6.5px;text-anchor:middle;dominant-baseline:middle;letter-spacing:.4px}
+/* ── Walkway / corridor strip ── */
+.walkway{fill:rgba(0,212,255,0.012);stroke:none}
+/* ── Legend dot ── */
+.leg-dot{rx:2}
+.leg-txt{font-family:'JetBrains Mono',monospace;font-size:6.5px;dominant-baseline:middle}
+.venue-rect{fill:rgba(0,212,255,0.07);stroke:rgba(0,212,255,0.28);stroke-width:1;cursor:pointer}
+.venue-rect:hover,.venue-rect.hi{fill:rgba(0,212,255,0.22);stroke:var(--cyan);stroke-width:1.5}
+.venue-name{fill:#cbd5e1;font-family:'Inter',sans-serif;font-size:7px;text-anchor:middle;dominant-baseline:middle}
+.venue-name.sm{font-size:6px}
+.esc-rect{fill:rgba(100,255,218,0.07);stroke:rgba(100,255,218,0.25);stroke-width:1}
+.esc-lbl{fill:rgba(100,255,218,0.5);font-size:8px;text-anchor:middle;dominant-baseline:middle}
+.entrance-rect{fill:rgba(0,212,255,0.1);stroke:rgba(0,212,255,0.4);stroke-width:1}
+.entrance-lbl{fill:rgba(0,212,255,0.75);font-family:'JetBrains Mono',monospace;font-size:7px;text-anchor:middle;dominant-baseline:middle}
+.you-outer{fill:none;stroke:rgba(100,255,218,0.35);stroke-width:1.5;transform-box:fill-box;transform-origin:center;animation:youpulse 2s ease-in-out infinite}
+.you-dot{fill:var(--teal)}
+.you-lbl{fill:var(--teal);font-family:'JetBrains Mono',monospace;font-size:8px;text-anchor:middle}
+.nav-glow{fill:none;stroke:rgba(0,212,255,0.1);stroke-width:16;stroke-linecap:round;stroke-linejoin:round}
+.nav-path{fill:none;stroke:var(--cyan);stroke-width:2.5;stroke-dasharray:8,5;stroke-linecap:round;stroke-linejoin:round;animation:navdash 1.6s linear infinite}
+.nav-arr{fill:rgba(0,212,255,0.62);font-size:10px;text-anchor:middle;dominant-baseline:middle}
+.nav-wp{fill:rgba(2,8,16,0.92);stroke:rgba(0,212,255,0.52);stroke-width:1.5}
+.nav-wp-lbl{fill:var(--cyan);font-size:8px;font-weight:700;text-anchor:middle;dominant-baseline:middle;font-family:'JetBrains Mono',monospace}
+.nav-walker{fill:rgba(100,255,218,1)}
+.dest-ring{fill:none;stroke:var(--cyan);stroke-width:1.5;transform-box:fill-box;transform-origin:center;animation:destring 1.5s ease-in-out infinite}
+#navStatusBar{display:none;align-items:center;gap:12px;padding:7px 18px;background:rgba(0,212,255,0.04);border-bottom:1px solid rgba(0,212,255,0.1);flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.5px}
+#navStatusBar.active{display:flex}
+.nsb-label{color:rgba(0,212,255,0.5)}.nsb-dest{color:var(--white);font-weight:600}.nsb-dim{color:rgba(0,212,255,0.35)}
+.nsb-val{color:rgba(100,255,218,0.85)}.nsb-step{margin-left:auto;font-size:9px;color:rgba(0,212,255,0.35)}
+.parking-free{fill:rgba(0,212,255,0.04);stroke:rgba(0,212,255,0.1);stroke-width:.6}
+.parking-occ{fill:rgba(248,113,113,0.08);stroke:rgba(248,113,113,0.18);stroke-width:.6}
+.ev-bay{fill:rgba(34,197,94,0.1);stroke:rgba(34,197,94,0.38);stroke-width:.8}
+.spot-lbl{fill:rgba(0,212,255,0.42);font-family:'JetBrains Mono',monospace;font-size:7.5px;text-anchor:middle;dominant-baseline:middle}
+.spot-occ-lbl{fill:rgba(248,113,113,0.38);font-size:9px;text-anchor:middle;dominant-baseline:middle}
+.ev-lbl{fill:#4ade80;font-size:11px;text-anchor:middle;dominant-baseline:middle}
+.terrace-area{fill:rgba(0,140,70,0.06);stroke:rgba(0,200,90,0.2);stroke-width:1}
+.terrace-lbl{fill:rgba(0,200,90,0.45);font-family:'JetBrains Mono',monospace;font-size:7px;text-anchor:middle}
+@keyframes youpulse{0%,100%{opacity:.25;r:16}50%{opacity:.6;r:24}}
+@keyframes destring{0%,100%{opacity:.2;r:20}50%{opacity:.65;r:30}}
+@keyframes navdash{to{stroke-dashoffset:-26}}
+
+/* ── HOLOGRAM FIGURE ── */
+.figure-wrap{position:relative;width:300px;height:430px;will-change:transform}
+.alya-photo{
+  width:100%;height:100%;object-fit:cover;object-position:center 8%;
+  display:block;border-radius:6px;
+  filter:brightness(1.06) contrast(1.08) saturate(1.15);
+  opacity:0.96;
+}
+#overlayCanvas{position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:6px}
+.holo-lines{
+  position:absolute;inset:0;pointer-events:none;border-radius:6px;z-index:4;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,0.055) 2px,rgba(0,212,255,0.055) 3px);
+  mix-blend-mode:screen;
+}
+.scanline{
+  position:absolute;left:0;right:0;height:2px;z-index:5;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.85) 45%,rgba(100,255,218,0.7) 50%,rgba(0,212,255,0.85) 55%,transparent);
+  animation:scan 3.2s linear infinite;pointer-events:none;filter:blur(0.4px);
+}
+@keyframes scan{0%{top:0%;opacity:0}6%{opacity:1}88%{opacity:.5}100%{top:100%;opacity:0}}
+.photo-edge{
+  position:absolute;inset:0;pointer-events:none;border-radius:6px;z-index:6;
+  box-shadow:inset 0 0 28px rgba(0,212,255,0.1),inset 0 0 1px rgba(0,212,255,0.3);transition:box-shadow .4s;
+}
+.speaking-active .photo-edge{animation:edgepulse 1s ease-in-out infinite}
+@keyframes edgepulse{0%,100%{box-shadow:inset 0 0 30px rgba(0,212,255,0.18),inset 0 0 1px rgba(0,212,255,0.5)}50%{box-shadow:inset 0 0 55px rgba(0,212,255,0.36),inset 0 0 2px rgba(0,212,255,0.85)}}
+.pc{position:absolute;width:14px;height:14px;pointer-events:none;z-index:7;border-color:rgba(0,212,255,0.5);border-style:solid}
+.pc-tl{top:8px;left:8px;border-width:1.5px 0 0 1.5px}.pc-tr{top:8px;right:8px;border-width:1.5px 1.5px 0 0}
+.pc-bl{bottom:8px;left:8px;border-width:0 0 1.5px 1.5px}.pc-br{bottom:8px;right:8px;border-width:0 1.5px 1.5px 0}
+.speaking-ring{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:320px;height:320px;border-radius:50%;border:1px solid rgba(0,212,255,0);
+  transition:border-color .3s;pointer-events:none;z-index:8;
+}
+.speaking-active .speaking-ring{border-color:rgba(0,212,255,0.2);animation:speakring 1.2s ease-in-out infinite}
+@keyframes speakring{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.3}50%{transform:translate(-50%,-50%) scale(1.04);opacity:.9}}
+.base-glow{
+  position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+  width:190px;height:12px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,212,255,0.22),transparent 70%);
+  filter:blur(5px);animation:pulse 4s ease-in-out infinite;
+}
+.proj-cone{
+  position:absolute;bottom:-55px;left:50%;transform:translateX(-50%);
+  width:0;height:0;z-index:1;pointer-events:none;
+  border-left:90px solid transparent;border-right:90px solid transparent;
+  border-top:55px solid rgba(0,212,255,0.05);filter:blur(10px);
+  animation:pulse 3s ease-in-out infinite;
+}
+
+/* waveform */
+#waveCanvas{display:block;margin-top:8px;border-radius:4px;opacity:0;transition:opacity .4s}
+#waveCanvas.active{opacity:1}
+
+/* name / voice */
+.name-block{text-align:center;margin-top:10px;margin-bottom:16px}
+.alya-name{font-size:2.4rem;font-weight:700;letter-spacing:8px;background:linear-gradient(135deg,var(--cyan),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.alya-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:3px}
+.voice-btn{width:60px;height:60px;border-radius:50%;background:rgba(0,212,255,0.08);border:1.5px solid rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s;font-size:22px}
+.voice-btn:hover{background:rgba(0,212,255,0.15);border-color:rgba(0,212,255,0.6)}
+.voice-btn.listening{background:rgba(255,50,50,0.12);border-color:rgba(255,100,100,0.6);animation:vring 1s infinite}
+@keyframes vring{0%,100%{box-shadow:0 0 0 0 rgba(255,100,100,0.3)}50%{box-shadow:0 0 0 12px rgba(255,100,100,0)}}
+.voice-btn.speaking{background:rgba(0,212,255,0.15);border-color:var(--cyan);animation:vring2 1s infinite}
+@keyframes vring2{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.3)}50%{box-shadow:0 0 0 14px rgba(0,212,255,0)}}
+.voice-hint{font-size:10px;color:var(--muted);margin-top:8px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono',monospace}
+
+/* ── CHAT ── */
+.chat-panel{display:flex;flex-direction:column;background:rgba(4,10,22,0.98);border-left:1px solid rgba(0,212,255,0.07);overflow:hidden}
+.chat-top{padding:14px 20px;border-bottom:1px solid rgba(0,212,255,0.07);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.chat-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(100,255,218,0.1));border:1px solid rgba(0,212,255,0.25);display:flex;align-items:center;justify-content:center;font-size:14px}
+.chat-tname{font-size:14px;font-weight:600;color:var(--white)}.chat-tsub{font-size:10px;color:var(--teal);font-family:'JetBrains Mono',monospace}
+.messages{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:2px}.messages::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.15);border-radius:2px}
+.msg{display:flex;flex-direction:column;gap:4px;animation:mi .3s ease}
+@keyframes mi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.l{align-items:flex-start}.msg.u{align-items:flex-end}
+.bubble{max-width:90%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.65}
+.msg.l .bubble{background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);color:var(--text);border-radius:3px 14px 14px 14px}
+.msg.u .bubble{background:rgba(0,212,255,0.11);border:1px solid rgba(0,212,255,0.22);color:var(--white);border-radius:14px 3px 14px 14px}
+.mname{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.msg.l .mname{color:var(--cyan)}
+.typing-bub{display:flex;gap:4px;padding:13px 16px;align-items:center}
+.typing-bub span{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:tb 1.2s infinite}
+.typing-bub span:nth-child(2){animation-delay:.2s}.typing-bub span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+
+/* ── VENUE CARDS ── */
+.cards-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;padding-top:2px;max-width:360px}
+.cards-scroll::-webkit-scrollbar{height:2px}.cards-scroll::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.2);border-radius:2px}
+.venue-card{
+  flex-shrink:0;width:155px;
+  background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);
+  border-radius:10px;padding:11px;cursor:pointer;
+  transition:all .2s;
+}
+.venue-card:hover{background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.35);transform:translateY(-2px)}
+.vc-icon{font-size:20px;margin-bottom:6px}
+.vc-name{font-size:12px;font-weight:600;color:var(--white);margin-bottom:3px;line-height:1.3}
+.vc-cuisine{font-size:10px;color:var(--muted);margin-bottom:6px}
+.vc-floor{font-size:10px;color:rgba(0,212,255,0.6);font-family:'JetBrains Mono',monospace;margin-bottom:5px}
+.vc-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.vc-wait{font-size:10px;padding:2px 7px;border-radius:8px;font-family:'JetBrains Mono',monospace}
+.vc-wait.low{background:rgba(100,255,218,0.1);color:var(--teal)}
+.vc-wait.mid{background:rgba(251,191,36,0.1);color:#fbbf24}
+.vc-wait.high{background:rgba(248,113,113,0.1);color:#f87171}
+.vc-rating{font-size:10px;color:#fbbf24}
+.vc-nav-btn{
+  width:100%;padding:5px 0;border-radius:8px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,152,204,0.2));
+  color:var(--cyan);font-size:10px;font-weight:600;letter-spacing:.5px;
+  transition:all .2s;
+}
+.vc-nav-btn:hover{background:linear-gradient(135deg,rgba(0,212,255,0.35),rgba(0,152,204,0.35))}
+
+/* map card inline */
+.mini-map-card{
+  width:100%;max-width:340px;height:160px;border-radius:10px;overflow:hidden;
+  border:1px solid rgba(0,212,255,0.2);position:relative;cursor:pointer;
+}
+.mini-map-card .expand-hint{
+  position:absolute;bottom:8px;right:8px;z-index:10;
+  font-size:10px;background:rgba(0,212,255,0.15);color:var(--cyan);
+  padding:3px 8px;border-radius:8px;font-family:'JetBrains Mono',monospace;
+}
+
+/* input */
+.input-area{padding:12px 14px;border-top:1px solid rgba(0,212,255,0.07);flex-shrink:0}
+.input-row{display:flex;gap:8px;align-items:center}
+.inp{flex:1;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);border-radius:22px;padding:10px 16px;font-size:13px;color:var(--white);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.inp::placeholder{color:var(--muted)}.inp:focus{border-color:rgba(0,212,255,0.35)}
+.sbtn{width:38px;height:38px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--cyan),var(--cyan2));border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.sbtn:hover{transform:scale(1.08)}
+.chips-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:11px;color:rgba(0,212,255,0.7);border:1px solid rgba(0,212,255,0.15);padding:5px 10px;border-radius:16px;background:transparent;cursor:pointer;transition:all .2s}
+.chip:hover{background:rgba(0,212,255,0.08);color:var(--cyan)}
+@media(max-width:768px){.figure-wrap{width:220px;height:315px}}
+
+/* ── MODALS ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.75);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+  backdrop-filter:blur(5px);padding:16px;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{
+  background:#040c18;border:1px solid rgba(0,212,255,0.22);
+  border-radius:16px;width:440px;max-width:100%;
+  max-height:88vh;overflow-y:auto;
+  box-shadow:0 0 80px rgba(0,212,255,0.14),0 0 0 1px rgba(0,212,255,0.06);
+  animation:mslide .28s ease;
+}
+@keyframes mslide{from{transform:translateY(22px);opacity:0}to{transform:none;opacity:1}}
+.modal-box::-webkit-scrollbar{width:2px}.modal-box::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.15);border-radius:2px}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 14px;border-bottom:1px solid rgba(0,212,255,0.1);
+  position:sticky;top:0;background:#040c18;z-index:1;
+}
+.modal-title{font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:2.5px;font-family:'JetBrains Mono',monospace}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;transition:color .2s}
+.modal-close:hover{color:var(--white)}
+.modal-body{padding:18px 20px 22px}
+.form-row{margin-bottom:14px}
+.form-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;display:block;font-family:'JetBrains Mono',monospace}
+.form-input{
+  width:100%;background:rgba(0,212,255,0.04);
+  border:1px solid rgba(0,212,255,0.14);border-radius:10px;
+  padding:10px 14px;font-size:13px;color:var(--white);
+  font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;
+}
+.form-input:focus{border-color:rgba(0,212,255,0.4)}
+.form-select{
+  width:100%;background:#040c18;
+  border:1px solid rgba(0,212,255,0.14);border-radius:10px;
+  padding:10px 14px;font-size:13px;color:var(--white);
+  font-family:'Inter',sans-serif;outline:none;cursor:pointer;
+}
+.form-select option{background:#040c18}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.size-row{display:flex;gap:6px;flex-wrap:wrap}
+.size-btn{
+  width:38px;height:38px;border-radius:10px;
+  background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.14);
+  color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.size-btn.sel{background:rgba(0,212,255,0.2);border-color:var(--cyan);color:var(--cyan)}
+.size-btn:hover{background:rgba(0,212,255,0.12)}
+.confirm-btn{
+  width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  color:#000;font-size:13px;font-weight:700;letter-spacing:1px;
+  transition:opacity .2s;
+}
+.confirm-btn:hover{opacity:.85}
+.confirm-btn:disabled{opacity:.35;cursor:not-allowed}
+.section-lbl{font-size:10px;font-weight:700;color:var(--cyan);letter-spacing:2.5px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:10px;display:block}
+/* Parking */
+.park-tabs{display:flex;gap:8px;margin-bottom:14px}
+.park-tab{
+  flex:1;padding:9px;border-radius:10px;border:1px solid rgba(0,212,255,0.14);
+  background:rgba(0,212,255,0.04);color:var(--muted);font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .2s;
+}
+.park-tab.active{background:rgba(0,212,255,0.16);border-color:var(--cyan);color:var(--cyan)}
+.spot-grid{display:grid;gap:4px;margin-bottom:12px}
+.spot{
+  aspect-ratio:1;border-radius:5px;cursor:pointer;
+  border:1px solid transparent;font-size:9px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-family:'JetBrains Mono',monospace;
+  user-select:none;
+}
+.spot.free{background:rgba(100,255,218,0.09);border-color:rgba(100,255,218,0.22);color:var(--teal)}
+.spot.free:hover{background:rgba(100,255,218,0.2);border-color:var(--teal)}
+.spot.occupied{background:rgba(248,113,113,0.07);border-color:rgba(248,113,113,0.18);color:rgba(248,113,113,0.45);cursor:not-allowed}
+.spot.selected{background:rgba(0,212,255,0.26);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 10px rgba(0,212,255,0.28)}
+.spot.ev{background:rgba(34,197,94,0.09);border-color:rgba(34,197,94,0.28);color:#4ade80}
+.spot.ev:hover{background:rgba(34,197,94,0.2)}
+.spot.ev.selected{background:rgba(0,212,255,0.26);border-color:var(--cyan);color:var(--cyan)}
+.spot-legend{display:flex;gap:12px;margin-bottom:11px;flex-wrap:wrap}
+.spot-legend span{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.dur-row{display:flex;gap:6px;margin-top:4px}
+.dur-btn{
+  flex:1;padding:8px 4px;border-radius:8px;border:1px solid rgba(0,212,255,0.14);
+  background:rgba(0,212,255,0.04);color:var(--muted);font-size:11px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .2s;
+}
+.dur-btn.sel{background:rgba(0,212,255,0.16);border-color:var(--cyan);color:var(--cyan)}
+.fee-box{
+  background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.14);
+  border-radius:10px;padding:13px 16px;margin:14px 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.fee-label{font-size:11px;color:var(--muted)}
+.fee-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.fee-amount{font-size:22px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace}
+.car-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.18);
+  border-radius:8px;padding:8px 14px;font-size:12px;color:var(--white);
+  font-family:'JetBrains Mono',monospace;margin-bottom:6px;
+}
+.divider{border:none;border-top:1px solid rgba(0,212,255,0.08);margin:16px -20px}
+/* Success state */
+.success-box{text-align:center;padding:24px 0 12px}
+.success-icon{font-size:52px;margin-bottom:14px}
+.success-title{font-size:17px;font-weight:700;color:var(--cyan);margin-bottom:10px}
+.success-detail{font-size:13px;color:var(--text);line-height:1.7}
+.conf-code{font-family:'JetBrains Mono',monospace;color:var(--teal);font-size:20px;font-weight:700;letter-spacing:4px;margin-top:14px;margin-bottom:4px}
+
+/* ── MINI HOLOGRAM — nav mode ── */
+#miniAlya{
+  position:fixed;
+  right:calc(400px + 16px);
+  bottom:68px;
+  width:96px;
+  z-index:10000;
+  opacity:0;
+  pointer-events:none;
+  transform:translateX(28px) scale(0.75);
+  transition:opacity .5s .18s ease, transform .55s .18s cubic-bezier(.34,1.56,.64,1);
+}
+#miniAlya.visible{
+  opacity:1;
+  transform:translateX(0) scale(1);
+  pointer-events:auto;
+}
+.ml-frame{
+  position:relative;width:96px;height:138px;border-radius:6px;overflow:hidden;
+  box-shadow:0 0 20px rgba(0,212,255,0.25),0 0 40px rgba(0,212,255,0.1);
+}
+.ml-frame .alya-photo{
+  width:100%;height:100%;object-fit:cover;object-position:center 8%;
+  filter:brightness(1.06) contrast(1.08) saturate(1.15);
+  opacity:0.96;
+}
+.ml-frame .holo-lines{
+  position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,0.06) 2px,rgba(0,212,255,0.06) 3px);
+  mix-blend-mode:screen;
+}
+.ml-frame .scanline{
+  position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.9) 45%,rgba(100,255,218,0.7) 50%,rgba(0,212,255,0.9) 55%,transparent);
+  animation:scan 3.2s linear infinite;filter:blur(0.4px);
+}
+.ml-frame .pc{z-index:7}
+.ml-badge{
+  text-align:center;padding:5px 0 3px;
+  font-size:8px;letter-spacing:2.5px;color:rgba(0,212,255,0.75);
+  font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+}
+.ml-status{
+  font-size:8px;color:rgba(100,255,218,0.6);letter-spacing:1px;
+  font-family:'JetBrains Mono',monospace;text-align:center;
+  animation:pulse 1.2s infinite;
+}
+@media(max-width:768px){#miniAlya{display:none}}
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><div class="ndot"></div>Dubai Square</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button class="lang-btn active" id="lbEN" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" id="lbTR" onclick="setLang('tr')">TR</button>
+    <button class="lang-btn" id="lbAR" onclick="setLang('ar')">AR</button>
+  </div>
+  <div class="nstatus"><div class="sdot"></div>ALYA ONLINE</div>
+</nav>
+
+<!-- ── MAP OVERLAY ── -->
+<div class="map-overlay" id="mapOverlay">
+  <div class="map-header">
+    <span class="map-header-title" id="mapTitle">DUBAI SQUARE — FLOOR PLAN</span>
+    <div style="display:flex;align-items:center">
+      <button class="map-twin-btn" id="twinBtn" onclick="toggleTwinView()">🔷 3D TWIN</button>
+      <button class="map-close-btn" onclick="closeMap()">✕ Close</button>
+    </div>
+  </div>
+  <div id="navStatusBar">
+    <span class="nsb-label">NAVIGATING TO</span>
+    <span class="nsb-dest" id="nsbDest">—</span>
+    <span class="nsb-dim">·</span>
+    <span class="nsb-val" id="nsbTime">⏱ —</span>
+    <span class="nsb-dim">·</span>
+    <span class="nsb-val" id="nsbDist">📍 —</span>
+    <span class="nsb-step" id="nsbStep">STEP 1 OF 2</span>
+  </div>
+  <div id="floorTabs">
+    <button class="ftab active" data-floor="L1">LEVEL 1</button>
+    <button class="ftab" data-floor="L2">LEVEL 2 ✦</button>
+    <button class="ftab" data-floor="L3">LEVEL 3 🍽</button>
+    <button class="ftab" data-floor="G">GROUND</button>
+    <button class="ftab" data-floor="B1">B1 ⚡</button>
+    <button class="ftab" data-floor="B2">B2</button>
+  </div>
+  <div id="floorPlanWrap">
+    <div id="mallMap"></div>
+    <iframe id="twinFrame" src="" title="Digital Twin"></iframe>
+  </div>
+</div>
+
+<div class="app">
+  <!-- STAGE -->
+  <div class="stage" id="stage">
+    <canvas id="bgc"></canvas>
+    <div class="dfloat df1">CROWD: 2.1p/m²<br>EV BAY 07: ACTIVE<br>PICKUP: 3 READY<br>TEMP: 38°C OUT</div>
+    <div class="dfloat df2">CAMERAS: 912<br>LATENCY: 11ms<br>B1: 67% FULL<br>ZONE A: CLEAR</div>
+    <div class="stage-inner">
+      <div class="figure-wrap" id="figure">
+        <img id="alyaPhoto" class="alya-photo" src="alya-portrait.png" crossorigin="anonymous" alt="Alya">
+        <canvas id="overlayCanvas"></canvas>
+        <div class="holo-lines"></div>
+        <div class="scanline"></div>
+        <div class="photo-edge"></div>
+        <div class="pc pc-tl"></div><div class="pc pc-tr"></div>
+        <div class="pc pc-bl"></div><div class="pc pc-br"></div>
+        <div class="speaking-ring" id="sring"></div>
+        <div class="base-glow"></div>
+        <div class="proj-cone"></div>
+      </div>
+      <canvas id="waveCanvas" width="250" height="34"></canvas>
+      <div class="name-block">
+        <div class="alya-name">ALYA</div>
+        <div class="alya-sub">Dubai Square · AI Concierge</div>
+      </div>
+      <div class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎙️</div>
+      <div class="voice-hint" id="voiceHint">tap to speak</div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-panel">
+    <div class="chat-top">
+      <div class="chat-av">✦</div>
+      <div><div class="chat-tname">Alya</div><div class="chat-tsub">Your Dubai Square companion</div></div>
+    </div>
+    <div class="messages" id="msgs">
+      <div class="msg l">
+        <div class="mname">Alya</div>
+        <div class="bubble">Welcome to Dubai Square. I'm Alya, your personal AI concierge.<br><br>I can help you find restaurants, shops, navigate the mall, check parking and EV charging, or explore the waterfront.<br><br>How can I help you today?</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <div class="input-row">
+        <input class="inp" id="inp" placeholder="Ask Alya anything…" autocomplete="off" onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="sbtn" onclick="sendMsg()">➤</button>
+      </div>
+      <div class="chips-row">
+        <div class="chip" onclick="quick('Show me restaurants')">🍽️ Dining</div>
+        <div class="chip" onclick="quick('Find a cafe')">☕ Cafe</div>
+        <div class="chip" onclick="quick('Reserve a table')">📋 Reserve</div>
+        <div class="chip" onclick="openParkingModal()">🚗 My Car</div>
+        <div class="chip" onclick="quick('Show me the map')">🗺️ Map</div>
+        <div class="chip" onclick="quick('Waterfront walk')">🌊 Waterfront</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MINI HOLOGRAM — nav mode -->
+<div id="miniAlya">
+  <div class="ml-frame">
+    <img class="alya-photo" src="alya-portrait.png" alt="Alya">
+    <div class="holo-lines"></div>
+    <div class="scanline"></div>
+    <div class="pc pc-tl"></div><div class="pc pc-tr"></div>
+    <div class="pc pc-bl"></div><div class="pc pc-br"></div>
+  </div>
+  <div class="ml-badge">ALYA</div>
+  <div class="ml-status" id="mlStatus">NAVIGATING</div>
+</div>
+
+<!-- RESERVATION MODAL -->
+<div class="modal-overlay" id="resvModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">RESERVE A TABLE</span>
+      <button class="modal-close" onclick="closeModal('resvModal')">✕</button>
+    </div>
+    <div class="modal-body" id="resvBody"></div>
+  </div>
+</div>
+
+<!-- PARKING MODAL -->
+<div class="modal-overlay" id="parkModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">PARKING & VEHICLE</span>
+      <button class="modal-close" onclick="closeModal('parkModal')">✕</button>
+    </div>
+    <div class="modal-body" id="parkBody"></div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   MALL DATA
+════════════════════════════════════════════════════════ */
+const MALL = {
+  center: [25.1972, 55.3517],
+  restaurants: [
+    {id:'r1',name:'Nobu Dubai Square',icon:'🍱',cuisine:'Japanese-Peruvian',floor:'Level 3',zone:'Dining Quarter',wait:15,rating:4.9,price:'AED 350/person',lat:25.1978,lng:55.3524},
+    {id:'r2',name:'Zuma',icon:'🍣',cuisine:'Japanese',floor:'Level 3',zone:'Dining Quarter',wait:28,rating:4.8,price:'AED 280/person',lat:25.1975,lng:55.3519},
+    {id:'r3',name:'Cipriani',icon:'🍝',cuisine:'Italian',floor:'Level 2',zone:'Central Atrium',wait:20,rating:4.7,price:'AED 220/person',lat:25.1971,lng:55.3515},
+    {id:'r4',name:'Nusr-Et Steakhouse',icon:'🥩',cuisine:'Grill',floor:'Level 2',zone:'Central Atrium',wait:45,rating:4.6,price:'AED 400/person',lat:25.1968,lng:55.3520},
+    {id:'r5',name:'Sushi Counter',icon:'🍱',cuisine:'Japanese',floor:'Level 1',zone:'Food Hall',wait:5,rating:4.5,price:'AED 120/person',lat:25.1974,lng:55.3510},
+    {id:'r6',name:'Scalini',icon:'🇮🇹',cuisine:'Italian',floor:'Level 2',zone:'West Wing',wait:35,rating:4.7,price:'AED 260/person',lat:25.1965,lng:55.3513},
+    {id:'r7',name:'La Petite Maison',icon:'🇫🇷',cuisine:'French Mediterranean',floor:'Level 3',zone:'Dining Quarter',wait:18,rating:4.8,price:'AED 290/person',lat:25.1979,lng:55.3526},
+    {id:'r8',name:'Morimoto',icon:'🍜',cuisine:'Japanese Fusion',floor:'Level 2',zone:'Gourmet Street West',wait:22,rating:4.7,price:'AED 210/person',lat:25.1966,lng:55.3513},
+  ],
+  cafes: [
+    {id:'c1',name:'% Arabica',icon:'☕',cuisine:'Specialty Coffee',floor:'Level 1',zone:'West Wing',wait:5,rating:4.8,price:'AED 35',lat:25.1970,lng:55.3508},
+    {id:'c2',name:'Blank Street Coffee',icon:'🧋',cuisine:'Coffee & Pastry',floor:'Ground Floor',zone:'Main Entrance',wait:3,rating:4.6,price:'AED 28',lat:25.1963,lng:55.3517},
+    {id:'c3',name:'Roastery by %',icon:'☕',cuisine:'Third Wave Coffee',floor:'Level 2',zone:'Food Hall',wait:8,rating:4.7,price:'AED 42',lat:25.1973,lng:55.3522},
+    {id:'c4',name:'Caffe Cipriani',icon:'🥐',cuisine:'Italian Cafe',floor:'Level 2',zone:'Central Atrium',wait:12,rating:4.8,price:'AED 55',lat:25.1969,lng:55.3514},
+    {id:'c5',name:'Starbucks Reserve',icon:'☕',cuisine:'Premium Coffee',floor:'Level 1',zone:'Lifestyle Avenue',wait:6,rating:4.6,price:'AED 38',lat:25.1968,lng:55.3519},
+  ],
+  shops: [
+    {id:'s1',name:'Gucci',icon:'👜',cat:'Luxury Fashion',floor:'Level 2',zone:'Luxury Quarter',lat:25.1976,lng:55.3516},
+    {id:'s2',name:'Louis Vuitton',icon:'👜',cat:'Luxury Fashion',floor:'Level 2',zone:'Luxury Quarter',lat:25.1974,lng:55.3514},
+    {id:'s3',name:'Chanel',icon:'💎',cat:'Luxury Fashion',floor:'Level 2',zone:'Luxury Quarter',lat:25.1972,lng:55.3513},
+    {id:'s4',name:'Apple Store',icon:'🍎',cat:'Technology',floor:'Level 1',zone:'Central Atrium',lat:25.1967,lng:55.3518},
+    {id:'s5',name:'Zara',icon:'🛍️',cat:'Fashion',floor:'Level 1',zone:'East Wing',lat:25.1966,lng:55.3523},
+    {id:'s6',name:'Sephora',icon:'💄',cat:'Beauty',floor:'Level 1',zone:'West Wing',lat:25.1971,lng:55.3507},
+    {id:'s7',name:'Rolex Boutique',icon:'⌚',cat:'Watches',floor:'Level 2',zone:'Luxury Quarter',lat:25.1977,lng:55.3519},
+    {id:'s8',name:'H&M',icon:'👗',cat:'Fashion',floor:'Level 1',zone:'Fashion Ave East',lat:25.1965,lng:55.3524},
+    {id:'s9',name:'Hermès',icon:'🧣',cat:'Luxury Fashion',floor:'Level 2',zone:'Luxury Quarter',lat:25.1975,lng:55.3515},
+    {id:'s10',name:'Cartier',icon:'💍',cat:'Luxury Jewelry',floor:'Level 2',zone:'Platinum Zone',lat:25.1977,lng:55.3521},
+  ],
+  waterfront: {lat:25.1960,lng:55.3530,name:'Creek Promenade',desc:'1.2 km waterfront walk along Dubai Creek Harbour. Stunning views of the Creek Tower and marina. Outdoor dining and water taxis available.'},
+  parking: {
+    b1:{name:'B1 Parking',lat:25.1958,lng:55.3515,capacity:67,ev:12},
+    b2:{name:'B2 Parking',lat:25.1955,lng:55.3518,capacity:45,ev:8},
+  }
+};
+
+/* ════════════════════════════════════════════════════════
+   LEAFLET MAP — STATE + INIT
+════════════════════════════════════════════════════════ */
+let _mallMap=null, _floorOverlay=null, _venueLayer=null;
+
+/* CSS embedded in serialized SVG (CSS variables resolved, no hover needed) */
+const _FP_CSS=`.mall-outer{fill:rgba(0,212,255,.018);stroke:rgba(0,212,255,.45);stroke-width:2}
+.zone-rect{fill:rgba(0,212,255,.035);stroke:rgba(0,212,255,.12);stroke-width:1}
+.zone-lbl{fill:rgba(0,212,255,.42);font-family:'JetBrains Mono',monospace;letter-spacing:1.2px;font-size:8.5px;text-anchor:middle;font-weight:600}
+.corridor-line{stroke:rgba(0,212,255,.09);stroke-width:1.5;stroke-dasharray:6,4;fill:none}
+.z-retail{fill:rgba(251,191,36,.045);stroke:rgba(251,191,36,.28);stroke-width:1.2}
+.z-food{fill:rgba(249,115,22,.045);stroke:rgba(249,115,22,.28);stroke-width:1.2}
+.z-luxury{fill:rgba(168,85,247,.05);stroke:rgba(168,85,247,.3);stroke-width:1.2}
+.z-entertain{fill:rgba(34,197,94,.04);stroke:rgba(34,197,94,.25);stroke-width:1.2}
+.z-service{fill:rgba(56,189,248,.04);stroke:rgba(56,189,248,.22);stroke-width:1}
+.zh-retail{fill:rgba(251,191,36,.14)}.zh-food{fill:rgba(249,115,22,.14)}
+.zh-luxury{fill:rgba(168,85,247,.15)}.zh-entertain{fill:rgba(34,197,94,.12)}.zh-service{fill:rgba(56,189,248,.11)}
+.zl-retail{fill:rgba(251,191,36,.7)}.zl-food{fill:rgba(249,115,22,.7)}
+.zl-luxury{fill:rgba(168,85,247,.7)}.zl-entertain{fill:rgba(34,197,94,.7)}.zl-service{fill:rgba(56,189,248,.65)}
+.su-retail{fill:rgba(251,191,36,.13);stroke:rgba(251,191,36,.38);stroke-width:1}
+.su-food{fill:rgba(249,115,22,.13);stroke:rgba(249,115,22,.38);stroke-width:1}
+.su-luxury{fill:rgba(168,85,247,.15);stroke:rgba(168,85,247,.42);stroke-width:1}
+.su-entertain{fill:rgba(34,197,94,.12);stroke:rgba(34,197,94,.36);stroke-width:1}
+.su-service{fill:rgba(56,189,248,.11);stroke:rgba(56,189,248,.32);stroke-width:1}
+.su-default{fill:rgba(0,212,255,.1);stroke:rgba(0,212,255,.28);stroke-width:1}
+.unit-num{fill:rgba(0,212,255,.22);font-family:'JetBrains Mono',monospace;font-size:6.5px;text-anchor:middle;dominant-baseline:middle;letter-spacing:.4px}
+.walkway{fill:rgba(0,212,255,.012);stroke:none}
+.leg-txt{font-family:'JetBrains Mono',monospace;font-size:6.5px;dominant-baseline:middle}
+.venue-rect{fill:rgba(0,212,255,.07);stroke:rgba(0,212,255,.28);stroke-width:1}
+.venue-rect.hi{fill:rgba(0,212,255,.22);stroke:#00d4ff;stroke-width:1.5}
+.venue-name{fill:#cbd5e1;font-family:'Inter',sans-serif;font-size:7px;text-anchor:middle;dominant-baseline:middle}
+.venue-name.sm{font-size:6px}
+.esc-rect{fill:rgba(100,255,218,.07);stroke:rgba(100,255,218,.25);stroke-width:1}
+.entrance-rect{fill:rgba(0,212,255,.1);stroke:rgba(0,212,255,.4);stroke-width:1}
+.entrance-lbl{fill:rgba(0,212,255,.75);font-family:'JetBrains Mono',monospace;font-size:9px;text-anchor:middle;dominant-baseline:middle}
+.dest-ring{fill:none;stroke:#00d4ff;stroke-width:1.5}
+.parking-free{fill:rgba(0,212,255,.04);stroke:rgba(0,212,255,.1);stroke-width:.6}
+.parking-occ{fill:rgba(248,113,113,.08);stroke:rgba(248,113,113,.18);stroke-width:.6}
+.ev-bay{fill:rgba(34,197,94,.1);stroke:rgba(34,197,94,.38);stroke-width:.8}
+.spot-lbl{fill:rgba(0,212,255,.42);font-family:'JetBrains Mono',monospace;font-size:7.5px;text-anchor:middle;dominant-baseline:middle}
+.spot-occ-lbl{fill:rgba(248,113,113,.38);font-size:9px;text-anchor:middle;dominant-baseline:middle}
+.ev-lbl{fill:#4ade80;font-size:11px;text-anchor:middle;dominant-baseline:middle}
+.terrace-area{fill:rgba(0,140,70,.06);stroke:rgba(0,200,90,.2);stroke-width:1}
+.terrace-lbl{fill:rgba(0,200,90,.45);font-family:'JetBrains Mono',monospace;font-size:9px;text-anchor:middle}`;
+
+function initMallLeaflet(){
+  if(_mallMap) return;
+  const el=document.getElementById('mallMap'); if(!el) return;
+  _mallMap=L.map(el,{
+    crs:L.CRS.Simple,
+    minZoom:-2, maxZoom:3,
+    zoomControl:false, // manuel ekleyeceğiz — konum için
+    attributionControl:false,
+    zoomSnap:0.25, zoomDelta:0.5,
+  });
+  L.control.zoom({position:'bottomright'}).addTo(_mallMap);
+  _mallMap.fitBounds([[0,0],[390,680]]);
+  _mallMap.setMaxBounds([[-30,-30],[420,710]]);
+}
+
+/* ════════════════════════════════════════════════════════
+   MALL FLOOR PLAN — SVG
+════════════════════════════════════════════════════════ */
+const FP = {
+  floor:'L1', hi:[], navTo:null,
+
+  VFLOOR:{r1:'L3',r2:'L3',r3:'L2',r4:'L2',r5:'L3',r6:'L2',r7:'L3',r8:'L2',
+          c1:'L1',c2:'G',c3:'L2',c4:'L2',c5:'L1',
+          s1:'L2',s2:'L2',s3:'L2',s4:'L1',s5:'L1',s6:'L1',s7:'L2',s8:'L1',s9:'L2',s10:'L2'},
+
+  V:{
+    // corr W=22: x=183→172-194, x=497→486-508
+    // zones: left x:24-171(w:147), cL x:195-340(w:145), cR x:344-484(w:140), right x:509-656(w:147)
+    // L3 — Dining Quarter
+    r1:{n:'Nobu',         i:'🍱',x:24,  y:48, w:147,h:90},
+    r2:{n:'Zuma',         i:'🍣',x:195, y:48, w:145,h:90},
+    r5:{n:'Sushi Counter',i:'🍱',x:344, y:48, w:140,h:90},
+    r7:{n:'La Petite Maison',i:'🇫🇷',x:509,y:48, w:147,h:90},
+    // L2 — Gourmet top row (y:200-282)
+    r6:{n:'Scalini',      i:'🇮🇹',x:24,  y:200,w:147,h:82},
+    r3:{n:'Cipriani',     i:'🍝',x:195, y:200,w:145,h:82},
+    r4:{n:'Nusr-Et',      i:'🥩',x:344, y:200,w:140,h:82},
+    r8:{n:'Morimoto',     i:'🍜',x:24,  y:287,w:72, h:81},
+    // L2 — Gourmet bottom (y:287-368)
+    c3:{n:'Roastery by %',i:'☕',x:195, y:287,w:145,h:81},
+    c4:{n:'Caffe Cipriani',i:'🥐',x:344,y:287,w:140,h:81},
+    // L2 — Luxury front row (y:127-183)
+    s1:{n:'Gucci',        i:'👜',x:24,  y:127,w:147,h:56},
+    s2:{n:'Louis Vuitton',i:'👜',x:195, y:127,w:145,h:56},
+    s3:{n:'Chanel',       i:'💎',x:344, y:127,w:140,h:56},
+    s7:{n:'Rolex',        i:'⌚',x:509, y:127,w:147,h:56},
+    s9:{n:'Hermès',       i:'🧣',x:195, y:48, w:70, h:65},
+    s10:{n:'Cartier',     i:'💍',x:509, y:200,w:72, h:82},
+    // L1 — Shops
+    c1:{n:'% Arabica',    i:'☕',x:24,  y:48, w:147,h:80},
+    s6:{n:'Sephora',      i:'💄',x:24,  y:142,w:147,h:118},
+    s4:{n:'Apple Store',  i:'🍎',x:195, y:48, w:289,h:118},
+    s5:{n:'Zara',         i:'🛍️',x:509, y:48, w:147,h:118},
+    c5:{n:'Starbucks Res.',i:'☕',x:195, y:180,w:96, h:86},
+    s8:{n:'H&M',          i:'👗',x:509, y:180,w:147,h:86},
+    // G — Cafe
+    c2:{n:'Blank Street', i:'🧋',x:195, y:293,w:145,h:52}
+  },
+
+  YOU:{L3:[340,376],L2:[340,376],L1:[340,376],G:[340,376],B1:[340,376],B2:[340,376]},
+  ESC_ENTRY:{L1:[183,145],L2:[183,250],L3:[183,234],G:[183,158],B1:[183,186],B2:[183,186]},
+  userFloor:'L1', fromEsc:false,
+
+  el(tag,attrs={},txt=''){
+    const e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+    for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);
+    if(txt)e.textContent=txt;
+    return e;
+  },
+
+  z(svg,x,y,w,h,lbl){
+    svg.appendChild(this.el('rect',{x,y,width:w,height:h,rx:6,class:'zone-rect'}));
+    if(lbl) svg.appendChild(this.el('text',{x:x+w/2,y:y+13,class:'zone-lbl'},lbl));
+  },
+
+  venue(svg,id){
+    const v=this.V[id]; if(!v)return;
+    const hl=this.hi.includes(id)||this.navTo===id;
+    if(hl) svg.appendChild(this.el('circle',{cx:v.x+v.w/2,cy:v.y+v.h/2,r:20,class:'dest-ring'}));
+    const g=this.el('g',{style:'cursor:pointer'}); g.onclick=()=>window.navigateTo(id);
+    g.appendChild(this.el('rect',{x:v.x,y:v.y,width:v.w,height:v.h,rx:6,class:'venue-rect'+(hl?' hi':'')}));
+    const big=v.h>80;
+    g.appendChild(this.el('text',{x:v.x+v.w/2,y:v.y+v.h/2-(big?9:5),
+      'text-anchor':'middle','dominant-baseline':'middle','font-size':big?'14':'10'},v.i));
+    const ws=v.n.split(' '),lines=ws.length>2?[ws.slice(0,2).join(' '),ws.slice(2).join(' ')].filter(Boolean):[v.n];
+    lines.forEach((ln,ii)=>g.appendChild(this.el('text',{x:v.x+v.w/2,y:v.y+v.h/2+(big?10:6)+ii*9,
+      class:'venue-name'+(v.w<115?' sm':''),'text-anchor':'middle','dominant-baseline':'middle'},ln)));
+    svg.appendChild(g);
+  },
+
+  esc(svg,cx,cy){
+    const W=18,H=26,gap=2;
+    // Up escalator - architectural symbol with diagonal
+    svg.appendChild(this.el('rect',{x:cx-W-gap,y:cy-H/2,width:W,height:H,rx:2,class:'esc-rect'}));
+    svg.appendChild(this.el('line',{x1:cx-W-gap+3,y1:cy+H/2-4,x2:cx-gap-3,y2:cy-H/2+4,stroke:'rgba(0,212,255,0.45)','stroke-width':'1.8'}));
+    svg.appendChild(this.el('text',{x:cx-W/2-gap,y:cy-H/2-3,fill:'rgba(0,212,255,0.7)','font-size':'8','text-anchor':'middle','dominant-baseline':'auto'},'▲'));
+    // Down escalator
+    svg.appendChild(this.el('rect',{x:cx+gap,y:cy-H/2,width:W,height:H,rx:2,class:'esc-rect'}));
+    svg.appendChild(this.el('line',{x1:cx+gap+3,y1:cy-H/2+4,x2:cx+W+gap-3,y2:cy+H/2-4,stroke:'rgba(0,212,255,0.45)','stroke-width':'1.8'}));
+    svg.appendChild(this.el('text',{x:cx+W/2+gap,y:cy+H/2+9,fill:'rgba(0,212,255,0.7)','font-size':'8','text-anchor':'middle'},'▼'));
+    svg.appendChild(this.el('text',{x:cx,y:cy+H/2+18,fill:'rgba(0,212,255,0.28)','font-family':"'JetBrains Mono',monospace",'font-size':'6.5','text-anchor':'middle'},'ESC'));
+  },
+
+  youHere(svg){
+    const[x,y]=this.fromEsc?(this.ESC_ENTRY[this.floor]||[183,248]):(this.YOU[this.floor]||[340,376]);
+    if(this.navTo){
+      let vx,vy;
+      if(this.navTo==='_esc'){
+        const ep=this.ESC_ENTRY[this.floor]||[183,148];
+        vx=ep[0]; vy=ep[1];
+      } else {
+        const v=this.V[this.navTo];
+        if(v){ vx=v.x+v.w/2; vy=v.y+v.h/2; }
+      }
+      if(vx!==undefined){
+        const mid=(y+vy)/2;
+        const pathD='M'+x+','+y+' L'+x+','+mid+' L'+vx+','+mid+' L'+vx+','+vy;
+        svg.appendChild(this.el('path',{d:pathD,class:'nav-glow'}));
+        svg.appendChild(this.el('path',{d:pathD,class:'nav-path'}));
+        [[x,y,x,mid],[x,mid,vx,mid],[vx,mid,vx,vy]].forEach(([ax,ay,bx,by])=>{
+          const slen=Math.sqrt((bx-ax)**2+(by-ay)**2);
+          if(slen<20)return;
+          const smx=(ax+bx)/2,smy=(ay+by)/2;
+          const ang=Math.atan2(by-ay,bx-ax)*180/Math.PI;
+          svg.appendChild(this.el('text',{x:smx,y:smy,class:'nav-arr',transform:'rotate('+ang+','+smx+','+smy+')'},'▶'));
+        });
+        [[x,mid,'1'],[vx,mid,'2']].forEach(([wx,wy,n])=>{
+          svg.appendChild(this.el('circle',{cx:wx,cy:wy,r:9,class:'nav-wp'}));
+          svg.appendChild(this.el('text',{x:wx,y:wy,class:'nav-wp-lbl'},n));
+        });
+        if(this.navTo==='_esc'){
+          // ESC hedefi: merdiven simgesi
+          svg.appendChild(this.el('circle',{cx:vx,cy:vy,r:15,fill:'rgba(0,212,255,0.15)',stroke:'rgba(0,212,255,0.7)','stroke-width':'1.5'}));
+          svg.appendChild(this.el('text',{x:vx,y:vy+1,fill:'var(--cyan)','font-size':'12','text-anchor':'middle','dominant-baseline':'middle'},'↑'));
+          svg.appendChild(this.el('text',{x:vx,y:vy+18,fill:'var(--cyan)','font-size':'7','text-anchor':'middle','font-family':"'JetBrains Mono',monospace"},'ESC'));
+        } else {
+          const walker=this.el('circle',{r:5,class:'nav-walker'});
+          const anim=document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+          anim.setAttribute('dur','3.5s'); anim.setAttribute('repeatCount','indefinite');
+          anim.setAttribute('path',pathD); anim.setAttribute('calcMode','linear');
+          walker.appendChild(anim); svg.appendChild(walker);
+        }
+      }
+    }
+    svg.appendChild(this.el('circle',{cx:x,cy:y,r:16,class:'you-outer'}));
+    svg.appendChild(this.el('circle',{cx:x,cy:y,r:7,class:this.fromEsc?'nav-walker':'you-dot'}));
+    svg.appendChild(this.el('text',{x,y:y+22,class:'you-lbl'},this.fromEsc?'ESC ▲':'YOU'));
+  },
+
+  bg(svg){ svg.appendChild(this.el('rect',{x:18,y:18,width:644,height:356,rx:8,class:'mall-outer'})); },
+  sep(svg,x1,y1,x2,y2){ svg.appendChild(this.el('line',{x1,y1,x2,y2,class:'corridor-line'})); },
+  dots(svg){ for(let gx=40;gx<648;gx+=22) for(let gy=36;gy<366;gy+=22) svg.appendChild(this.el('circle',{cx:gx,cy:gy,r:'.85',fill:'rgba(0,212,255,0.05)'})); },
+  ghost(svg,x,y,w,h,lbl){
+    svg.appendChild(this.el('rect',{x,y,width:w,height:h,rx:4,fill:'rgba(0,212,255,0.03)',stroke:'rgba(0,212,255,0.1)','stroke-width':'.7'}));
+    if(lbl) svg.appendChild(this.el('text',{x:x+w/2,y:y+h/2,fill:'rgba(0,212,255,0.2)','font-family':"'JetBrains Mono',monospace",'font-size':'8','text-anchor':'middle','dominant-baseline':'middle'},lbl));
+  },
+  shopGrid(svg,x,y,w,h,cols,rows){
+    const gx=Math.floor((w-(cols+1)*2)/cols), gy=Math.floor((h-(rows+1)*2)/rows);
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+      svg.appendChild(this.el('rect',{x:x+2+c*(gx+2),y:y+2+r*(gy+2),width:gx,height:gy,rx:3,fill:'rgba(0,212,255,0.05)',stroke:'rgba(0,212,255,0.11)','stroke-width':'.7'}));
+    }
+  },
+  unit(svg,x,y,w,h,type,lbl){
+    svg.appendChild(this.el('rect',{x,y,width:w,height:h,rx:3,class:'su-'+(type||'default')}));
+    if(lbl) svg.appendChild(this.el('text',{x:x+w/2,y:y+h/2,class:'unit-num'},lbl));
+  },
+  shopRow(svg,x,y,w,h,n,type,base){
+    const g=3, uw=Math.floor((w-g*(n-1))/n);
+    for(let i=0;i<n;i++) this.unit(svg,x+i*(uw+g),y,uw,h,type,base?String(base+i):null);
+  },
+  // ── TİPLİ ZON — renk kodlu alan çizimi ──
+  zT(svg,x,y,w,h,lbl,type){
+    const t=type||'default';
+    svg.appendChild(this.el('rect',{x,y,width:w,height:h,rx:6,class:t==='default'?'zone-rect':'z-'+t}));
+    if(t!=='corridor'){
+      svg.appendChild(this.el('rect',{x:x+1,y:y+1,width:w-2,height:13,rx:0,class:'zh-'+t,
+        style:'border-radius:5px 5px 0 0'}));
+      // Sol üst köşe yuvarlama düzeltmesi
+      svg.appendChild(this.el('rect',{x:x+1,y:y+8,width:w-2,height:6,class:'zh-'+t}));
+    }
+    if(lbl){
+      const lc=t==='default'?'zone-lbl':`zone-lbl zl-${t}`;
+      svg.appendChild(this.el('text',{x:x+w/2,y:y+(t==='corridor'?11:24),class:lc},lbl));
+    }
+  },
+  // ── TİPLİ SHOP GRID — renk kodlu birim ızgarası ──
+  sgT(svg,x,y,w,h,cols,rows,type){
+    const cls='su-'+(type||'default');
+    const gx=Math.floor((w-(cols+1)*2)/cols), gy=Math.floor((h-(rows+1)*2)/rows);
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+      svg.appendChild(this.el('rect',{x:x+2+c*(gx+2),y:y+2+r*(gy+2),width:gx,height:gy,rx:2,class:cls}));
+    }
+  },
+  // ── KORIDOR ŞERİDİ ──
+  walkway(svg,x,y,w,h){
+    svg.appendChild(this.el('rect',{x,y,width:w,height:h,rx:0,class:'walkway'}));
+  },
+  // ── RENK EFSANESI (kat planı köşesi) ──
+  legend(svg){
+    const items=[
+      ['retail','rgba(251,191,36,0.7)','RETAIL'],
+      ['food','rgba(249,115,22,0.7)','DINING'],
+      ['luxury','rgba(168,85,247,0.7)','LUXURY'],
+      ['entertain','rgba(34,197,94,0.7)','LEISURE'],
+      ['service','rgba(56,189,248,0.65)','SERVICES'],
+    ];
+    // Efsane: sağ alt köşe — zone label ve badge ile çakışmaz
+    const lx=522, ly0=310;
+    svg.appendChild(this.el('rect',{x:lx,y:ly0,width:92,height:items.length*13+8,rx:4,
+      fill:'rgba(2,8,16,0.9)',stroke:'rgba(0,212,255,0.14)','stroke-width':'0.8'}));
+    items.forEach(([t,col,lbl],i)=>{
+      const ly=ly0+8+i*13;
+      svg.appendChild(this.el('rect',{x:lx+6,y:ly-3,width:7,height:7,rx:1.5,
+        fill:col.replace('0.7)','0.3)').replace('0.65)','0.3)'),stroke:col,'stroke-width':'.8'}));
+      svg.appendChild(this.el('text',{x:lx+18,y:ly+1,fill:col,class:'leg-txt'},lbl));
+    });
+  },
+  // ── GÖRÜNÜR KORİDOR ŞERİDİ — shop grid hücrelerini kapatır, yolu gösterir ──
+  corr(svg,x1,y1,x2,y2){
+    const isV=x1===x2;
+    const W=22; // koridor genişliği (px)
+    if(isV){
+      const y=Math.min(y1,y2),h=Math.abs(y2-y1);
+      svg.appendChild(this.el('rect',{x:x1-W/2,y,width:W,height:h,rx:0,
+        fill:'rgba(2,8,16,0.9)',stroke:'rgba(0,212,255,0.25)','stroke-width':'0.8'}));
+      // yön noktalı çizgi
+      for(let dy=y+10;dy<y+h-6;dy+=14)
+        svg.appendChild(this.el('circle',{cx:x1,cy:dy,r:'1.2',fill:'rgba(0,212,255,0.18)'}));
+    } else {
+      const x=Math.min(x1,x2),w=Math.abs(x2-x1);
+      svg.appendChild(this.el('rect',{x,y:y1-W/2,width:w,height:W,rx:0,
+        fill:'rgba(2,8,16,0.9)',stroke:'rgba(0,212,255,0.25)','stroke-width':'0.8'}));
+      for(let dx=x+10;dx<x+w-6;dx+=14)
+        svg.appendChild(this.el('circle',{cx:dx,cy:y1,r:'1.2',fill:'rgba(0,212,255,0.18)'}));
+    }
+  },
+  svc(svg,cx,cy){
+    this.esc(svg,cx,cy);
+    this.lift(svg,cx+50,cy);
+    this.fac(svg,cx-44,cy,'🚻','WC');
+    this.fac(svg,cx-44,cy+40,'🏧','ATM');
+  },
+  badge(svg,fl){ svg.appendChild(this.el('rect',{x:614,y:22,width:50,height:20,rx:4,fill:'rgba(0,212,255,0.1)',stroke:'rgba(0,212,255,0.3)','stroke-width':'1'})); svg.appendChild(this.el('text',{x:639,y:36,fill:'var(--cyan)','font-family':"'JetBrains Mono',monospace",'font-size':'10','font-weight':'600','text-anchor':'middle'},fl)); },
+  fac(svg,x,y,icon,lbl){ svg.appendChild(this.el('rect',{x:x-14,y:y-14,width:28,height:26,rx:4,fill:'rgba(0,212,255,0.04)',stroke:'rgba(0,212,255,0.1)','stroke-width':'.8'})); svg.appendChild(this.el('text',{x,y:y-2,style:'font-size:11px;text-anchor:middle;dominant-baseline:middle'},icon)); if(lbl) svg.appendChild(this.el('text',{x,y:y+13,fill:'rgba(0,212,255,0.3)','font-family':"'JetBrains Mono',monospace",'font-size':'6.5','text-anchor':'middle'},lbl)); },
+  lift(svg,cx,cy){
+    const SW=11,SH=13,gap=2;
+    [[-SW-gap,-SH-gap],[gap,-SH-gap],[-SW-gap,gap],[gap,gap]].forEach(([dx,dy])=>{
+      svg.appendChild(this.el('rect',{x:cx+dx,y:cy+dy,width:SW,height:SH,rx:2,fill:'rgba(100,255,218,0.05)',stroke:'rgba(100,255,218,0.22)','stroke-width':'1'}));
+      svg.appendChild(this.el('line',{x1:cx+dx+2,y1:cy+dy+2,x2:cx+dx+SW-2,y2:cy+dy+SH-2,stroke:'rgba(100,255,218,0.12)','stroke-width':'1'}));
+    });
+    svg.appendChild(this.el('text',{x:cx,y:cy+SH+gap+9,fill:'rgba(100,255,218,0.38)','font-family':"'JetBrains Mono',monospace",'font-size':'6.5','text-anchor':'middle'},'LIFT'));
+  },
+  stair(svg,cx,cy,lbl){
+    const W=28,H=32,steps=6;
+    svg.appendChild(this.el('rect',{x:cx-W/2-2,y:cy-H/2-2,width:W+4,height:H+4,rx:3,fill:'rgba(248,113,113,0.04)',stroke:'rgba(248,113,113,0.22)','stroke-width':'1'}));
+    for(let i=0;i<steps;i++){
+      const lw=W-4-i*(W-6)/steps;
+      svg.appendChild(this.el('line',{x1:cx-W/2+2,y1:cy-H/2+3+i*(H-6)/steps,x2:cx-W/2+2+lw,y2:cy-H/2+3+i*(H-6)/steps,stroke:'rgba(248,113,113,0.32)','stroke-width':'1'}));
+    }
+    svg.appendChild(this.el('text',{x:cx,y:cy+H/2+9,fill:'rgba(248,113,113,0.42)','font-family':"'JetBrains Mono',monospace",'font-size':'6.5','text-anchor':'middle'},lbl||'STAIR'));
+  },
+  boh(svg,x,y,w){
+    svg.appendChild(this.el('rect',{x,y,width:w,height:16,rx:3,fill:'rgba(71,85,105,0.12)',stroke:'rgba(100,116,139,0.2)','stroke-width':'1','stroke-dasharray':'5,3'}));
+    svg.appendChild(this.el('text',{x:x+w/2,y:y+11,fill:'rgba(100,116,139,0.45)','font-family':"'JetBrains Mono',monospace",'font-size':'7','text-anchor':'middle','letter-spacing':'1.5'},'BOH CORRIDOR'));
+  },
+  link(svg,x,y,lbl){
+    svg.appendChild(this.el('rect',{x:x-36,y:y-13,width:72,height:26,rx:4,fill:'rgba(250,204,21,0.06)',stroke:'rgba(250,204,21,0.28)','stroke-width':'1','stroke-dasharray':'4,2'}));
+    svg.appendChild(this.el('text',{x,y:y-1,'text-anchor':'middle','font-size':'11'},'🔗'));
+    svg.appendChild(this.el('text',{x,y:y+11,fill:'rgba(250,204,21,0.55)','font-family':"'JetBrains Mono',monospace",'font-size':'6.5','text-anchor':'middle'},lbl));
+  },
+  hatch(svg,x,y,w,h){ const id='hp'+Math.floor(Math.random()*99999); const d=this.el('defs'); const p=this.el('pattern',{id,x:'0',y:'0',width:'14',height:'14',patternUnits:'userSpaceOnUse',patternTransform:'rotate(45)'}); p.appendChild(this.el('line',{x1:'0',y1:'0',x2:'0',y2:'14',stroke:'rgba(0,212,255,0.038)','stroke-width':'5'})); d.appendChild(p); svg.appendChild(d); svg.appendChild(this.el('rect',{x,y,width:w,height:h,rx:6,fill:'url(#'+id+')',stroke:'rgba(0,212,255,0.07)','stroke-width':'1','stroke-dasharray':'5,3'})); },
+  crowd(svg,x,y,w,pct){ const bw=Math.min(w-20,68),bx=x+(w-bw)/2,by=y+36; svg.appendChild(this.el('rect',{x:bx,y:by,width:bw,height:3,rx:1.5,fill:'rgba(0,212,255,0.07)'})); const col=pct<40?'#4ade80':pct<70?'#facc15':'#f87171'; svg.appendChild(this.el('rect',{x:bx,y:by,width:Math.round(bw*pct/100),height:3,rx:1.5,fill:col,opacity:'.5'})); svg.appendChild(this.el('text',{x:bx+bw+6,y:by+3,fill:col,'font-size':'7','font-family':"'JetBrains Mono',monospace",opacity:'.65'},pct+'%')); },
+  doors(svg,cx,y,count){ const gap=26; const total=(count*20+(count-1)*6); let sx=cx-total/2; for(let i=0;i<count;i++){ svg.appendChild(this.el('rect',{x:sx,y:y,width:20,height:5,rx:2.5,fill:'rgba(0,212,255,0.5)'})); sx+=26; } },
+
+  render(fitView){
+    initMallLeaflet();
+    if(!_mallMap) return;
+    // Eski katmanları temizle
+    if(_venueLayer){ _mallMap.removeLayer(_venueLayer); _venueLayer=null; }
+    if(_floorOverlay){ _mallMap.removeLayer(_floorOverlay); _floorOverlay=null; }
+    // Geçici SVG oluştur
+    const ns='http://www.w3.org/2000/svg';
+    const tempSvg=document.createElementNS(ns,'svg');
+    tempSvg.setAttribute('viewBox','0 0 680 390');
+    tempSvg.setAttribute('xmlns',ns);
+    const st=document.createElementNS(ns,'style');
+    st.textContent=_FP_CSS; tempSvg.appendChild(st);
+    // Katı çiz (youHere/nav yok — Leaflet katmanları halledecek)
+    const draws={L1:()=>this.drawL1(tempSvg),L2:()=>this.drawL2(tempSvg),
+                 L3:()=>this.drawL3(tempSvg),G:()=>this.drawG(tempSvg),
+                 B1:()=>this.drawB1(tempSvg),B2:()=>this.drawB2(tempSvg)};
+    (draws[this.floor]||draws.L1)();
+    // SVG → blob URL → Leaflet image overlay
+    const svgStr=new XMLSerializer().serializeToString(tempSvg);
+    const blob=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    _floorOverlay=L.imageOverlay(url,[[390,0],[0,680]],{opacity:1,zIndex:1,interactive:false}).addTo(_mallMap);
+    _floorOverlay.on('load',()=>URL.revokeObjectURL(url));
+    if(fitView) _mallMap.fitBounds([[0,0],[390,680]],{padding:[8,8]});
+    // Etkileşimli Leaflet katmanları
+    _venueLayer=L.layerGroup().addTo(_mallMap);
+    this._leafletVenues();
+    this._leafletYou();
+    if(this.navTo) this._leafletNav();
+  },
+
+  show(floor,hiIds,navId,fromEsc){
+    this.floor=floor; this.hi=hiIds||[]; this.navTo=navId||null; this.fromEsc=fromEsc||false;
+    document.querySelectorAll('.ftab').forEach(t=>t.classList.toggle('active',t.dataset.floor===floor));
+    this.render(true); // ilk açılışta görünümü sığdır
+    const twinBtn=document.getElementById('twinBtn');
+    if(twinBtn) twinBtn.classList.toggle('visible',floor==='B1'||floor==='B2');
+    document.querySelectorAll('.ftab').forEach(t=>{
+      t.onclick=()=>{
+        this.floor=t.dataset.floor;this.hi=[];this.navTo=null;
+        document.querySelectorAll('.ftab').forEach(tt=>tt.classList.toggle('active',tt===t));
+        this.render(); // sekme değişiminde zoom korunur
+        if(twinBtn) twinBtn.classList.toggle('visible',this.floor==='B1'||this.floor==='B2');
+        if(_twinActive && this.floor!=='B1' && this.floor!=='B2'){
+          _twinActive=false;
+          document.getElementById('twinFrame').classList.remove('visible');
+          document.getElementById('mallMap').classList.remove('hidden');
+          if(_mallMap) _mallMap.invalidateSize();
+          if(twinBtn) twinBtn.textContent='🔷 3D TWIN';
+        }
+      };
+    });
+  },
+
+  /* ── SVG koordinatı → Leaflet [lat, lng] dönüşümü ── */
+  _s2l(sx,sy){ return [390-sy, sx]; },
+
+  /* ── Leaflet — tıklanabilir mekân dikdörtgenleri ── */
+  _leafletVenues(){
+    const floorVenues=Object.keys(this.V).filter(id=>{
+      const vf=this.VFLOOR[id]; if(!vf) return false;
+      return vf===this.floor;
+    });
+    floorVenues.forEach(id=>{
+      const v=this.V[id]; if(!v) return;
+      const isHi=this.hi.includes(id);
+      const isNav=this.navTo===id;
+      const bounds=[[390-v.y,v.x],[390-v.y-v.h,v.x+v.w]];
+      const rect=L.rectangle(bounds,{
+        fillColor:'#00d4ff',
+        fillOpacity:isNav?0.18:(isHi?0.12:0),
+        stroke:isNav||isHi,
+        color:'#00d4ff',
+        weight:isNav?2:1.2,
+        dashArray:isNav?'5,3':null,
+        interactive:true,
+        zIndex:5,
+        bubblingMouseEvents:false,
+      });
+      rect.on('mouseover',function(){
+        if(!isNav) this.setStyle({fillOpacity:0.22,stroke:true,color:'rgba(0,212,255,.7)',weight:1});
+      });
+      rect.on('mouseout',function(){
+        if(!isNav&&!isHi) this.setStyle({fillOpacity:0,stroke:false});
+        else if(isHi&&!isNav) this.setStyle({fillOpacity:0.12,color:'#00d4ff',weight:1.2});
+      });
+      rect.on('click',()=>window.navigateTo(id));
+      rect.addTo(_venueLayer);
+      // Hedef mekân için nabız halkası
+      if(isNav){
+        const cx=390-v.y-v.h/2, lx=v.x+v.w/2;
+        L.circleMarker([cx,lx],{radius:22,fill:false,color:'rgba(0,212,255,.55)',weight:1.5,interactive:false,className:'dest-pulse'}).addTo(_venueLayer);
+      }
+    });
+  },
+
+  /* ── Leaflet — "Sen Buradasın" işaretçisi ── */
+  _leafletYou(){
+    const[sx,sy]=this.fromEsc?(this.ESC_ENTRY[this.floor]||[183,248]):(this.YOU[this.floor]||[340,376]);
+    const lp=this._s2l(sx,sy);
+    // Dış halk (ışıltı)
+    L.circleMarker(lp,{radius:18,fill:false,color:'rgba(100,255,218,.28)',weight:10,interactive:false}).addTo(_venueLayer);
+    // Ana nokta
+    L.circleMarker(lp,{radius:7,fillColor:this.fromEsc?'#00d4ff':'#64ffda',fillOpacity:1,color:'rgba(100,255,218,.5)',weight:2,interactive:false}).addTo(_venueLayer);
+    // Etiket
+    const lbl=this.fromEsc?'ESC ▲':'YOU';
+    L.marker(lp,{interactive:false,icon:L.divIcon({
+      html:`<div style="color:${this.fromEsc?'#00d4ff':'#64ffda'};font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;white-space:nowrap;transform:translate(-50%,-24px);letter-spacing:.8px;">${lbl}</div>`,
+      className:'',iconAnchor:[0,0]
+    })}).addTo(_venueLayer);
+  },
+
+  /* ── Leaflet — navigasyon yolu ── */
+  _leafletNav(){
+    const id=this.navTo;
+    const[sx,sy]=this.fromEsc?(this.ESC_ENTRY[this.floor]||[183,248]):(this.YOU[this.floor]||[340,376]);
+    let tx,ty;
+    if(id==='_esc'){
+      const ep=this.ESC_ENTRY[this.floor]||[183,248];
+      tx=ep[0]; ty=ep[1];
+    } else {
+      const v=this.V[id]; if(!v) return;
+      tx=v.x+v.w/2; ty=v.y+v.h/2;
+    }
+    const mid=(sy+ty)/2;
+    const pts=[this._s2l(sx,sy),this._s2l(sx,mid),this._s2l(tx,mid),this._s2l(tx,ty)];
+    // Arka plan ışıltısı
+    L.polyline(pts,{color:'rgba(0,212,255,.1)',weight:14,lineCap:'round',lineJoin:'round',interactive:false}).addTo(_venueLayer);
+    // Ana yol (animasyonlu)
+    L.polyline(pts,{color:'#00d4ff',weight:2.5,dashArray:'8,5',lineCap:'round',lineJoin:'round',interactive:false,className:'l-nav-path'}).addTo(_venueLayer);
+    // Waypoint noktaları
+    const wp1=this._s2l(sx,mid), wp2=this._s2l(tx,mid);
+    [wp1,wp2].forEach((pt,i)=>{
+      L.circleMarker(pt,{radius:9,fillColor:'rgba(2,8,16,.92)',fillOpacity:.9,color:'rgba(0,212,255,.5)',weight:1.5,interactive:false}).addTo(_venueLayer);
+      L.marker(pt,{interactive:false,icon:L.divIcon({
+        html:`<div style="color:#00d4ff;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;transform:translate(-50%,-50%);">${i+1}</div>`,
+        className:'',iconAnchor:[0,0]
+      })}).addTo(_venueLayer);
+    });
+    // ESC hedef simgesi
+    if(id==='_esc'){
+      L.circleMarker(this._s2l(tx,ty),{radius:14,fillColor:'rgba(0,212,255,.15)',fillOpacity:1,color:'rgba(0,212,255,.7)',weight:1.5,interactive:false}).addTo(_venueLayer);
+      L.marker(this._s2l(tx,ty),{interactive:false,icon:L.divIcon({
+        html:`<div style="color:#00d4ff;font-family:'JetBrains Mono',monospace;font-size:11px;transform:translate(-50%,-50%);">↑</div>`,
+        className:'',iconAnchor:[0,0]
+      })}).addTo(_venueLayer);
+    }
+  },
+
+  drawL1(svg){
+    this.bg(svg); this.dots(svg); this.badge(svg,'L1');
+    this.boh(svg,24,24,632);
+    // Zone backgrounds (W=22: left x:24-171, center x:195-484, right x:509-656)
+    this.zT(svg,24,42,147,232,'FASHION AVE WEST','retail');   this.crowd(svg,24,42,147,28);
+    this.zT(svg,195,42,289,232,'LIFESTYLE AVENUE','retail');  this.crowd(svg,195,42,289,72);
+    this.zT(svg,509,42,147,232,'FASHION AVE EAST','retail');  this.crowd(svg,509,42,147,35);
+    this.zT(svg,24,282,147,84,'SUPERMARKET','service');        this.crowd(svg,24,282,147,30);
+    this.zT(svg,195,282,203,84,'FOOD HALL','food');            this.crowd(svg,195,282,203,45);
+    this.zT(svg,402,282,84,84,'KIDS ZONE','entertain');        this.crowd(svg,402,282,84,60);
+    this.zT(svg,509,282,147,84,'PRAYER & REST','service');
+    // Named anchor stores
+    ['c1','s6','s4','s5'].forEach(id=>this.venue(svg,id));
+    // Interior horizontal divider (below Apple/Zara)
+    this.corr(svg,195,170,656,170);
+    // Filler units below Apple (center) — numbered
+    this.shopRow(svg,295,176,189,88,2,'food',102);
+    this.venue(svg,'c5');   // Starbucks Reserve at x:195
+    // Filler + H&M (right zone below Zara)
+    this.venue(svg,'s8');
+    // Main corridors
+    this.corr(svg,183,42,183,374);
+    this.corr(svg,497,42,497,374);
+    this.corr(svg,24,274,656,274);
+    this.corr(svg,400,274,400,374);
+    // Escalators + lifts
+    this.esc(svg,183,145); this.lift(svg,183,214);
+    this.esc(svg,497,145); this.lift(svg,497,214);
+    // Facilities
+    this.fac(svg,80,322,'🛒','SUPER');  this.fac(svg,148,322,'🚻','WC');
+    this.fac(svg,352,322,'🍽️','FOOD');  this.fac(svg,448,322,'🎮','PLAY');
+    this.fac(svg,554,322,'🕌','PRAYER');this.fac(svg,626,322,'🏧','ATM');
+    // Entrance + legend
+    this.legend(svg);
+    svg.appendChild(this.el('rect',{x:266,y:356,width:148,height:24,rx:5,class:'entrance-rect'}));
+    this.doors(svg,340,356,4);
+    svg.appendChild(this.el('text',{x:340,y:375,class:'entrance-lbl'},'▲ MAIN ENTRANCE'));
+  },
+
+  drawL2(svg){
+    this.bg(svg); this.dots(svg); this.badge(svg,'L2');
+    this.boh(svg,24,24,632);
+    // Zone backgrounds (W=22: left x:24-171, center x:195-484, right x:509-656)
+    this.zT(svg,24,42,632,145,'FASHION AVENUE — LUXURY QUARTER','luxury'); this.crowd(svg,24,42,632,62);
+    this.zT(svg,24,200,147,168,'GOURMET ST. WEST','food');    this.crowd(svg,24,200,147,48);
+    this.zT(svg,195,200,289,168,'GOURMET STREET','food');      this.crowd(svg,195,200,289,68);
+    this.zT(svg,509,200,147,168,'PLATINUM ZONE','luxury');     this.crowd(svg,509,200,147,35);
+    // Luxury back boutique row (y:48-112) — numbered units
+    this.shopRow(svg,24, 48,147,64,2,'luxury',211);
+    this.shopRow(svg,269,48,215,64,3,'luxury',213); // after Hermès
+    this.shopRow(svg,509,48,147,64,2,'luxury',216);
+    this.venue(svg,'s9');  // Hermès at x:195
+    // Interior luxury corridor
+    this.corr(svg,24,120,656,120);
+    // Luxury flagship row (y:127-183)
+    ['s1','s2','s3','s7'].forEach(id=>this.venue(svg,id));
+    // Main corridors
+    this.corr(svg,24,192,656,192);
+    this.corr(svg,183,42,183,374);
+    this.corr(svg,497,42,497,374);
+    // Gourmet venues (top row)
+    ['r6','r3','r4'].forEach(id=>this.venue(svg,id));
+    // Gourmet bottom row
+    this.unit(svg,100,287,71,81,'food',221);
+    this.venue(svg,'r8');  // Morimoto x:24
+    ['c3','c4'].forEach(id=>this.venue(svg,id));
+    // Platinum zone — Cartier + numbered units
+    this.venue(svg,'s10'); // Cartier x:509
+    this.unit(svg,585,200,71,82,'luxury',231);
+    this.shopRow(svg,509,287,147,81,2,'luxury',232);
+    // Escalators + lifts
+    this.esc(svg,183,250); this.lift(svg,183,318);
+    this.esc(svg,497,250); this.lift(svg,497,318);
+    this.esc(svg,340,192);
+    // Facilities
+    this.fac(svg,136,332,'🚻','WC');  this.fac(svg,136,298,'🏧','ATM');
+    this.fac(svg,548,332,'🚻','WC');  this.fac(svg,548,264,'🎭','VIP');  this.fac(svg,548,298,'🛡️','SEC');
+    this.legend(svg);
+  },
+
+  drawL3(svg){
+    this.bg(svg); this.dots(svg); this.badge(svg,'L3');
+    this.boh(svg,24,24,632);
+    // Zone background — full-width dining
+    this.zT(svg,24,42,632,196,'GOURMET STREET — PREMIUM DINING','food'); this.crowd(svg,24,42,632,55);
+    // Named anchor restaurants (top row y:48-138)
+    ['r1','r2','r5','r7'].forEach(id=>this.venue(svg,id));
+    // Interior horizontal below restaurants
+    this.corr(svg,24,146,656,146);
+    // Second row numbered units (y:153-234)
+    this.shopRow(svg,24, 153,147,79,2,'food',311);
+    this.shopRow(svg,195,153,289,79,3,'food',313);
+    this.shopRow(svg,509,153,147,79,2,'food',316);
+    // Vertical corridors (dining zone only)
+    this.corr(svg,183,42,183,242);
+    this.corr(svg,497,42,497,242);
+    // Main lower horizontal
+    this.corr(svg,24,242,656,242);
+    // Creek terrace
+    svg.appendChild(this.el('rect',{x:24,y:248,width:478,height:116,rx:6,class:'terrace-area'}));
+    svg.appendChild(this.el('text',{x:263,y:265,class:'terrace-lbl','font-size':'8.5','letter-spacing':'1.5'},'CREEK TERRACE — OUTDOOR DINING'));
+    for(let wx=50;wx<500;wx+=36) svg.appendChild(this.el('text',{x:wx,y:305,'font-size':'9',opacity:'.14','text-anchor':'middle'},'〰'));
+    svg.appendChild(this.el('text',{x:130,y:298,'font-size':'22',opacity:'.3'},'🌊'));
+    svg.appendChild(this.el('text',{x:263,y:298,'font-size':'22',opacity:'.3'},'🌊'));
+    svg.appendChild(this.el('text',{x:390,y:298,'font-size':'22',opacity:'.3'},'🌊'));
+    svg.appendChild(this.el('text',{x:263,y:322,class:'terrace-lbl','font-size':'8.5'},'Creek Promenade · Water Taxis · Dubai Creek Harbour'));
+    svg.appendChild(this.el('text',{x:263,y:342,class:'terrace-lbl','font-size':'8','opacity':'.55'},'⛵  Water Taxi Dock  ·  Dhs 15 per ride  ·  2 min walk'));
+    // Teen entertainment zone
+    this.zT(svg,508,248,150,116,'TEEN ENTERTAIN.','entertain');
+    this.shopRow(svg,508,265,150,95,2,'entertain');
+    this.fac(svg,583,306,'🎮','TEEN ZONE');
+    // Metro link
+    this.link(svg,630,58,'METRO LINK');
+    // Escalators + lifts
+    this.esc(svg,183,234); this.esc(svg,497,234); this.lift(svg,342,248);
+    // Facilities
+    this.fac(svg,100,180,'🚻','WC'); this.fac(svg,430,180,'🚻','WC');
+    this.fac(svg,100,218,'🍷','BAR'); this.fac(svg,430,218,'🎵','LIVE');
+    this.legend(svg);
+  },
+
+  drawG(svg){
+    this.bg(svg); this.dots(svg); this.badge(svg,'G');
+    // Street level strip
+    svg.appendChild(this.el('rect',{x:24,y:24,width:632,height:16,rx:3,fill:'rgba(34,197,94,0.05)',stroke:'rgba(34,197,94,0.14)','stroke-width':'1','stroke-dasharray':'5,3'}));
+    svg.appendChild(this.el('text',{x:340,y:35,fill:'rgba(34,197,94,0.4)','font-family':"'JetBrains Mono',monospace",'font-size':'7','text-anchor':'middle','letter-spacing':'1.5'},'STREET LEVEL  ·  PICK UP / DROP OFF  ·  REGULAR VALET  ·  TAXI RANK'));
+    // Side retail zones (W=22: left x:24-171, right x:509-656)
+    this.zT(svg,24,42,147,238,'FASHION AVE WEST','retail');  this.crowd(svg,24,42,147,22);
+    this.zT(svg,509,42,147,238,'FASHION AVE EAST','retail'); this.crowd(svg,509,42,147,18);
+    // Welcome Hall — hatch (centre x:195-484)
+    this.hatch(svg,195,42,289,238);
+    svg.appendChild(this.el('text',{x:340,y:110,fill:'rgba(0,212,255,0.55)','font-family':"'JetBrains Mono',monospace",'font-size':'11','text-anchor':'middle','letter-spacing':'2','font-weight':'600'},'WELCOME HALL'));
+    svg.appendChild(this.el('text',{x:340,y:130,fill:'rgba(0,212,255,0.24)','font-family':"'JetBrains Mono',monospace",'font-size':'8','text-anchor':'middle'},'🏗  CENTRAL LOBBY — UNDER FIT-OUT'));
+    svg.appendChild(this.el('text',{x:340,y:148,fill:'rgba(0,212,255,0.16)','font-family':"'JetBrains Mono',monospace",'font-size':'7','text-anchor':'middle'},'OPENING Q4 2026'));
+    // Retail rows — left zone (fac strip x:24-46, units x:50-171)
+    this.shopRow(svg,50,48, 121,108,2,'retail',101);
+    this.corr(svg,24,164,171,164);
+    this.shopRow(svg,50,172,121,104,2,'retail',103);
+    // Retail rows — right zone (fac strip x:624-656, units x:509-618)
+    this.shopRow(svg,509,48, 109,108,2,'retail',105);
+    this.corr(svg,509,164,656,164);
+    this.shopRow(svg,509,172,109,104,2,'retail',107);
+    // Main corridors
+    this.corr(svg,183,42,183,348);
+    this.corr(svg,497,42,497,348);
+    this.corr(svg,24,282,656,282);
+    this.corr(svg,400,282,400,348);
+    // Escalators + lifts
+    this.esc(svg,183,158); this.lift(svg,183,228);
+    this.esc(svg,497,158); this.lift(svg,497,228);
+    // Facilities strips
+    this.fac(svg,36,166,'🚻','WC');  this.fac(svg,36,208,'🏧','ATM');  this.fac(svg,36,250,'🛡️','SEC');
+    this.fac(svg,626,166,'🚻','WC'); this.fac(svg,626,208,'ℹ️','INFO'); this.fac(svg,626,250,'🚑','AID');
+    // Bottom zones
+    this.zT(svg,195,288,201,54,'FOOD HALL','food');        this.crowd(svg,195,288,201,50);
+    this.zT(svg,400,288,95,54,'COACH WAIT.','service');    this.fac(svg,448,316,'🚌','COACH');
+    this.zT(svg,509,288,147,54,'VALET PARKING','service'); this.fac(svg,582,316,'🛡️','VALET');
+    this.venue(svg,'c2');
+    this.unit(svg,344,293,48,48,'food',null);
+    // B1 ramps + ANPR strip
+    svg.appendChild(this.el('rect',{x:24,y:346,width:72,height:18,rx:4,fill:'rgba(34,197,94,0.07)',stroke:'rgba(34,197,94,0.2)','stroke-width':'1'}));
+    svg.appendChild(this.el('text',{x:60,y:359,fill:'rgba(34,197,94,0.5)','font-family':"'JetBrains Mono',monospace",'font-size':'7.5','text-anchor':'middle'},'▼ B1 RAMP'));
+    svg.appendChild(this.el('rect',{x:562,y:346,width:72,height:18,rx:4,fill:'rgba(34,197,94,0.07)',stroke:'rgba(34,197,94,0.2)','stroke-width':'1'}));
+    svg.appendChild(this.el('text',{x:598,y:359,fill:'rgba(34,197,94,0.5)','font-family':"'JetBrains Mono',monospace",'font-size':'7.5','text-anchor':'middle'},'▼ B1 RAMP'));
+    svg.appendChild(this.el('rect',{x:100,y:346,width:458,height:18,rx:4,fill:'rgba(0,212,255,0.04)',stroke:'rgba(0,212,255,0.14)','stroke-width':'1'}));
+    svg.appendChild(this.el('text',{x:329,y:359,fill:'rgba(0,212,255,0.35)','font-family':"'JetBrains Mono',monospace",'font-size':'7','text-anchor':'middle'},'📷 ANPR  ·  FACIAL RECOGNITION  ·  ACS GATE'));
+    // Entrance + legend
+    this.legend(svg);
+    svg.appendChild(this.el('rect',{x:218,y:362,width:244,height:22,rx:5,class:'entrance-rect'}));
+    this.doors(svg,340,362,5);
+    svg.appendChild(this.el('text',{x:340,y:379,class:'entrance-lbl'},'▲ MAIN MALL ENTRANCE'));
+  },
+
+  drawB1(svg){ this._parking(svg,'B1 — PARKING + EV CHARGING',true); },
+  drawB2(svg){ this._parking(svg,'B2 — PARKING LEVEL',false); },
+
+  _parking(svg,title,ev){
+    this.bg(svg);
+    svg.appendChild(this.el('text',{x:340,y:38,class:'zone-lbl','font-size':'10.5'},title));
+    this.sep(svg,24,186,656,186);
+    svg.appendChild(this.el('rect',{x:293,y:356,width:94,height:26,rx:4,class:'entrance-rect'}));
+    svg.appendChild(this.el('text',{x:340,y:373,class:'entrance-lbl'},'▲ RAMP'));
+    const OCC=ev?[2,5,7,9,11,14,16,19,21,23,27,30]:[1,3,6,8,12,15,17,20,22];
+    const EV=ev?[3,8,13,18,32,37,38,39]:[];
+    const SW=44,SH=36,GX=4,GY=3,COLS=12;
+    for(let sec=0;sec<2;sec++){
+      const sy=sec===0?52:198;
+      for(let r=0;r<4;r++) for(let c=0;c<COLS;c++){
+        const idx=sec*COLS*4+r*COLS+c;
+        const x=28+c*(SW+GX),y=sy+r*(SH+GY);
+        const isOcc=OCC.includes(idx),isEv=EV.includes(idx);
+        svg.appendChild(this.el('rect',{x,y,width:SW,height:SH,rx:3,class:isEv?'ev-bay':isOcc?'parking-occ':'parking-free'}));
+        const lbl=isEv?'⚡':isOcc?'✕':String(idx+1).padStart(2,'0');
+        svg.appendChild(this.el('text',{x:x+SW/2,y:y+SH/2,class:isEv?'ev-lbl':isOcc?'spot-occ-lbl':'spot-lbl'},lbl));
+      }
+    }
+    if(ev) svg.appendChild(this.el('text',{x:340,y:348,class:'terrace-lbl','font-size':'8'},'⚡ EV BAY — SHOW QR CODE AT BARRIER'));
+  }
+};
+
+let _twinActive = false;
+
+function showMap(title,opts){
+  opts=opts||{};
+  document.getElementById('mapTitle').textContent=title||'DUBAI SQUARE';
+  document.getElementById('mapOverlay').classList.add('visible');
+  document.getElementById('mallMap').classList.remove('hidden');
+  _twinActive = false;
+  document.getElementById('twinFrame').classList.remove('visible');
+  // Container görünür olduktan sonra init+render (fitBounds doğru çalışsın)
+  setTimeout(function(){
+    document.getElementById('mlStatus').textContent=opts.status||'ONLINE';
+    document.getElementById('miniAlya').classList.add('visible');
+    FP.show(opts.floor||FP.floor,opts.highlight||[],opts.navTo||null,opts.fromEsc||false);
+    setTimeout(function(){ if(_mallMap) _mallMap.invalidateSize(); },80);
+  },60);
+}
+
+function closeMap(){
+  document.getElementById('mapOverlay').classList.remove('visible');
+  document.getElementById('miniAlya').classList.remove('visible');
+  document.getElementById('navStatusBar').classList.remove('active');
+  _twinActive = false;
+  document.getElementById('twinFrame').src = '';
+  document.getElementById('twinFrame').classList.remove('visible');
+  document.getElementById('mallMap').classList.remove('hidden');
+}
+
+function toggleTwinView(){
+  const frame = document.getElementById('twinFrame');
+  const mapDiv = document.getElementById('mallMap');
+  const btn = document.getElementById('twinBtn');
+  _twinActive = !_twinActive;
+  if(_twinActive){
+    if(!frame.src || frame.src === window.location.href) frame.src = 'twin/index.html';
+    frame.classList.add('visible');
+    mapDiv.classList.add('hidden');
+    btn.textContent = '🗺 FLOOR PLAN';
+  } else {
+    frame.classList.remove('visible');
+    mapDiv.classList.remove('hidden');
+    if(_mallMap) _mallMap.invalidateSize();
+    btn.textContent = '🔷 3D TWIN';
+  }
+}
+
+function navigateTo(id){
+  const all=[...MALL.restaurants,...MALL.cafes,...MALL.shops];
+  const v=all.find(function(x){return x.id===id}); if(!v)return;
+  closeMap();
+  const destFloor=FP.VFLOOR[id]||'L1';
+  const srcFloor=FP.userFloor||'L1';
+  const isFloorChange=destFloor!==srcFloor;
+
+  if(isFloorChange){
+    const txt='Navigating to '+v.name+' on '+v.floor+'. Head to the escalator first, then I will guide you on the next floor.';
+    addMsg(txt,'l'); speak(txt);
+    // Faz 1 — mevcut kat, yürüyen merdivene path
+    setTimeout(function(){
+      showMap('STEP 1/2 — GO TO ESCALATOR',{floor:srcFloor,navTo:'_esc',status:'FLOOR CHANGE'});
+      document.getElementById('nsbDest').textContent=v.name;
+      document.getElementById('nsbTime').textContent='⏱ ~30s';
+      document.getElementById('nsbDist').textContent='📍 ~40m';
+      document.getElementById('nsbStep').textContent='↑ ESC → '+destFloor;
+      document.getElementById('navStatusBar').classList.add('active');
+    },280);
+    // Faz 2 — hedef kat, ESC girişinden mekâna path
+    setTimeout(function(){
+      showMap('STEP 2/2 — '+v.name.toUpperCase(),{floor:destFloor,navTo:id,fromEsc:true,status:'NAVIGATING'});
+      const escPos=FP.ESC_ENTRY[destFloor]||[183,248];
+      const vd=FP.V[id];
+      if(vd){
+        const dx=(vd.x+vd.w/2)-escPos[0],dy=(vd.y+vd.h/2)-escPos[1];
+        const dist=Math.max(10,Math.round(Math.sqrt(dx*dx+dy*dy)*0.52));
+        const walkSec=Math.round(dist/1.3);
+        const timeStr=walkSec<60?'~'+walkSec+'s':'~'+Math.ceil(walkSec/60)+'m';
+        document.getElementById('nsbTime').textContent='⏱ '+timeStr;
+        document.getElementById('nsbDist').textContent='📍 '+dist+'m';
+        document.getElementById('nsbStep').textContent='ARRIVED ON '+destFloor;
+      }
+    },3400);
+  } else {
+    const txt='Navigating to '+v.name+' on '+v.floor+'. I am showing you the route on the floor plan.';
+    addMsg(txt,'l'); speak(txt);
+    setTimeout(function(){
+      showMap('ROUTE — '+v.name.toUpperCase(),{floor:destFloor,navTo:id,status:'NAVIGATING'});
+      const vd=FP.V[id];
+      if(vd){
+        const yx=FP.YOU[destFloor]||[340,376];
+        const dx=(vd.x+vd.w/2)-yx[0],dy=(vd.y+vd.h/2)-yx[1];
+        const dist=Math.max(10,Math.round(Math.sqrt(dx*dx+dy*dy)*0.52));
+        const walkSec=Math.round(dist/1.3);
+        const timeStr=walkSec<60?'~'+walkSec+'s':'~'+Math.ceil(walkSec/60)+'m';
+        document.getElementById('nsbDest').textContent=v.name;
+        document.getElementById('nsbTime').textContent='⏱ '+timeStr;
+        document.getElementById('nsbDist').textContent='📍 '+dist+'m';
+        document.getElementById('nsbStep').textContent='STEP 1 OF 2';
+        document.getElementById('navStatusBar').classList.add('active');
+      }
+    },280);
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   RICH CARD RENDERING
+════════════════════════════════════════════════════════ */
+function venueCard(v, type){
+  const wait = type==='shop' ? '' : `<div class="vc-row"><span class="vc-wait ${v.wait<15?'low':v.wait<30?'mid':'high'}">⏱ ${v.wait} min</span><span class="vc-rating">★ ${v.rating}</span></div>`;
+  const sub = type==='shop' ? `<div class="vc-cuisine">${v.cat}</div>` : `<div class="vc-cuisine">${v.cuisine}</div>`;
+  const btns = type==='restaurant'
+    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px">
+        <button class="vc-nav-btn" onclick="event.stopPropagation();navigateTo('${v.id}')">Nav ↗</button>
+        <button class="vc-nav-btn" style="background:linear-gradient(135deg,rgba(100,255,218,0.18),rgba(0,212,255,0.12));color:var(--teal)" onclick="event.stopPropagation();openReservation('${v.id}')">Reserve</button>
+      </div>`
+    : `<button class="vc-nav-btn" style="margin-top:6px">Navigate ↗</button>`;
+  return `<div class="venue-card" onclick="navigateTo('${v.id}')">
+    <div class="vc-icon">${v.icon}</div>
+    <div class="vc-name">${v.name}</div>
+    ${sub}
+    <div class="vc-floor">${v.floor} · ${v.zone}</div>
+    ${wait}
+    ${btns}
+  </div>`;
+}
+
+function addCards(items, type){
+  const d = document.createElement('div');
+  d.className = 'msg l';
+  d.innerHTML = `<div class="mname">Alya</div><div class="cards-scroll">${items.map(v=>venueCard(v,type)).join('')}</div>`;
+  const c = document.getElementById('msgs');
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+
+/* ════════════════════════════════════════════════════════
+   BACKGROUND PARTICLES
+════════════════════════════════════════════════════════ */
+const bgCv=document.getElementById('bgc'),bgCtx=bgCv.getContext('2d'),stageEl=document.getElementById('stage');
+function rszBg(){bgCv.width=stageEl.offsetWidth;bgCv.height=stageEl.offsetHeight}
+rszBg();window.addEventListener('resize',rszBg);
+const pts=[];
+class Pt{constructor(){this.reset()}reset(){this.x=Math.random()*bgCv.width;this.y=Math.random()*bgCv.height;this.vx=(Math.random()-.5)*.18;this.vy=(Math.random()-.5)*.18;this.a=Math.random()*.28+.03;this.r=Math.random()*1.1+.3}update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>bgCv.width||this.y<0||this.y>bgCv.height)this.reset()}draw(){bgCtx.beginPath();bgCtx.arc(this.x,this.y,this.r,0,Math.PI*2);bgCtx.fillStyle=`rgba(0,212,255,${this.a})`;bgCtx.fill()}}
+for(let i=0;i<70;i++)pts.push(new Pt());
+
+/* ════════════════════════════════════════════════════════
+   FACE ANIMATOR
+════════════════════════════════════════════════════════ */
+const FACE={mouth:{x:0.50,y:0.650,rw:0.130,rh:0.038}};
+let skinR=180,skinG=120,skinB=75;
+const photoEl=document.getElementById('alyaPhoto'),overlayCanvas=document.getElementById('overlayCanvas'),oc=overlayCanvas.getContext('2d');
+function rszOverlay(){const w=document.getElementById('figure');overlayCanvas.width=w.offsetWidth;overlayCanvas.height=w.offsetHeight}
+rszOverlay();window.addEventListener('resize',rszOverlay);
+photoEl.onload=()=>{try{const tmp=document.createElement('canvas');tmp.width=4;tmp.height=4;const tc=tmp.getContext('2d');tc.drawImage(photoEl,photoEl.naturalWidth*0.42,photoEl.naturalHeight*0.38,photoEl.naturalWidth*0.16,photoEl.naturalHeight*0.08,0,0,4,4);const px=tc.getImageData(2,2,1,1).data;if(px[0]>60){skinR=px[0];skinG=px[1];skinB=px[2]}}catch(e){}};
+
+const anim={mouth:0,mouthT:0,hx:0,hy:0,htilt:0,speaking:false,speakText:'',speakStart:0,speakDur:0,charRate:11,
+  startSpeak(text){const c=text.replace(/<[^>]*>/g,'').replace(/[^\w\s.,!?;:'"-]/g,'');this.speaking=true;this.speakText=c;this.speakStart=performance.now();this.speakDur=(c.length/this.charRate)*1000;setTimeout(()=>{this.speaking=false;this.mouthT=0},this.speakDur+300)},
+  update(ts){const t=ts*.001;if(this.speaking){const el=ts-this.speakStart;const idx=Math.min(Math.floor((el/this.speakDur)*this.speakText.length),this.speakText.length-1);const ch=this.speakText[idx]||' ';const v=/[aeiou]/i.test(ch);const p=/[ .,!?;]/.test(ch);if(p)this.mouthT=0.02;else if(v)this.mouthT=0.55+Math.sin(ts*0.025)*0.25;else this.mouthT=0.22+Math.sin(ts*0.04)*0.14;this.hx=Math.sin(t*.65)*2.2+Math.sin(t*1.1)*.8;this.hy=Math.sin(t*.5)*2.5;this.htilt=Math.sin(t*.38)*1.3}else{this.mouthT=0;this.hx=Math.sin(t*.28)*.9;this.hy=Math.sin(t*.22)*1.3;this.htilt=Math.sin(t*.18)*.5}this.mouth+=(this.mouthT-this.mouth)*.2}
+};
+
+/* waveform */
+const waveCv=document.getElementById('waveCanvas'),waveCtx=waveCv.getContext('2d');
+let waveActive=false;
+const waveBars=Array.from({length:32},(_,i)=>({h:0,t:i*.35}));
+function drawWave(ts){waveCtx.clearRect(0,0,waveCv.width,waveCv.height);const bw=waveCv.width/waveBars.length;waveBars.forEach((b,i)=>{if(waveActive){b.t+=.08;b.h=(Math.sin(b.t)*.4+.6)*(10+Math.sin(ts*.003+i)*8)}else{b.h+=(2-b.h)*.12}const x=i*bw+bw*.15,h=Math.max(1,b.h),y=(waveCv.height-h)/2,a=waveActive?.6+Math.sin(b.t)*.3:.18;waveCtx.fillStyle=`rgba(0,212,255,${a})`;waveCtx.beginPath();waveCtx.roundRect(x,y,bw*.7,h,2);waveCtx.fill()})}
+
+/* render loop */
+function renderLoop(ts){
+  bgCtx.clearRect(0,0,bgCv.width,bgCv.height);
+  pts.forEach(p=>{p.update();p.draw()});
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<75){bgCtx.beginPath();bgCtx.moveTo(pts[i].x,pts[i].y);bgCtx.lineTo(pts[j].x,pts[j].y);bgCtx.strokeStyle=`rgba(0,212,255,${.05*(1-d/75)})`;bgCtx.lineWidth=.4;bgCtx.stroke()}}
+  anim.update(ts);
+  photoEl.style.transform='none';
+  const W=overlayCanvas.width,H=overlayCanvas.height;oc.clearRect(0,0,W,H);
+  if(anim.mouth>.03){
+    const mx=FACE.mouth.x*W,my=FACE.mouth.y*H,rw=FACE.mouth.rw*W,rh=FACE.mouth.rh*H,m=anim.mouth;
+    oc.fillStyle=`rgba(10,3,3,${m*.88})`;oc.beginPath();oc.ellipse(mx,my+rh*.3,rw*.72*m+1,rh*2.4*m+.5,0,0,Math.PI*2);oc.fill();
+    oc.fillStyle=`rgba(${Math.round(skinR*.72)},${Math.round(skinG*.52)},${Math.round(skinB*.48)},${m*.55})`;oc.beginPath();oc.ellipse(mx,my,rw*m+3,rh*1.1*m+1,0,0,Math.PI);oc.fill();
+    oc.fillStyle=`rgba(${Math.round(skinR*.78)},${Math.round(skinG*.56)},${Math.round(skinB*.52)},${m*.45})`;oc.beginPath();oc.ellipse(mx,my+rh*.5,rw*.82*m+2,rh*1.3*m+1,0,Math.PI,Math.PI*2);oc.fill();
+    if(m>.25){const g=oc.createRadialGradient(mx,my,0,mx,my,rw*2.2);g.addColorStop(0,`rgba(0,212,255,${m*.18})`);g.addColorStop(.5,`rgba(0,212,255,${m*.07})`);g.addColorStop(1,'transparent');oc.fillStyle=g;oc.beginPath();oc.ellipse(mx,my,rw*2.4,rh*3.5,0,0,Math.PI*2);oc.fill()}
+    if(m>.15)for(let i=0;i<3;i++){const px=FACE.mouth.x*W+(Math.random()-.5)*FACE.mouth.rw*W*1.4,py=FACE.mouth.y*H-Math.random()*35;oc.fillStyle=`rgba(0,212,255,${m*Math.random()*.3})`;oc.beginPath();oc.arc(px,py,Math.random()*2.5+.5,0,Math.PI*2);oc.fill()}
+  }
+  drawWave(ts);
+  requestAnimationFrame(renderLoop);
+}
+requestAnimationFrame(renderLoop);
+
+/* ════════════════════════════════════════════════════════
+   SPEECH
+════════════════════════════════════════════════════════ */
+const figure=document.getElementById('figure'),sring=document.getElementById('sring'),voiceBtn=document.getElementById('voiceBtn'),vHint=document.getElementById('voiceHint');
+let synth=window.speechSynthesis,voices=[],selVoice=null;
+function loadVoices(){voices=synth.getVoices();selVoice=voices.find(v=>/en-US/i.test(v.lang)&&/samantha|victoria|karen|ava|zoe|jenny/i.test(v.name))||voices.find(v=>/en-US/i.test(v.lang)&&!/male/i.test(v.name))||voices.find(v=>/en/i.test(v.lang))||voices[0]}
+loadVoices();if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=loadVoices;
+function setSpeaking(on){if(on){figure.classList.add('speaking-active');sring.classList.add('speaking-active');voiceBtn.className='voice-btn speaking';vHint.textContent='speaking…';waveCv.classList.add('active');waveActive=true}else{figure.classList.remove('speaking-active');sring.classList.remove('speaking-active');voiceBtn.className='voice-btn';vHint.textContent='tap to speak';waveActive=false;setTimeout(()=>waveCv.classList.remove('active'),600)}}
+function speak(text){synth.cancel();const clean=text.replace(/<br>/g,' ').replace(/[🍽️☕🅿️⚡🗺️🌊🍱🍣🍝🥩🛍️👜💎🍎💄⌚📍🇮🇹🧋🥐]/g,'');const u=new SpeechSynthesisUtterance(clean);if(selVoice)u.voice=selVoice;u.rate=0.92;u.pitch=1.05;u.volume=1;u.onstart=()=>{setSpeaking(true);anim.startSpeak(clean)};u.onend=()=>setSpeaking(false);u.onerror=()=>setSpeaking(false);synth.speak(u)}
+
+/* ════════════════════════════════════════════════════════
+   SPEECH RECOGNITION
+════════════════════════════════════════════════════════ */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,listening=false;
+if(SR){rec=new SR();rec.continuous=false;rec.interimResults=false;rec.lang='en-US';rec.onresult=e=>{document.getElementById('inp').value=e.results[0][0].transcript;sendMsg()};rec.onerror=()=>stopListening();rec.onend=()=>stopListening()}
+function toggleVoice(){if(!rec){alert('Chrome required.');return}listening?stopListening():startListening()}
+function startListening(){if(listening)return;synth.cancel();listening=true;voiceBtn.className='voice-btn listening';vHint.textContent='listening…';try{rec.start()}catch(e){}}
+function stopListening(){listening=false;try{rec.stop()}catch(e){}voiceBtn.className='voice-btn';vHint.textContent='tap to speak'}
+
+/* ════════════════════════════════════════════════════════
+   SMART RESPONSE HANDLER
+════════════════════════════════════════════════════════ */
+function handleQuery(txt){
+  const t = txt.toLowerCase();
+
+  /* MAP */
+  if(/\bmap\b|show.*map|open.*map/.test(t)){
+    showMap('DUBAI SQUARE — FLOOR PLAN', {floor:'L1', highlight:[]});
+    return `Here's the full Dubai Square floor plan. Use the floor tabs to explore all levels. Tap any venue to navigate there.`;
+  }
+
+  /* WATERFRONT */
+  if(/waterfront|creek|water|promenade|walk|outside|outdoor/.test(t)){
+    setTimeout(()=>showMap('CREEK PROMENADE — GROUND EXIT', {floor:'G', highlight:[]}),600);
+    return `Dubai Creek Promenade is just a 2-minute walk from the East Exit on Ground Floor. It's a stunning 1.2 km waterfront walk along Dubai Creek Harbour, with views of the Creek Tower and marina. Outdoor dining and water taxis are available. The temperature outside is 38°C but the waterfront area is partially shaded.`;
+  }
+
+  /* RESTAURANTS */
+  if(/restaurant|dinner|lunch|hungry|dining|eat/.test(t)){
+    let results = MALL.restaurants;
+    let ids = ['r1','r2','r3','r4','r5','r6'];
+    let floor = 'L3';
+    if(/japanese|sushi/.test(t)){ results = MALL.restaurants.filter(r=>/japanese/i.test(r.cuisine)); ids=['r1','r2','r5']; }
+    if(/italian/.test(t)){ results = MALL.restaurants.filter(r=>/italian/i.test(r.cuisine)); ids=['r3','r6']; floor='L2'; }
+    if(/quick|fast|short wait|no wait/.test(t)) results = [...MALL.restaurants].sort((a,b)=>a.wait-b.wait).slice(0,3);
+    const names = results.slice(0,2).map(r=>r.name).join(' and ');
+    const reply = `I found ${results.length} restaurants for you. ${names} are both highly rated right now. ${results[0].name} has the shortest wait at ${results[0].wait} minutes. Want me to navigate you to any of them?`;
+    setTimeout(()=>{ addCards(results.slice(0,4),'restaurant'); showMap('RESTAURANTS',{floor, highlight:ids}); },600);
+    return reply;
+  }
+
+  /* CAFE */
+  if(/cafe|coffee|cappuccino|latte|espresso|pastry|tea/.test(t)){
+    const reply = `There are ${MALL.cafes.length} cafes in Dubai Square. % Arabica on Level 1 is currently the most popular, with only a 5-minute wait. Blank Street at the Main Entrance is the fastest option right now.`;
+    setTimeout(()=>{ addCards(MALL.cafes,'restaurant'); showMap('CAFES',{floor:'L1', highlight:['c1','c2','c3','c4']}); },600);
+    return reply;
+  }
+
+  /* SHOPS / SEARCH */
+  if(/shop|store|buy|fashion|luxury|brand|gucci|louis|chanel|apple|zara|sephora|rolex/.test(t)){
+    let results = MALL.shops;
+    let ids = ['s1','s2','s3','s4','s5','s6','s7'];
+    let floor = 'L2';
+    if(/luxury|gucci|louis|chanel|rolex|watch/.test(t)){ results = MALL.shops.filter(s=>s.cat==='Luxury Fashion'||s.cat==='Watches'); ids=['s1','s2','s3','s7']; }
+    if(/tech|apple|phone/.test(t)){ results = MALL.shops.filter(s=>s.cat==='Technology'); ids=['s4']; floor='L1'; }
+    if(/beauty|makeup|sephora/.test(t)){ results = MALL.shops.filter(s=>s.cat==='Beauty'); ids=['s6']; floor='L1'; }
+    if(/zara/.test(t)){ ids=['s5']; floor='L1'; }
+    const reply = `I found ${results.length} shops matching your search. Shall I navigate you to any of them?`;
+    setTimeout(()=>{ addCards(results,'shop'); showMap('SHOPS',{floor, highlight:ids}); },600);
+    return reply;
+  }
+
+  /* NAVIGATE TO SPECIFIC PLACE */
+  if(/navigat|take me|go to|route to|how.*get/.test(t)){
+    const all = [...MALL.restaurants,...MALL.cafes,...MALL.shops];
+    const found = all.find(v=>t.includes(v.name.toLowerCase().split(' ')[0].toLowerCase()));
+    if(found){ setTimeout(()=>navigateTo(found.id),400); return `Navigating to ${found.name}. Opening the route on the floor plan now.`; }
+    if(/ev|electric|charg|plug/.test(t)){ setTimeout(()=>showMap('EV CHARGING — B1',{floor:'B1',highlight:[]}),500); return `The nearest EV bays are on Level B1. I've opened the parking floor — Bay 07 is available right now. Head to the east ramp from the main entrance.`; }
+    if(/park|otopark|\bb1\b|\bb2\b/.test(t)){ const fl=/b2/.test(t)?'B2':'B1'; setTimeout(()=>showMap('PARKING — '+fl,{floor:fl,highlight:[]}),500); return `I've opened the ${fl} parking floor plan for you. Head to the ramp at the east exit — I'll guide you down.`; }
+    return `Which place would you like me to navigate to? I can route you to any restaurant, cafe, or shop in the mall.`;
+  }
+
+  /* RESERVATION — TABLE */
+  if(/reserv|book.*table|table.*book|make.*reserv|masa.*ayırt/.test(t)){
+    const found = MALL.restaurants.find(r=>t.includes(r.name.toLowerCase().split(' ')[0].toLowerCase()));
+    setTimeout(()=>openReservation(found?found.id:'r1'),400);
+    return found
+      ? `Opening the reservation form for ${found.name}. I'll get your table booked right away.`
+      : `I'm opening the reservation system. Choose your restaurant, date, and party size, and I'll confirm your table instantly.`;
+  }
+
+  /* PARKING RESERVATION / MY CAR */
+  if(/my car|my vehicle|car regist|reserve.*spot|book.*park|park.*reserv|otopark.*ayırt|araç kayıt/.test(t)){
+    setTimeout(()=>openParkingModal(),400);
+    return `Opening the parking system. Register your vehicle and select your spot on B1 or B2 — I'll confirm your reservation immediately.`;
+  }
+
+  /* PARKING */
+  if(/park|otopark|car|vehicle|b1|b2/.test(t)){
+    const floor = /b2/.test(t) ? 'B2' : 'B1';
+    setTimeout(()=>showMap('PARKING — '+floor, {floor, highlight:[]}),600);
+    return `B1 Parking is at ${MALL.parking.b1.capacity}% capacity with ${MALL.parking.b1.ev} EV charging bays. B2 Parking is at ${MALL.parking.b2.capacity}% — I recommend B2, plenty of space. I've opened the parking floor on the map.`;
+  }
+
+  /* EV */
+  if(/ev|electric|charg|plug/.test(t)){
+    setTimeout(()=>showMap('EV CHARGING — B1', {floor:'B1', highlight:[]}),600);
+    return `Your nearest available EV bay is Bay 07 on Level B1. Current charge session average is 50 minutes. Based on that, I've prepared a dining and shopping route that brings you back just as your car finishes. Want me to show it?`;
+  }
+
+  /* CROWD */
+  if(/crowd|busy|quiet|how many people/.test(t)){
+    return `Current crowd levels: West Wing is calm at 1.4 persons per square meter. The Food Hall is moderate. The Central Atrium is busy at 4.8 — above comfort threshold. I recommend the west wing right now for a relaxed experience.`;
+  }
+
+  /* GREETING */
+  if(/hello|hi|hey|merhaba|good (morning|evening|afternoon)/.test(t)){
+    return `Hello! Great to have you at Dubai Square. I'm Alya. I can show you restaurants, shops, navigate anywhere in the mall, check parking and EV charging, or show you the waterfront. What are you looking for today?`;
+  }
+
+  /* WEATHER / TEMP */
+  if(/weather|hot|outside|temperature/.test(t)){
+    return `It's 38 degrees outside right now. Every zone inside Dubai Square is climate-controlled at a comfortable 22 degrees. The Creek Promenade has partial shading if you'd like to step outside.`;
+  }
+
+  /* DEFAULT */
+  return `I'm checking the live systems for that. I can help you find restaurants, cafes, shops, navigate anywhere in the mall, check parking, EV charging, or show you the waterfront map. What would you like?`;
+}
+
+/* ════════════════════════════════════════════════════════
+   GEMINI AI
+════════════════════════════════════════════════════════ */
+const GEMINI_KEY = 'AIzaSyA-RAbZ98TVmu2-O5THvQWxjj-F81Mq5xY';
+let LANG = 'en';
+
+const ALYA_SYSTEM_BASE = `You are Alya, the AI concierge of Dubai Square — EMAAR's $6B landmark mall at Dubai Creek Harbour. You are sophisticated, warm, and precise.
+
+What you know:
+- Restaurants (all highly rated): Nobu Dubai Square (Japanese-Peruvian, Level 3, AED 350/person), Zuma (Japanese, Level 3, AED 280), Cipriani (Italian, Level 2, AED 220), Nusr-Et Steakhouse (Level 2, AED 400), Sushi Counter (Level 1, AED 120), Scalini (Italian, Level 2, AED 260)
+- Cafes: % Arabica (Level 1), Blank Street Coffee (Ground Floor), Roastery by % (Level 2), Caffe Cipriani (Level 2)
+- Luxury shops: Gucci, Louis Vuitton, Chanel, Rolex Boutique — all Level 2 Luxury Quarter
+- Other: Apple Store, Zara, Sephora — Level 1
+- Parking: B1 (67% full, 12 EV bays), B2 (45% full, 8 EV bays) — AED 15/hr reserved
+- Creek Promenade: 1.2km waterfront walk, water taxis, partial shade, 2 min from East Exit
+- Outside: 38°C. Inside: 22°C climate controlled. 912 AI cameras, 11ms latency security system.
+- You can show the interactive map, navigate guests turn-by-turn, make restaurant table reservations, and reserve parking spots with vehicle registration.
+
+Style: luxury concierge — warm, confident, 2-3 sentences max. No bullet points. No markdown. Natural spoken language.`;
+
+const LANG_SUFFIX = {
+  en: '',
+  tr: '\n\nÖNEMLİ: Kullanıcıya YALNIZCA Türkçe yanıt ver. Lüks bir otel konsiyerjinin sıcak ve şık Türkçesiyle konuş. Maksimum 2-3 cümle.',
+  ar: '\n\nمهم: أجب المستخدم باللغة العربية فقط. استخدم أسلوب مدير فندق فاخر — دافئ ومهذب. جملتان أو ثلاث كحد أقصى.'
+};
+
+function getSystemPrompt(){ return ALYA_SYSTEM_BASE + (LANG_SUFFIX[LANG]||''); }
+
+const WELCOME = {
+  en: "Welcome to Dubai Square. I'm Alya, your personal AI concierge.<br><br>I can help you find restaurants, shops, navigate the mall, check parking and EV charging, or explore the waterfront.<br><br>How can I help you today?",
+  tr: "Dubai Square'e hoş geldiniz. Ben Alya, yapay zeka konsierjinizim.<br><br>Restoran ve mağaza bulma, AVM navigasyonu, otopark ve EV şarj durumu veya sahil gezisi konularında yardımcı olabilirim.<br><br>Size nasıl yardımcı olabilirim?",
+  ar: "مرحباً بكم في دبي سكوير. أنا ألياء، مساعدتكم الذكية الشخصية.<br><br>أستطيع مساعدتك في إيجاد المطاعم والمحلات، التنقل داخل المركز، مواقف السيارات وشحن السيارات الكهربائية.<br><br>كيف يمكنني مساعدتك اليوم؟"
+};
+
+function setLang(l){
+  LANG=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.id==='lb'+l.toUpperCase()));
+  // Arapça RTL, diğerleri LTR
+  document.getElementById('msgs').style.direction = l==='ar'?'rtl':'ltr';
+  // Karşılama mesajını güncelle
+  const first=document.querySelector('#msgs .msg.l .bubble');
+  if(first) first.innerHTML=WELCOME[l]||WELCOME.en;
+  // Geçmiş sıfırla (yeni dilde baştan)
+  geminiHistory.length=0;
+}
+
+const geminiHistory = [];
+
+async function callGemini(userText){
+  geminiHistory.push({role:'user', parts:[{text:userText}]});
+  if(geminiHistory.length > 10) geminiHistory.splice(0,2);
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+    { method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:getSystemPrompt()}]},
+        contents: geminiHistory,
+        generationConfig:{temperature:0.75, maxOutputTokens:160}
+      })
+    }
+  );
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  const reply = data.candidates[0].content.parts[0].text.trim();
+  geminiHistory.push({role:'model', parts:[{text:reply}]});
+  return reply;
+}
+
+/* ════════════════════════════════════════════════════════
+   ACTION TRIGGERS (map + modal side-effects)
+════════════════════════════════════════════════════════ */
+function triggerActions(txt){
+  const t = txt.toLowerCase();
+  const isNav = /navigat|take me|go to|route to|how.*get|direct me/.test(t);
+
+  /* Specific venue navigation — always highest priority */
+  if(isNav){
+    const all=[...MALL.restaurants,...MALL.cafes,...MALL.shops];
+    const found=all.find(v=>t.includes(v.name.toLowerCase().split(' ')[0]));
+    if(found){ setTimeout(()=>navigateTo(found.id),400); return; }
+    /* no specific venue found — fall through to show relevant map */
+  }
+
+  /* Reservation modals */
+  if(/reserv|book.*table|table.*book|make.*reserv/.test(t)){
+    const found=MALL.restaurants.find(r=>t.includes(r.name.toLowerCase().split(' ')[0]));
+    setTimeout(()=>openReservation(found?found.id:'r1'),400); return;
+  }
+  if(/my car|my vehicle|car.*regist|reserve.*spot|park.*reserv|book.*park|book.*spot/.test(t)){
+    setTimeout(()=>openParkingModal(),400); return;
+  }
+
+  /* EV — before generic parking so "EV parking" hits this */
+  if(/ev|electric|charg|plug/.test(t)){
+    setTimeout(()=>showMap('EV CHARGING — B1',{floor:'B1',highlight:[]}),600); return;
+  }
+
+  /* Parking */
+  if(/park|otopark|\bb1\b|\bb2\b/.test(t)){
+    const floor=/b2/.test(t)?'B2':'B1';
+    setTimeout(()=>showMap('PARKING — '+floor,{floor,highlight:[]}),600); return;
+  }
+
+  /* Floor plan overview */
+  if(/\bmap\b|show.*map|open.*map/.test(t)){
+    setTimeout(()=>showMap('DUBAI SQUARE — FLOOR PLAN',{floor:'L1',highlight:[]}),500); return;
+  }
+
+  /* Waterfront */
+  if(/waterfront|creek|promenade/.test(t)){
+    setTimeout(()=>showMap('CREEK PROMENADE — GROUND EXIT',{floor:'G',highlight:[]}),500); return;
+  }
+
+  /* Restaurants */
+  if(/restaurant|dinner|lunch|hungry|dining|eat/.test(t)){
+    let r=MALL.restaurants, ids=['r1','r2','r3','r4','r5','r6'], floor='L3';
+    if(/japanese|sushi/.test(t)){ r=r.filter(x=>/japanese/i.test(x.cuisine)); ids=['r1','r2','r5']; }
+    if(/italian/.test(t)){ r=r.filter(x=>/italian/i.test(x.cuisine)); ids=['r3','r6']; floor='L2'; }
+    if(/quick|fast|short wait/.test(t)) r=[...r].sort((a,b)=>a.wait-b.wait);
+    setTimeout(()=>{addCards(r.slice(0,4),'restaurant'); showMap('RESTAURANTS',{floor,highlight:ids});},600); return;
+  }
+
+  /* Cafes */
+  if(/cafe|coffee|cappuccino|espresso|latte|pastry/.test(t)){
+    setTimeout(()=>{addCards(MALL.cafes,'restaurant'); showMap('CAFES',{floor:'L1',highlight:['c1','c2','c3','c4']});},600); return;
+  }
+
+  /* Shops */
+  if(/shop|store|buy|gucci|louis|chanel|apple|zara|sephora|rolex|fashion|luxury/.test(t)){
+    let s=MALL.shops, ids=['s1','s2','s3','s4','s5','s6','s7'], floor='L2';
+    if(/luxury|gucci|louis|chanel|rolex|watch/.test(t)){ s=s.filter(x=>x.cat==='Luxury Fashion'||x.cat==='Watches'); ids=['s1','s2','s3','s7']; }
+    if(/tech|apple|phone|electronic/.test(t)){ s=s.filter(x=>x.cat==='Technology'); ids=['s4']; floor='L1'; }
+    if(/beauty|makeup|sephora/.test(t)){ s=s.filter(x=>x.cat==='Beauty'); ids=['s6']; floor='L1'; }
+    if(/zara/.test(t)){ ids=['s5']; floor='L1'; }
+    setTimeout(()=>{addCards(s,'shop'); showMap('SHOPS',{floor,highlight:ids});},600);
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   CHAT
+════════════════════════════════════════════════════════ */
+function addMsg(txt,who){
+  const c=document.getElementById('msgs'),d=document.createElement('div');
+  d.className=`msg ${who}`;
+  d.innerHTML=`<div class="mname">${who==='l'?'Alya':'You'}</div><div class="bubble">${txt.replace(/\n/g,'<br>')}</div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function showTyping(){
+  const c=document.getElementById('msgs'),d=document.createElement('div');
+  d.className='msg l';d.id='typ';
+  d.innerHTML=`<div class="mname">Alya</div><div class="bubble typing-bub"><span></span><span></span><span></span></div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+async function sendMsg(){
+  const inp=document.getElementById('inp'),txt=inp.value.trim();
+  if(!txt) return;
+  addMsg(txt,'u'); inp.value='';
+  triggerActions(txt);
+  showTyping();
+  try {
+    const reply = await callGemini(txt);
+    document.getElementById('typ')?.remove();
+    addMsg(reply,'l'); speak(reply);
+  } catch(e){
+    console.warn('Gemini error:', e.message);
+    const fallback = handleQuery(txt);
+    document.getElementById('typ')?.remove();
+    addMsg(fallback,'l'); speak(fallback);
+  }
+}
+function quick(t){document.getElementById('inp').value=t;sendMsg()}
+
+setTimeout(()=>speak('Welcome to Dubai Square. I am Alya, your personal AI concierge. I can help you find restaurants, navigate the mall, check parking, and much more. How can I help you today?'),1200);
+
+/* ════════════════════════════════════════════════════════
+   MODAL SYSTEM
+════════════════════════════════════════════════════════ */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e=>{
+  if(e.target.classList.contains('modal-overlay')) closeModal(e.target.id);
+});
+
+/* ════════════════════════════════════════════════════════
+   RESTAURANT RESERVATION
+════════════════════════════════════════════════════════ */
+let resv = { restaurant:'r1', size:2 };
+
+function openReservation(venueId){
+  resv.restaurant = venueId || 'r1';
+  resv.size = 2;
+  const today = new Date();
+  const minDate = today.toISOString().split('T')[0];
+
+  const sizeOptions = [1,2,3,4,5,6,8,10].map(n=>
+    `<button class="size-btn ${n===2?'sel':''}" onclick="setResvSize(${n})">${n}</button>`
+  ).join('');
+
+  const timeOptions = [];
+  for(let h=11;h<=22;h++){
+    timeOptions.push(`<option value="${h}:00">${h}:00</option>`);
+    if(h<22) timeOptions.push(`<option value="${h}:30">${h}:30</option>`);
+  }
+
+  const restaurantOptions = MALL.restaurants.map(r=>
+    `<option value="${r.id}" ${r.id===resv.restaurant?'selected':''}>${r.icon} ${r.name} — ${r.floor}</option>`
+  ).join('');
+
+  document.getElementById('resvBody').innerHTML = `
+    <div class="form-row">
+      <label class="form-label">Restaurant</label>
+      <select class="form-select" id="resvRestaurant">${restaurantOptions}</select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Your Name</label>
+      <input class="form-input" id="resvName" placeholder="Full name" autocomplete="name">
+    </div>
+    <div class="two-col">
+      <div class="form-row">
+        <label class="form-label">Date</label>
+        <input class="form-input" type="date" id="resvDate" min="${minDate}" value="${minDate}">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Time</label>
+        <select class="form-select" id="resvTime">${timeOptions}</select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Party Size</label>
+      <div class="size-row" id="sizeRow">${sizeOptions}</div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Special Requests</label>
+      <input class="form-input" id="resvNotes" placeholder="Allergies, celebration, window seat…">
+    </div>
+    <button class="confirm-btn" onclick="confirmReservation()">Confirm Reservation</button>
+  `;
+  document.getElementById('resvTime').value = '19:00';
+  openModal('resvModal');
+}
+
+function setResvSize(n){
+  resv.size = n;
+  document.querySelectorAll('#sizeRow .size-btn').forEach(b=>{
+    b.classList.toggle('sel', parseInt(b.textContent)===n);
+  });
+}
+
+function confirmReservation(){
+  const nameEl = document.getElementById('resvName');
+  const name = nameEl.value.trim();
+  if(!name){ nameEl.style.borderColor='rgba(248,113,113,0.6)'; nameEl.focus(); return; }
+  const r = MALL.restaurants.find(x=>x.id===document.getElementById('resvRestaurant').value) || MALL.restaurants[0];
+  const date = document.getElementById('resvDate').value;
+  const time = document.getElementById('resvTime').value;
+  const size = resv.size;
+  const code = 'DSQ-' + Math.random().toString(36).substr(2,6).toUpperCase();
+  const d = new Date(date + 'T12:00:00');
+  const dateStr = d.toLocaleDateString('en-AE',{weekday:'long',month:'long',day:'numeric'});
+
+  // Aşama 1 — gönderiliyor
+  document.getElementById('resvBody').innerHTML = `
+    <div class="success-box" style="text-align:center;padding:32px 16px">
+      <div style="font-size:36px;animation:pulse 1s infinite">📡</div>
+      <div class="success-title" style="margin-top:12px">Sending to ${r.name}…</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Awaiting confirmation from the host stand</div>
+      <div style="width:60%;margin:20px auto 0;height:3px;border-radius:2px;background:rgba(0,212,255,0.1);overflow:hidden">
+        <div style="height:100%;background:var(--cyan);border-radius:2px;animation:resvBar 2.6s ease-in-out forwards"></div>
+      </div>
+    </div>
+  `;
+  // Animasyon keyframe (tek seferlik enjekte et)
+  if(!document.getElementById('resvBarKF')){
+    const s=document.createElement('style');
+    s.id='resvBarKF';
+    s.textContent='@keyframes resvBar{0%{width:0%}80%{width:90%}100%{width:100%}}';
+    document.head.appendChild(s);
+  }
+
+  // Aşama 2 — onay geldi (2.8s simüle gecikme)
+  setTimeout(function(){
+    document.getElementById('resvBody').innerHTML = `
+      <div class="success-box">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Reservation Confirmed</div>
+        <div class="success-detail">
+          ${r.icon} <strong>${r.name}</strong><br>
+          ${dateStr} at ${time}<br>
+          ${size} guest${size>1?'s':''} &nbsp;·&nbsp; ${r.floor}<br>
+          <span style="color:var(--muted);font-size:12px">${name}</span>
+        </div>
+        <div class="conf-code">${code}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Show this code at the host stand</div>
+      </div>
+      <button class="confirm-btn" onclick="closeModal('resvModal')" style="margin-top:16px">Done</button>
+    `;
+    const msg = `Great news! ${r.name} has confirmed your reservation. ${size} guest${size>1?'s':''} on ${dateStr} at ${time}. Confirmation code: ${code}. Please show it at the host stand. Enjoy your meal!`;
+    setTimeout(()=>{ addMsg(msg,'l'); speak(msg); }, 200);
+  }, 2800);
+}
+
+/* ════════════════════════════════════════════════════════
+   PARKING & VEHICLE SYSTEM
+════════════════════════════════════════════════════════ */
+let myVehicle = null;
+let parkState = { floor:'b1', spot:null, duration:2 };
+
+const PARK_LAYOUTS = {
+  b1:{ rows:5, cols:8, occupied:[2,5,7,9,11,14,16,19,21,23,27,30,33,36], ev:[3,8,13,18,32,37,38,39] },
+  b2:{ rows:4, cols:8, occupied:[1,3,6,8,12,15,17,20,22,25,28],           ev:[0,7,16,23,24,31] },
+};
+
+function openParkingModal(){ renderParkingModal(); openModal('parkModal'); }
+
+function renderParkingModal(){
+  const fl = PARK_LAYOUTS[parkState.floor];
+  const total = fl.rows * fl.cols;
+
+  const vehicleSection = myVehicle ? `
+    <div style="margin-bottom:16px">
+      <span class="section-lbl">Registered Vehicle</span>
+      <div class="car-badge">🚗 &nbsp;${myVehicle.plate}&nbsp;&nbsp;·&nbsp;&nbsp;${myVehicle.model}</div><br>
+      <span style="font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="myVehicle=null;renderParkingModal()">Change vehicle</span>
+    </div>
+    <hr class="divider">
+  ` : `
+    <span class="section-lbl">Register Your Vehicle</span>
+    <div class="form-row">
+      <label class="form-label">License Plate</label>
+      <input class="form-input" id="plateinp" placeholder="e.g. Dubai A 12345" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase" autocomplete="off">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Car Model</label>
+      <input class="form-input" id="modelinp" placeholder="e.g. Tesla Model 3, Range Rover" autocomplete="off">
+    </div>
+    <button class="confirm-btn" onclick="saveVehicle()" style="margin-bottom:0">Save &amp; Continue →</button>
+    <hr class="divider">
+    <div style="text-align:center;padding:18px 0 4px;color:var(--muted);font-size:12px">Register your vehicle to reserve a spot</div>
+  `;
+
+  const spotItems = Array.from({length:total},(_,i)=>{
+    const isOcc = fl.occupied.includes(i);
+    const isEv  = fl.ev.includes(i) && !isOcc;
+    const isSel = parkState.spot===i;
+    const cls   = isOcc ? 'occupied' : isSel ? 'selected' : isEv ? 'ev free' : 'free';
+    const lbl   = isOcc ? '✕' : isEv ? '⚡' : String(i+1).padStart(2,'0');
+    return `<div class="spot ${cls}" onclick="${isOcc?'':('selectSpot('+i+')')}" title="${isEv?'EV Bay':'Spot'} ${i+1}">${lbl}</div>`;
+  }).join('');
+
+  const fee = parkState.duration * 15;
+  const durBtns = [1,2,3,4].map(h=>
+    `<button class="dur-btn ${h===parkState.duration?'sel':''}" onclick="setDuration(${h})">${h} hr</button>`
+  ).join('');
+
+  const spotSection = myVehicle ? `
+    <span class="section-lbl">Select Your Spot</span>
+    <div class="park-tabs">
+      <div class="park-tab ${parkState.floor==='b1'?'active':''}" onclick="setParkFloor('b1')">B1 Lower Level</div>
+      <div class="park-tab ${parkState.floor==='b2'?'active':''}" onclick="setParkFloor('b2')">B2 Upper Level</div>
+    </div>
+    <div class="spot-legend">
+      <span><div class="leg-dot" style="background:rgba(100,255,218,0.35)"></div>Available</span>
+      <span><div class="leg-dot" style="background:rgba(0,212,255,0.45)"></div>Selected</span>
+      <span><div class="leg-dot" style="background:rgba(34,197,94,0.35)"></div>EV Bay</span>
+      <span><div class="leg-dot" style="background:rgba(248,113,113,0.25)"></div>Occupied</span>
+    </div>
+    <div class="spot-grid" style="grid-template-columns:repeat(${fl.cols},1fr)">${spotItems}</div>
+    <span class="section-lbl" style="margin-top:14px">Duration</span>
+    <div class="dur-row">${durBtns}</div>
+    <div class="fee-box">
+      <div>
+        <div class="fee-label">Reservation Fee</div>
+        <div class="fee-sub">${parkState.floor.toUpperCase()} · Spot ${parkState.spot!==null?parkState.spot+1:'—'} · ${parkState.duration}hr @ AED 15/hr</div>
+      </div>
+      <div class="fee-amount">AED ${fee}</div>
+    </div>
+    <button class="confirm-btn" onclick="confirmParking()" ${parkState.spot===null?'disabled':''}>
+      ${parkState.spot===null?'Select a spot to continue':'Confirm &amp; Pay AED '+fee}
+    </button>
+  ` : '';
+
+  document.getElementById('parkBody').innerHTML = vehicleSection + spotSection;
+}
+
+function saveVehicle(){
+  const plateEl = document.getElementById('plateinp');
+  const modelEl = document.getElementById('modelinp');
+  const plate = plateEl?.value.trim();
+  const model = modelEl?.value.trim();
+  if(!plate){ plateEl.style.borderColor='rgba(248,113,113,0.6)'; plateEl.focus(); return; }
+  if(!model){ modelEl.style.borderColor='rgba(248,113,113,0.6)'; modelEl.focus(); return; }
+  myVehicle = { plate:plate.toUpperCase(), model };
+  renderParkingModal();
+}
+
+function selectSpot(i){
+  if(PARK_LAYOUTS[parkState.floor].occupied.includes(i)) return;
+  parkState.spot = parkState.spot===i ? null : i;
+  renderParkingModal();
+}
+
+function setParkFloor(fl){ parkState.floor=fl; parkState.spot=null; renderParkingModal(); }
+function setDuration(h){ parkState.duration=h; renderParkingModal(); }
+
+function confirmParking(){
+  if(parkState.spot===null || !myVehicle) return;
+  const fl = PARK_LAYOUTS[parkState.floor];
+  const isEv = fl.ev.includes(parkState.spot);
+  const fee = parkState.duration * 15;
+  const code = 'PK-' + Math.random().toString(36).substr(2,5).toUpperCase();
+
+  document.getElementById('parkBody').innerHTML = `
+    <div class="success-box">
+      <div class="success-icon">🅿️</div>
+      <div class="success-title">Spot Reserved</div>
+      <div class="success-detail">
+        ${isEv?'⚡ EV Bay':'🚗 Spot'} <strong>${parkState.spot+1}</strong> &nbsp;·&nbsp; ${parkState.floor.toUpperCase()} Level<br>
+        ${myVehicle.plate} &nbsp;·&nbsp; ${myVehicle.model}<br>
+        ${parkState.duration} hour${parkState.duration>1?'s':''} &nbsp;·&nbsp; AED ${fee}
+      </div>
+      <div class="conf-code">${code}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px">Show this code at the parking barrier</div>
+    </div>
+    <button class="confirm-btn" onclick="closeModal('parkModal')" style="margin-top:16px">Done</button>
+  `;
+
+  const msg = `Your parking is confirmed! ${isEv?'EV Bay':'Spot'} ${parkState.spot+1} on ${parkState.floor.toUpperCase()} level, reserved for ${parkState.duration} hour${parkState.duration>1?'s':''}. Total: AED ${fee}. Your code is ${code} — show it at the barrier. Enjoy your visit!`;
+  closeModal('parkModal');
+  setTimeout(()=>{ addMsg(msg,'l'); speak(msg); }, 300);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "Dubai Square — Proje",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "markdown.preview.breaks": true,
+    "markdown.preview.fontSize": 14,
+    "workbench.colorTheme": "Dark Modern",
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+      "ARCHITECTURE.md": "*.drawio, *.png",
+      "PARTNERSHIP.md": "*.pdf",
+      "PRESENTATION.md": "*.html"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "marp-team.marp-vscode",
+      "yzhang.markdown-all-in-one",
+      "hediet.vscode-drawio",
+      "shd101wyy.markdown-preview-enhanced"
+    ]
+  }
+}

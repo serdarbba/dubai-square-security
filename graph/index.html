@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entity Intelligence Graph — BBA Security | Dubai Square</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<style>
+:root{
+  --bg:#02080f;--s1:#040e1c;--line:#0c1e30;--line2:#102840;
+  --blue:#0ab0cc;--teal:#3ddbbe;--green:#38d96a;--red:#d64040;
+  --amber:#c8920a;--gold:#c8a820;--purple:#9880e0;--pink:#d060a0;
+  --cam:#60c8ff;--door:#b06ad0;--staff:#80c880;
+  --txt:#8aaec8;--txt2:#4a6a84;--white:#d4e8f4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif}
+
+.topbar{position:fixed;top:0;left:0;right:0;height:48px;background:var(--s1);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:500}
+.t-logo{font-size:12px;font-weight:600;color:var(--white);display:flex;align-items:center;gap:7px;flex-shrink:0}
+.t-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:glow 2s ease infinite}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.35}}
+.t-div{width:1px;height:20px;background:var(--line2);flex-shrink:0}
+.t-title-block{display:flex;flex-direction:column;gap:1px}
+.t-tag{font-size:9.5px;color:var(--txt2);font-family:'JetBrains Mono',monospace;letter-spacing:.8px}
+.t-sub{font-size:7.5px;color:var(--blue);font-family:'JetBrains Mono',monospace;letter-spacing:.5px;opacity:.7}
+.t-sp{flex:1}
+.t-stats{display:flex;gap:18px}
+.t-stat{display:flex;align-items:center;gap:5px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2)}
+.ts-d{width:4px;height:4px;border-radius:50%}
+.ts-v{color:var(--white);font-weight:500;margin-left:1px}
+.t-live{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--red);border:1px solid rgba(214,64,64,.2);padding:3px 8px;border-radius:3px;letter-spacing:1px;flex-shrink:0}
+.page-nav{display:flex;gap:0;border:1px solid var(--line2);border-radius:4px;overflow:hidden;margin-left:4px}
+.pn{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);text-decoration:none;padding:4px 11px;transition:all .15s;white-space:nowrap}
+.pn:hover{background:rgba(10,176,204,.08);color:var(--white)}
+.pn+.pn{border-left:1px solid var(--line2)}
+.pn-act{background:rgba(10,176,204,.12);color:var(--blue)!important}
+
+.layout{position:fixed;top:48px;left:0;right:0;bottom:0;display:grid;grid-template-columns:228px 1fr 296px;overflow:hidden}
+
+/* LEFT */
+.left-panel{border-right:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
+.ph{padding:8px 12px;border-bottom:1px solid var(--line);font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ph::before{content:'';width:8px;height:1px;background:var(--blue)}
+
+.search-wrap{padding:7px 8px;border-bottom:1px solid var(--line);flex-shrink:0}
+.search-input{width:100%;background:rgba(2,8,15,.6);border:1px solid var(--line2);border-radius:3px;padding:5px 10px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--white);outline:none;transition:border-color .15s}
+.search-input::placeholder{color:var(--txt2)}
+.search-input:focus{border-color:rgba(10,176,204,.4)}
+
+.filter-row{padding:6px 8px;display:flex;gap:3px;flex-wrap:wrap;border-bottom:1px solid var(--line);flex-shrink:0}
+.fchip{padding:3px 7px;border-radius:12px;border:1px solid var(--line2);font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer;transition:all .15s;background:none}
+.fchip:hover{border-color:rgba(10,176,204,.35);color:var(--white)}
+.fchip.on{border-color:currentColor;background:rgba(10,176,204,.05)}
+
+.ent-list{flex:1;overflow-y:auto;padding:6px}
+.ei{padding:6px 9px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5);margin-bottom:3px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px}
+.ei:hover{border-color:var(--line2);background:rgba(10,176,204,.03)}
+.ei.sel{border-color:rgba(10,176,204,.45);background:rgba(10,176,204,.06)}
+.ei.alert{animation:alertblink 1.2s ease infinite}
+@keyframes alertblink{0%,100%{border-color:rgba(214,64,64,.4)}50%{border-color:rgba(214,64,64,.08)}}
+.ei-ico{width:20px;height:20px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.ei-nm{font-size:9.5px;font-weight:500;color:var(--white);line-height:1.3}
+.ei-sub{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-top:1px}
+
+/* CENTER */
+.graph-wrap{position:relative;overflow:hidden;background:var(--bg)}
+#graphSvg{width:100%;height:100%}
+
+.graph-ctrl{position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:3px;z-index:50}
+.gc-btn{width:26px;height:26px;border-radius:3px;background:rgba(4,14,28,.92);border:1px solid var(--line);color:var(--txt2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.gc-btn:hover{border-color:rgba(10,176,204,.4);color:var(--white)}
+
+.graph-legend{position:absolute;top:10px;left:10px;background:rgba(4,14,28,.92);border:1px solid var(--line);border-radius:3px;padding:8px 12px;pointer-events:none}
+.gl-row{display:flex;align-items:center;gap:7px;font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-bottom:3px}
+.gl-row:last-child{margin-bottom:0}
+.gl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.gl-line{width:16px;height:1px;flex-shrink:0}
+
+.graph-badge{position:absolute;bottom:12px;left:12px;background:rgba(4,14,28,.92);border:1px solid rgba(10,176,204,.15);border-radius:3px;padding:6px 10px;font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);pointer-events:none;letter-spacing:.5px}
+.graph-badge span{color:var(--blue);font-weight:500}
+
+.graph-stats{position:absolute;top:10px;right:10px;background:rgba(4,14,28,.92);border:1px solid var(--line);border-radius:3px;padding:8px 12px;text-align:right}
+.gs-num{font-size:18px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--white);line-height:1}
+.gs-lbl{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1px}
+
+.toast{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);background:rgba(4,14,28,.96);border:1px solid rgba(10,176,204,.3);border-radius:4px;padding:6px 16px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--white);pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;z-index:200}
+.toast.show{opacity:1}
+
+.edge-tip{position:absolute;background:rgba(4,14,28,.96);border:1px solid rgba(10,176,204,.25);border-radius:3px;padding:4px 10px;font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--blue);pointer-events:none;display:none;z-index:300;letter-spacing:.5px}
+
+/* RIGHT */
+.right-panel{border-left:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
+
+/* Why Entity Graph — default state */
+.why-panel{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:16px}
+.why-hero{text-align:center;padding:16px 0 20px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.why-icon{font-size:28px;margin-bottom:8px;opacity:.7}
+.why-title{font-size:13px;font-weight:600;color:var(--white);letter-spacing:.5px;margin-bottom:4px}
+.why-subtitle{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px}
+.why-concept{background:rgba(10,176,204,.04);border:1px solid rgba(10,176,204,.1);border-radius:4px;padding:12px;margin-bottom:16px}
+.why-concept-title{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:8px}
+.why-concept-body{font-size:10px;color:var(--txt);line-height:1.65}
+.why-concept-body strong{color:var(--white)}
+.why-example{margin-top:10px;padding:8px;background:rgba(2,8,15,.5);border-radius:3px;border-left:2px solid var(--amber)}
+.why-example-label{font-size:7.5px;font-family:'JetBrains Mono',monospace;color:var(--amber);letter-spacing:1px;margin-bottom:5px}
+.why-example-body{font-size:9.5px;color:var(--txt);line-height:1.6}
+.why-example-body span{color:var(--white);font-weight:500}
+
+.bba-section{margin-bottom:14px}
+.bba-section-hd{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.bba-section-hd::before{content:'';width:12px;height:1px;background:var(--blue)}
+.bba-section-hd::after{content:'';flex:1;height:1px;background:var(--line)}
+
+.comp-item{display:flex;gap:10px;margin-bottom:10px;padding:9px 10px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.4);transition:border-color .2s}
+.comp-item:hover{border-color:rgba(10,176,204,.2)}
+.comp-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 6px var(--blue);margin-top:2px;flex-shrink:0}
+.comp-name{font-size:9.5px;font-weight:500;color:var(--white);margin-bottom:3px}
+.comp-desc{font-size:8.5px;color:var(--txt2);line-height:1.5}
+.comp-tag{display:inline-block;margin-top:4px;font-size:7px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:2px;background:rgba(10,176,204,.08);color:var(--blue);border:1px solid rgba(10,176,204,.15)}
+
+.ifc-badge{margin-top:4px;padding:8px 10px;background:rgba(200,168,32,.04);border:1px solid rgba(200,168,32,.15);border-radius:3px;font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--amber);line-height:1.6}
+.ifc-badge .ifc-id{font-weight:500;color:var(--gold)}
+
+.why-hint{margin-top:12px;text-align:center;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);padding:8px 0;border-top:1px solid var(--line)}
+.why-hint span{color:var(--blue)}
+
+/* Detail view */
+.detail-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.det-head{padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+.det-ico-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.det-big-ico{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.det-name{font-size:14px;font-weight:600;color:var(--white);line-height:1.3}
+.det-id{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue);margin-top:2px}
+.det-rows{padding:12px 16px;display:flex;flex-direction:column;gap:7px;border-bottom:1px solid var(--line)}
+.dr{display:flex;justify-content:space-between;align-items:center;font-size:10px}
+.dk{color:var(--txt2);font-family:'JetBrains Mono',monospace;font-size:9px}
+.dv{color:var(--white);font-weight:500;text-align:right}
+.connections-section{padding:12px 16px;flex:1;overflow-y:auto}
+.cs-head{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.cs-head::before{content:'';width:8px;height:1px;background:var(--blue)}
+.conn-item{padding:7px 10px;border-radius:3px;border:1px solid var(--line);background:rgba(2,8,15,.5);margin-bottom:3px;display:flex;align-items:center;gap:8px;font-size:9.5px;cursor:pointer;transition:all .15s}
+.conn-item:hover{border-color:var(--line2);background:rgba(10,176,204,.03)}
+.conn-rel{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-top:1px}
+.risk-bar{padding:12px 16px;border-top:1px solid var(--line);flex-shrink:0}
+.rb-head{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);letter-spacing:1.5px;margin-bottom:6px}
+.rb-track{height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-bottom:4px}
+.rb-fill{height:100%;border-radius:2px;transition:width .8s ease}
+.rb-val{font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:2px}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+
+/* Help button */
+.help-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--line2);background:rgba(10,176,204,.06);color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.help-btn:hover{background:rgba(10,176,204,.15);border-color:rgba(10,176,204,.45)}
+
+/* Help modal */
+.help-overlay{position:fixed;inset:0;background:rgba(2,8,15,.82);backdrop-filter:blur(4px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.help-overlay.open{opacity:1;pointer-events:all}
+.help-modal{width:640px;max-height:86vh;background:var(--s1);border:1px solid rgba(10,176,204,.25);border-radius:6px;display:flex;flex-direction:column;overflow:hidden;transform:translateY(12px);transition:transform .25s}
+.help-overlay.open .help-modal{transform:translateY(0)}
+.hm-head{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hm-icon{font-size:20px}
+.hm-title{font-size:13px;font-weight:600;color:var(--white);flex:1}
+.hm-close{width:26px;height:26px;border-radius:3px;border:1px solid var(--line2);background:none;color:var(--txt2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.hm-close:hover{border-color:var(--red);color:var(--red)}
+.hm-body{overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:20px}
+.hm-section{background:rgba(2,8,15,.4);border:1px solid var(--line);border-radius:4px;padding:14px 16px}
+.hm-section-hd{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.hm-section-hd::before{content:'';width:10px;height:1px;background:var(--blue)}
+.hm-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.hm-row:last-child{margin-bottom:0}
+.hm-key{width:26px;height:26px;border-radius:3px;background:rgba(10,176,204,.08);border:1px solid rgba(10,176,204,.2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.hm-row-body{}
+.hm-row-title{font-size:10px;font-weight:500;color:var(--white);margin-bottom:2px}
+.hm-row-desc{font-size:9px;color:var(--txt2);line-height:1.6}
+.hm-row-desc strong{color:var(--txt)}
+.hm-alert{padding:10px 12px;background:rgba(200,168,32,.05);border:1px solid rgba(200,168,32,.18);border-radius:3px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--amber);line-height:1.7}
+.hm-alert strong{color:var(--gold);font-size:9.5px}
+.hm-spec{padding:8px 12px;background:rgba(10,176,204,.04);border:1px solid rgba(10,176,204,.12);border-radius:3px;font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--txt2);line-height:1.8}
+.hm-spec strong{color:var(--blue)}
+.hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hm-grid-item{padding:8px 10px;background:rgba(2,8,15,.5);border:1px solid var(--line);border-radius:3px}
+.hgi-label{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--blue);letter-spacing:.5px;margin-bottom:3px}
+.hgi-val{font-size:9.5px;color:var(--white)}
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .layout{grid-template-columns:200px 1fr 240px}
+}
+@media(max-width:820px){
+  .layout{grid-template-columns:180px 1fr 0px}
+  .layout > *:last-child{display:none}
+}
+@media(max-width:600px){
+  .layout{grid-template-columns:0px 1fr 0px;position:fixed;top:44px;left:0;right:0;bottom:0}
+  .layout > *:first-child{display:none}
+  .layout > *:last-child{display:none}
+  #graphMobLeft{display:block!important}
+  .pn{display:none}
+  .t-tag{display:none}
+  .hm-grid{grid-template-columns:1fr}
+}
+#graphMobLeft{display:none;position:fixed;bottom:16px;left:8px;z-index:600;padding:6px 12px;background:rgba(4,14,28,.95);border:1px solid var(--line2);border-radius:3px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--txt2);cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="t-logo"><div class="t-dot"></div><span style="color:var(--blue)">BBA</span>&nbsp;Security Intelligence</div>
+  <div class="t-div"></div>
+  <div class="t-title-block">
+    <span class="t-tag">DUBAI SQUARE · ENTITY INTELLIGENCE GRAPH</span>
+    <span class="t-sub">ONTOLOGY-DRIVEN THREAT CORRELATION ENGINE</span>
+  </div>
+  <div class="t-sp"></div>
+  <div class="t-stats">
+    <div class="t-stat"><div class="ts-d" style="background:var(--green)"></div>Entities <span class="ts-v" id="hdr-ent">55</span></div>
+    <div class="t-stat"><div class="ts-d" style="background:var(--blue)"></div>Relations <span class="ts-v" id="hdr-rel">112</span></div>
+    <div class="t-stat"><div class="ts-d" style="background:var(--red);animation:glow .9s ease infinite"></div>Alerts <span class="ts-v" style="color:var(--red)" id="hdr-alerts">4</span></div>
+  </div>
+  <div class="t-div"></div>
+  <div class="t-live"><div class="ts-d" style="background:var(--red);animation:glow .8s ease infinite"></div>LIVE</div>
+  <button class="help-btn" title="Entity Graph Hakkında" onclick="openHelp()">?</button>
+  <div class="page-nav">
+    <a href="../" class="pn">Proposal</a>
+    <a href="../ops/" class="pn">Ops Center</a>
+    <a href="../twin/" class="pn">Digital Twin</a>
+    <a href="../access/" class="pn">Access Intel</a>
+    <a href="../graph/" class="pn pn-act">Entity Graph</a>
+    <a href="../demo/" class="pn">AI Operator</a>
+    <a href="../cards/" class="pn">Card Mgmt</a>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <div class="left-panel">
+    <div class="ph">Entity Filter</div>
+    <div class="search-wrap">
+      <input class="search-input" id="searchInput" type="text" placeholder="Search entities…" oninput="filterSearch(this.value)">
+    </div>
+    <div class="filter-row">
+      <button class="fchip on" style="color:var(--gold)"      onclick="toggleFilter('vip',this)">👑 VIP</button>
+      <button class="fchip on" style="color:var(--teal)"     onclick="toggleFilter('guard',this)">👮 Guard</button>
+      <button class="fchip on" style="color:var(--red)"      onclick="toggleFilter('suspect',this)">⚠ Suspect</button>
+      <button class="fchip on" style="color:var(--blue)"     onclick="toggleFilter('vehicle',this)">🚗 Vehicle</button>
+      <button class="fchip on" style="color:var(--purple)"   onclick="toggleFilter('incident',this)">🔴 Incident</button>
+      <button class="fchip on" style="color:var(--txt2)"     onclick="toggleFilter('zone',this)">🏢 Zone</button>
+      <button class="fchip on" style="color:var(--cam)"      onclick="toggleFilter('camera',this)">📷 Camera</button>
+      <button class="fchip on" style="color:var(--door)"     onclick="toggleFilter('door',this)">🚪 Door</button>
+      <button class="fchip on" style="color:var(--staff)"    onclick="toggleFilter('staff',this)">👷 Staff</button>
+    </div>
+    <div class="ent-list" id="entList"></div>
+  </div>
+
+  <!-- CENTER GRAPH -->
+  <div class="graph-wrap" id="graphWrap">
+    <svg id="graphSvg">
+      <defs>
+        <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <marker id="arrow" viewBox="0 -3 8 6" refX="8" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,-3L8,0L0,3" fill="rgba(10,176,204,.4)"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 -3 8 6" refX="8" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,-3L8,0L0,3" fill="rgba(214,64,64,.5)"/>
+        </marker>
+        <marker id="arrow-gold" viewBox="0 -3 8 6" refX="8" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,-3L8,0L0,3" fill="rgba(200,168,32,.5)"/>
+        </marker>
+      </defs>
+      <g id="graphG"></g>
+    </svg>
+
+    <div class="graph-legend">
+      <div class="gl-row"><div class="gl-dot" style="background:#c8a820;box-shadow:0 0 5px #c8a820"></div>VIP</div>
+      <div class="gl-row"><div class="gl-dot" style="background:#d64040;box-shadow:0 0 5px #d64040"></div>Suspect / Alert</div>
+      <div class="gl-row"><div class="gl-dot" style="background:#3ddbbe;box-shadow:0 0 5px #3ddbbe"></div>Security / Drone</div>
+      <div class="gl-row"><div class="gl-dot" style="background:#0ab0cc;box-shadow:0 0 5px #0ab0cc"></div>Vehicle / ANPR</div>
+      <div class="gl-row"><div class="gl-dot" style="background:#60c8ff;box-shadow:0 0 5px #60c8ff"></div>CCTV Camera</div>
+      <div class="gl-row"><div class="gl-dot" style="background:#b06ad0;box-shadow:0 0 5px #b06ad0"></div>ACS Door</div>
+      <div class="gl-row"><div class="gl-dot" style="background:#9880e0;box-shadow:0 0 5px #9880e0"></div>Zone / Gate</div>
+      <div class="gl-row" style="margin-top:5px"><div class="gl-line" style="background:rgba(200,168,32,.6)"></div>VIP escort</div>
+      <div class="gl-row"><div class="gl-line" style="background:rgba(214,64,64,.5)"></div>Threat link</div>
+      <div class="gl-row"><div class="gl-line" style="background:rgba(10,176,204,.3)"></div>Operational</div>
+    </div>
+
+    <div class="graph-stats">
+      <div class="gs-num" id="gs-nodes">55</div>
+      <div class="gs-lbl">ENTITIES</div>
+      <div class="gs-num" style="margin-top:8px" id="gs-links">112</div>
+      <div class="gs-lbl">RELATIONS</div>
+    </div>
+
+    <div class="graph-badge">POWERED BY <span>BBA INTELLIGENCE ENGINE</span> · v2.4</div>
+    <div class="toast" id="toast"></div>
+    <div class="edge-tip" id="edgeTip"></div>
+
+    <div class="graph-ctrl">
+      <button class="gc-btn" title="Zoom in"  onclick="graphZoom(1.3)">+</button>
+      <button class="gc-btn" title="Zoom out" onclick="graphZoom(.77)">−</button>
+      <button class="gc-btn" title="Reset"    onclick="graphReset()">⟳</button>
+      <button class="gc-btn" title="Reheat"   onclick="graphReheat()" style="font-size:10px">⚡</button>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <div class="ph">Entity Intelligence</div>
+    <div id="detailPane"></div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div class="help-overlay" id="helpOverlay" onclick="closeHelpOutside(event)">
+  <div class="help-modal">
+    <div class="hm-head">
+      <span class="hm-icon">🕸</span>
+      <span class="hm-title" id="hmTitle">Entity Intelligence Graph — User Guide</span>
+      <div style="display:flex;gap:6px;margin-left:auto;margin-right:10px">
+        <button onclick="setHelpLang('en')" id="hmLangEn" style="padding:2px 8px;border-radius:2px;border:1px solid rgba(10,176,204,.6);background:rgba(10,176,204,.15);color:#0ab0cc;font-size:8px;font-family:'JetBrains Mono',monospace;cursor:pointer">EN</button>
+        <button onclick="setHelpLang('ar')" id="hmLangAr" style="padding:2px 8px;border-radius:2px;border:1px solid rgba(10,176,204,.2);background:transparent;color:rgba(10,176,204,.45);font-size:8px;font-family:'JetBrains Mono',monospace;cursor:pointer">عربي</button>
+      </div>
+      <button class="hm-close" onclick="closeHelp()">✕</button>
+    </div>
+    <div class="hm-body" id="hmBody">
+      <!-- populated by setHelpLang() below -->
+    </div>
+  </div>
+</div>
+
+<script>
+// ── HELP MODAL EN/AR ──────────────────────────────────────────
+var _hmLang = localStorage.getItem('bba_lang') || 'en';
+var _hmContent = {
+  en: {
+    title:'Entity Intelligence Graph — User Guide',
+    s1hd:'WHAT IS THIS SCREEN?',
+    s1p:'The Entity Intelligence Graph displays <strong style="color:var(--white)">55 security entities</strong> at Dubai Square (persons, vehicles, cameras, doors, zones, incidents) and the <strong style="color:var(--white)">112 relationships</strong> between them in a live network map.',
+    s1alert:'<strong>Why is this different?</strong><br>Traditional systems show every alarm in <em>isolation</em> — separate screens, separate databases.<br>This graph merges signals from multiple systems (ACS + CCTV + ANPR + Behaviour) into a single <strong>relationship map, surfacing coordinated threats</strong> within minutes.',
+    s2hd:'HOW TO USE',
+    rows:[
+      {key:'👆',title:'Click a Node',desc:'Click any entity to view its <strong>full intelligence profile</strong> in the right panel. Connected entities are highlighted; unconnected ones fade.'},
+      {key:'✋',title:'Drag & Rearrange',desc:'Drag nodes to reorganise the map. Click empty space to deselect and reset the full view.'},
+      {key:'🔍',title:'Left Panel — Filter & Search',desc:'<strong>Search box:</strong> filter by ID or name.<br><strong>Chip buttons:</strong> toggle types such as VIP, Guard, Suspect.<br><strong>List:</strong> click an item to focus directly on that entity.'},
+      {key:'⚡',title:'Controls (Bottom Right)',desc:'<strong>+ / −</strong> zoom in/out &nbsp;·&nbsp; <strong>⟳</strong> reset view &nbsp;·&nbsp; <strong>⚡</strong> restart simulation (when nodes tangle)'},
+      {key:'🔗',title:'Edge Labels',desc:'Hover over a link to see the relationship type: <strong>ESCORT, THREAT, COVERS, MONITORING, PROTECTS</strong> etc. Colour codes are in the bottom-left legend.'},
+    ],
+    s3hd:'COLOUR & SYMBOL GUIDE',
+    colours:[
+      {lbl:'👑 GOLD',val:'VIP · Vehicle Owner',c:'#c8a820'},
+      {lbl:'🔴 RED',val:'Suspect · Active Incident',c:'#d64040'},
+      {lbl:'👮 TEAL',val:'Security · Drone',c:'#3ddbbe'},
+      {lbl:'🚗 BLUE',val:'Vehicle · ANPR',c:'#0ab0cc'},
+      {lbl:'📷 LIGHT BLUE',val:'CCTV Camera',c:'#60c8ff'},
+      {lbl:'🚪 PURPLE',val:'ACS Door',c:'#b06ad0'},
+      {lbl:'🏢 DARK PURPLE',val:'Zone · Access Point',c:'#9880e0'},
+      {lbl:'⚠ AMBER',val:'Watchlist · Risk',c:'#c8920a'},
+    ],
+    s4hd:'PURPOSE & STRATEGIC VALUE',
+    s4p1:'The purpose of this graph is to provide security operators with <strong style="color:var(--white)">relational intelligence</strong> — not just alarms, but answers to <em>who, where, when, connected to whom</em>.',
+    s4p2:'<strong style="color:var(--white)">Competing systems</strong> show only CCTV monitoring or ACS logs. BBA\'s Entity Intelligence Graph unites all security subsystems in a single ontology model, making coordinated threats visible on one screen.',
+    specHd:'IFC SPEC COMPLIANCE',
+  },
+  ar: {
+    title:'رسم ذكاء الكيانات — دليل الاستخدام',
+    s1hd:'ما هذه الشاشة؟',
+    s1p:'يعرض رسم ذكاء الكيانات <strong style="color:var(--white)">55 كياناً أمنياً</strong> في دبي سكوير (أشخاص، مركبات، كاميرات، أبواب، مناطق، حوادث) و<strong style="color:var(--white)">112 علاقة</strong> بينها في خريطة شبكية حية.',
+    s1alert:'<strong>لماذا هذا مختلف؟</strong><br>الأنظمة التقليدية تعرض كل إنذار بشكل <em>منعزل</em> — شاشات منفصلة وقواعد بيانات منفصلة.<br>يدمج هذا الرسم الإشارات من أنظمة متعددة (ACS + CCTV + ANPR + السلوك) في <strong>خريطة علاقات واحدة تكشف التهديدات المنسقة</strong> في دقائق.',
+    s2hd:'كيفية الاستخدام',
+    rows:[
+      {key:'👆',title:'انقر على عقدة',desc:'انقر على أي كيان لعرض <strong>ملف الاستخبارات الكامل</strong> في اللوحة اليمنى. تُبرَز الكيانات المرتبطة وتتلاشى غير المرتبطة.'},
+      {key:'✋',title:'اسحب وأعد الترتيب',desc:'اسحب العقد لإعادة تنظيم الخريطة. انقر على مساحة فارغة لإلغاء التحديد وإعادة تعيين العرض الكامل.'},
+      {key:'🔍',title:'اللوحة اليسرى — تصفية وبحث',desc:'<strong>مربع البحث:</strong> تصفية بالمعرف أو الاسم.<br><strong>أزرار الشريحة:</strong> تفعيل/تعطيل أنواع مثل VIP وحارس ومشتبه به.<br><strong>القائمة:</strong> انقر على عنصر للتركيز على ذلك الكيان.'},
+      {key:'⚡',title:'عناصر التحكم (أسفل اليمين)',desc:'<strong>+ / −</strong> تكبير/تصغير &nbsp;·&nbsp; <strong>⟳</strong> إعادة تعيين العرض &nbsp;·&nbsp; <strong>⚡</strong> إعادة تشغيل المحاكاة'},
+      {key:'🔗',title:'تسميات الحواف',desc:'مرّر فوق رابط لرؤية نوع العلاقة: <strong>ESCORT, THREAT, COVERS, MONITORING, PROTECTS</strong> إلخ. رموز الألوان في وسيلة الإيضاح أسفل اليسار.'},
+    ],
+    s3hd:'دليل الألوان والرموز',
+    colours:[
+      {lbl:'👑 ذهبي',val:'VIP · مالك المركبة',c:'#c8a820'},
+      {lbl:'🔴 أحمر',val:'مشتبه به · حادثة نشطة',c:'#d64040'},
+      {lbl:'👮 أزرق مخضر',val:'الأمن · طائرة مسيّرة',c:'#3ddbbe'},
+      {lbl:'🚗 أزرق',val:'مركبة · ANPR',c:'#0ab0cc'},
+      {lbl:'📷 أزرق فاتح',val:'كاميرا CCTV',c:'#60c8ff'},
+      {lbl:'🚪 بنفسجي',val:'باب ACS',c:'#b06ad0'},
+      {lbl:'🏢 بنفسجي غامق',val:'منطقة · نقطة وصول',c:'#9880e0'},
+      {lbl:'⚠ كهرماني',val:'قائمة مراقبة · مخاطرة',c:'#c8920a'},
+    ],
+    s4hd:'الغرض والقيمة الاستراتيجية',
+    s4p1:'الغرض من هذا الرسم تزويد مشغلي الأمن بـ<strong style="color:var(--white)">استخبارات العلاقات</strong> — ليس مجرد إنذارات، بل إجابات عن <em>من، أين، متى، ومرتبط بمن</em>.',
+    s4p2:'<strong style="color:var(--white)">الأنظمة المنافسة</strong> تعرض مراقبة CCTV أو سجلات ACS فقط. يوحّد رسم ذكاء الكيانات من BBA جميع الأنظمة الفرعية الأمنية في نموذج أنطولوجيا واحد مما يجعل التهديدات المنسقة مرئية على شاشة واحدة.',
+    specHd:'الامتثال لمواصفة IFC',
+  }
+};
+function setHelpLang(lang) {
+  _hmLang = lang;
+  localStorage.setItem('bba_lang', lang);
+  var d = _hmContent[lang];
+  var isAr = lang === 'ar';
+  document.getElementById('hmTitle').textContent = d.title;
+  var enBtn = document.getElementById('hmLangEn');
+  var arBtn = document.getElementById('hmLangAr');
+  enBtn.style.borderColor = lang==='en' ? 'rgba(10,176,204,.6)' : 'rgba(10,176,204,.2)';
+  enBtn.style.background  = lang==='en' ? 'rgba(10,176,204,.15)' : 'transparent';
+  enBtn.style.color       = lang==='en' ? '#0ab0cc' : 'rgba(10,176,204,.45)';
+  arBtn.style.borderColor = lang==='ar' ? 'rgba(10,176,204,.6)' : 'rgba(10,176,204,.2)';
+  arBtn.style.background  = lang==='ar' ? 'rgba(10,176,204,.15)' : 'transparent';
+  arBtn.style.color       = lang==='ar' ? '#0ab0cc' : 'rgba(10,176,204,.45)';
+  var dir = isAr ? ' dir="rtl"' : '';
+  var rowsHtml = d.rows.map(function(r){
+    return '<div class="hm-row"><div class="hm-key">'+r.key+'</div><div class="hm-row-body"><div class="hm-row-title">'+r.title+'</div><div class="hm-row-desc">'+r.desc+'</div></div></div>';
+  }).join('');
+  var coloursHtml = d.colours.map(function(c){
+    return '<div class="hm-grid-item"><div class="hgi-label">'+c.lbl+'</div><div class="hgi-val" style="color:'+c.c+'">'+c.val+'</div></div>';
+  }).join('');
+  document.getElementById('hmBody').innerHTML =
+    '<div class="hm-section"'+dir+'>'+
+      '<div class="hm-section-hd">'+d.s1hd+'</div>'+
+      '<div style="font-size:10px;color:var(--txt);line-height:1.7;margin-bottom:10px">'+d.s1p+'</div>'+
+      '<div class="hm-alert">'+d.s1alert+'</div>'+
+    '</div>'+
+    '<div class="hm-section"'+dir+'>'+
+      '<div class="hm-section-hd">'+d.s2hd+'</div>'+rowsHtml+
+    '</div>'+
+    '<div class="hm-section"'+dir+'>'+
+      '<div class="hm-section-hd">'+d.s3hd+'</div>'+
+      '<div class="hm-grid">'+coloursHtml+'</div>'+
+    '</div>'+
+    '<div class="hm-section"'+dir+'>'+
+      '<div class="hm-section-hd">'+d.s4hd+'</div>'+
+      '<div style="font-size:9.5px;color:var(--txt);line-height:1.7;margin-bottom:12px">'+d.s4p1+'</div>'+
+      '<div style="font-size:9.5px;color:var(--txt);line-height:1.7;margin-bottom:12px">'+d.s4p2+'</div>'+
+      '<div class="hm-spec"><strong>'+d.specHd+'</strong><br>'+
+        'DCH-M-KTE-RPT-IFC-SEC-00001-01 · EMAAR Dubai Square<br>'+
+        '55 entities — §17.4 entity classes full match<br>'+
+        '112 relationships — §17.7 security zone topology<br>'+
+        'PSIM/SMS §17.8.3 · ANPR §17.10.8 · ACS §17.11 · HVM §17.14<br>'+
+        'SIRA Res. 13/2025 · BS EN 62676 · BS EN 50131 · PAS 68/69'+
+      '</div>'+
+    '</div>';
+}
+document.addEventListener('DOMContentLoaded', function(){ setHelpLang(_hmLang); });
+// ── END HELP MODAL ────────────────────────────────────────────
+</script>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const NODES = [
+  // ── VIPs ─────────────────────────────────────────────────────
+  {id:'VIP-001',label:'H.E. Abdullah\nAl Maktoum',   type:'vip',icon:'👑',color:'#c8a820',risk:15,
+   detail:{role:'VIP · Unrestricted',location:'Welcome Hall → VIP Lounge L2',clearance:'GOLD',visits:'12 today',vehicle:'DXB-7829',escort:'SEC-047',spec:'§17.5.4.1'}},
+  {id:'VIP-002',label:'Fahad Al Gergawi\nEMAAR Board',type:'vip',icon:'🎖',color:'#c8a820',risk:10,
+   detail:{role:'VIP · Board Level',location:'VIP Lounge L2',clearance:'GOLD',visits:'3 today',vehicle:'DXB-4401',escort:'SEC-012',spec:'§17.5.4.1'}},
+  {id:'VIP-003',label:'Sara Al Hashimi\nRetail Director',type:'vip',icon:'👑',color:'#c8a820',risk:8,
+   detail:{role:'VIP · Executive',location:'VIP Lounge L2',clearance:'SILVER',visits:'1 today',escort:'SEC-019',spec:'§17.4 Restricted Public'}},
+
+  // ── Security Personnel ────────────────────────────────────────
+  {id:'SEC-047',label:'Hassan\nMohammed',  type:'guard',icon:'👮',color:'#3ddbbe',risk:20,
+   detail:{role:'Security Guard',location:'Platinum Zone · ALERT',badge:'#0047',shift:'07:00–19:00',status:'Dispatched',spec:'§17.24 Staffing'}},
+  {id:'SEC-012',label:'Khalid\nRahman',    type:'guard',icon:'👮',color:'#3ddbbe',risk:5,
+   detail:{role:'Security Guard',location:'Welcome Hall Entry',badge:'#0012',shift:'07:00–19:00',status:'On Post',spec:'§17.5.4.1'}},
+  {id:'SEC-031',label:'Ahmed\nAl Farsi',   type:'guard',icon:'👮',color:'#3ddbbe',risk:5,
+   detail:{role:'Patrol Officer',location:'Food Hall L3',badge:'#0031',shift:'07:00–19:00',status:'Patrol',spec:'§17.24 Staffing'}},
+  {id:'SEC-008',label:'Omar\nKhalid',      type:'guard',icon:'👮',color:'#3ddbbe',risk:5,
+   detail:{role:'Supervisor',location:'SCR · Security Control Room',badge:'#0008',shift:'07:00–19:00',status:'Monitoring',spec:'§17.6.1 SCR'}},
+  {id:'SEC-019',label:'Bilal\nYusuf',      type:'guard',icon:'👮',color:'#3ddbbe',risk:5,
+   detail:{role:'VIP Escort',location:'VIP Lounge L2',badge:'#0019',shift:'07:00–19:00',status:'Escort',spec:'§17.4 Restricted Public'}},
+  {id:'SEC-055',label:'Tariq\nAl Mansouri',type:'guard',icon:'👮',color:'#3ddbbe',risk:5,
+   detail:{role:'Patrol Officer',location:'Boulevard · North',badge:'#0055',shift:'07:00–19:00',status:'Response',spec:'§17.5.9 Boulevard'}},
+  {id:'SEC-022',label:'Mariam\nAl Nasser', type:'guard',icon:'👮',color:'#3ddbbe',risk:5,
+   detail:{role:'Control Room Op.',location:'SCR · Security Control Room',badge:'#0022',shift:'07:00–19:00',status:'Monitoring',spec:'§17.6.1 6 Operators 24/7'}},
+  {id:'DSQ-02', label:'Drone\nDSQ-02',     type:'guard',icon:'🚁',color:'#3ddbbe',risk:5,
+   detail:{role:'Patrol Drone',location:'North Perimeter 180m',battery:'74%',speed:'8 m/s',status:'PATROL',spec:'§17.17 Drone Monitoring System'}},
+
+  // ── Suspects ──────────────────────────────────────────────────
+  {id:'UNK-B4', label:'UNKNOWN\nBadge #2847',    type:'suspect',icon:'⚠',color:'#d64040',risk:88,
+   detail:{role:'⚠ Unauthorized',location:'BOH Corridor · Loading Bay',badge:'CLONED #2847',attempts:'2',vehicle:'SHJ-9904',threat:'HIGH',spec:'§17.11.1 ACS Alarm'}},
+  {id:'SUB-002',label:'Person of\nInterest C7',  type:'suspect',icon:'⚠',color:'#d64040',risk:65,
+   detail:{role:'⚠ Loitering 45min+',location:'Platinum Zone · West Atrium',badge:'None',flag:'Behavior anomaly',threat:'MEDIUM',spec:'§17.10.8 Video Analytics'}},
+  {id:'SUB-003',label:'Suspect\nBoulevard N',    type:'suspect',icon:'⚠',color:'#d64040',risk:72,
+   detail:{role:'⚠ Perimeter Probe',location:'Boulevard · North',badge:'None',flag:'Fire exit probe attempt',vehicle:'RAK-3341',threat:'HIGH',spec:'§17.5.5 Fire Exit ACS'}},
+
+  // ── Vehicles ──────────────────────────────────────────────────
+  {id:'DXB-7829',label:'DXB-7829', type:'vehicle',icon:'🚗',color:'#0ab0cc',risk:5,
+   detail:{role:'VIP Registered',location:'Welcome Hall Entry · Cleared',make:'Mercedes G-Class',owner:'VIP-001',status:'CLEARED',spec:'§17.5.6.2 VIP Drop-Off'}},
+  {id:'DXB-4401',label:'DXB-4401', type:'vehicle',icon:'🚗',color:'#0ab0cc',risk:5,
+   detail:{role:'VIP Registered',location:'VIP Drop-Off · Cleared',make:'BMW 7 Series',owner:'VIP-002',status:'CLEARED',spec:'§17.5.6.2 VIP Drop-Off'}},
+  {id:'SHJ-9904',label:'SHJ-9904', type:'vehicle',icon:'🚗',color:'#c8920a',risk:72,
+   detail:{role:'⚠ Watch List',location:'Loading Bay Gate · Flagged',make:'Toyota Camry',owner:'Unknown',status:'FLAGGED',spec:'§17.10.8 ANPR · ESG Hotlist'}},
+  {id:'AJM-0018',label:'AJM-0018', type:'vehicle',icon:'🚗',color:'#d64040',risk:95,
+   detail:{role:'🔴 BLACKLISTED',location:'Welcome Hall Entry · DENIED',make:'Nissan Patrol',owner:'Unknown',status:'BLACKLISTED',spec:'§17.10.8 ANPR · Blacklist DB'}},
+  {id:'DXB-6677',label:'DXB-6677', type:'vehicle',icon:'🚗',color:'#0ab0cc',risk:5,
+   detail:{role:'Staff Registered',location:'Loading Bay B1',make:'Toyota Corolla',owner:'Staff #882',status:'CLEARED',spec:'§17.5.2 Car Parking ANPR'}},
+  {id:'DXB-1122',label:'DXB-1122', type:'vehicle',icon:'🚗',color:'#0ab0cc',risk:12,
+   detail:{role:'Delivery · VMS Pre-Registered',location:'Loading Bay Lane 1 · Cleared',make:'Ford Transit',owner:'Al Futtaim Log.',status:'CLEARED',spec:'§17.16 VMS Food Delivery'}},
+  {id:'RAK-3341',label:'RAK-3341', type:'vehicle',icon:'🚗',color:'#c8920a',risk:78,
+   detail:{role:'⚠ Watch List',location:'Loading Bay B1 · Monitored',make:'Mitsubishi Pajero',owner:'Unknown',status:'FLAGGED',spec:'§17.10.8 ANPR · ESG Hotlist'}},
+
+  // ── Incidents ─────────────────────────────────────────────────
+  {id:'INC-001',label:'Crowd Surge\nPlatinum Zone',  type:'incident',icon:'🔴',color:'#d64040',risk:92,
+   detail:{role:'CRITICAL Incident',location:'Platinum Zone · 4.2 p/m²',time:'14:32',cameras:'CAM-PLAT1, CAM-PLAT2',status:'ACTIVE',spec:'§17.10.2 Video Monitoring'}},
+  {id:'INC-002',label:'Unauth Badge\nBOH Bay 4',     type:'incident',icon:'🟠',color:'#c8920a',risk:70,
+   detail:{role:'ACCESS VIOLATION',location:'BOH Corridor · Bay 4',time:'14:14',cameras:'CAM-BOH-B4',status:'INVESTIGATING',spec:'§17.11.1 ACS Door Forced'}},
+  {id:'INC-003',label:'Perimeter Probe\nBoulevard N',type:'incident',icon:'🟠',color:'#c8920a',risk:68,
+   detail:{role:'PERIMETER ALERT',location:'Boulevard · North',time:'14:41',cameras:'CAM-FR2',status:'INVESTIGATING',spec:'§17.5.5 Fire Exit Staircase ACS'}},
+
+  // ── Zones (§17.7 Security Zoning) ────────────────────────────
+  {id:'ZONE-PLAT', label:'Platinum Zone\nGF Mall',     type:'zone',icon:'🏢',color:'#9880e0',risk:88,
+   detail:{role:'PUBLIC · CRITICAL',location:'Ground Floor — Level 2',density:'4.2 p/m²',zoning:'Public Area in Building',cameras:'12 active',status:'CRITICAL',spec:'§17.4 List of Assets · Public'}},
+  {id:'ZONE-WELC', label:'Welcome Hall\nGF North',     type:'zone',icon:'🏢',color:'#9880e0',risk:35,
+   detail:{role:'PUBLIC · ELEVATED',location:'Ground Floor North',density:'2.8 p/m²',zoning:'Public Area/Public Parking',cameras:'8 active',status:'ELEVATED',spec:'§17.5.4.1 Main Mall Entrance'}},
+  {id:'ZONE-BLVD', label:'Boulevard\nExternal',        type:'zone',icon:'🛣',color:'#9880e0',risk:55,
+   detail:{role:'PUBLIC · WATCH',location:'External Area',density:'1.9 p/m²',zoning:'Public Area — CPTED',hvm:'Active',status:'WATCH',spec:'§17.5.9 Boulevard · HVM Required'}},
+  {id:'ZONE-VIP',  label:'VIP Lounge\nLevel 2',        type:'zone',icon:'🏛',color:'#9880e0',risk:15,
+   detail:{role:'RESTRICTED PUBLIC · SECURE',location:'Level 2',density:'0.3 p/m²',zoning:'Restricted Public Area',cameras:'4 active',status:'SECURE',spec:'§17.4 List of Assets · Restricted Public'}},
+  {id:'ZONE-LDBAY',label:'Loading Bay\nBasement 1',    type:'zone',icon:'🚛',color:'#9880e0',risk:42,
+   detail:{role:'LOADING BAY · ELEVATED',location:'Basement 1',density:'—',zoning:'Loading Bay (Separate Zone)',hvm:'Road Blockers',status:'ELEVATED',spec:'§17.6.2 Loading Dock Areas · 3 Lanes'}},
+  {id:'ZONE-FOOD', label:'Food Hall\nLevel 3',         type:'zone',icon:'🍽',color:'#9880e0',risk:22,
+   detail:{role:'PUBLIC · NORMAL',location:'Level 3 (First Floor)',density:'1.2 p/m²',zoning:'Public Area in Building',cameras:'8 active',status:'NORMAL',spec:'§17.4 List of Assets · Food Hall'}},
+  {id:'GATE-WELC', label:'Welcome Hall\nEntry · GF',   type:'zone',icon:'🚧',color:'#9880e0',risk:25,
+   detail:{role:'Entry Gate — Active',location:'GF North · §17.5.4.1',vehicles:'247 today',facial_rec:'Online',anpr:'Online',acs:'Online',status:'ACTIVE',spec:'§17.5.4.1 Facial Rec + ACS'}},
+  {id:'GATE-LOAD', label:'Loading Bay\nGate · B1',     type:'zone',icon:'🚧',color:'#9880e0',risk:40,
+   detail:{role:'Entry Gate — Alert',location:'Basement 1 · §17.6.2',vehicles:'182 today',lanes:'Lane 1 / 2 / 3',anpr:'Online',scanner:'Active',status:'WATCH',spec:'§17.6.2 Vehicle Screening · 3 Lanes'}},
+
+  // ── Cameras (§17.10 Video Surveillance System) ────────────────
+  {id:'CAM-PLAT1', label:'CAM-PLAT1\nPlatinum PTZ',  type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'PTZ · 4K · Crowd Monitor',location:'Platinum Zone · West Column',resolution:'4K 120% TIH',fps:'30',analytics:'Crowd density · People count',status:'RECORDING',spec:'§17.10.5 Identification Level'}},
+  {id:'CAM-PLAT2', label:'CAM-PLAT2\nPlatinum PTZ',  type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'PTZ · 4K · Crowd Monitor',location:'Platinum Zone · East Column',resolution:'4K 120% TIH',fps:'30',analytics:'Crowd density · People count',status:'RECORDING',spec:'§17.10.5 Identification Level'}},
+  {id:'CAM-BOH-B4',label:'CAM-BOH-B4\nBOH Bay 4',   type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'Fixed · Flagged Footage',location:'BOH Corridor · Bay 4 Service',resolution:'2K 50% TIH',fps:'25',analytics:'Motion detection',status:'FLAGGED',spec:'§17.10.3 Video Assessment'}},
+  {id:'CAM-FR1',   label:'CAM-FR1\nFacial Rec N',   type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'Facial Recognition · ID Level',location:'Welcome Hall · North Entry',resolution:'4K 120% TIH',fps:'30',analytics:'Facial recognition · ID capture',status:'RECORDING',spec:'§17.5.4.1 Welcome Hall Entry'}},
+  {id:'CAM-FR2',   label:'CAM-FR2\nFacial Rec S',   type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'Facial Recognition · ID Level',location:'Welcome Hall · South Entry',resolution:'4K 120% TIH',fps:'30',analytics:'Facial recognition · Exit capture',status:'RECORDING',spec:'§17.5.4.1 Exit Facing'}},
+  {id:'CAM-ANPR-W',label:'CAM-ANPR-W\nWelcome ANPR',type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'ANPR · 8MP · Entry',location:'Welcome Hall Entry Lane',resolution:'8MP ANPR',fps:'60',analytics:'Plate recognition · Roma + Arabic',status:'RECORDING',spec:'§17.10.8 ANPR · ESG Blacklist'}},
+  {id:'CAM-ANPR-L',label:'CAM-ANPR-L\nLoading ANPR',type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'ANPR · 8MP · Alert',location:'Loading Bay Lane 1 Entry',resolution:'8MP ANPR',fps:'60',analytics:'Vehicle classification · Dwell time',status:'ALERT',spec:'§17.5.6.1 Loading Bay Video Analytics'}},
+  {id:'CAM-VIP1',  label:'CAM-VIP1\nVIP Lounge',    type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'Discreet · 4K Active',location:'VIP Lounge L2',resolution:'4K',fps:'30',analytics:'Identification level',status:'RECORDING',spec:'§17.5.4.1 VIP Area ID Coverage'}},
+  {id:'CAM-FOOD',  label:'CAM-FOOD\nFood Hall',      type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'PTZ · 4K Active',location:'Food Hall L3',resolution:'4K',fps:'30',analytics:'People counting · Queue detection',status:'RECORDING',spec:'§17.10.5 Monitoring Level'}},
+
+  // ── ACS Doors (§17.11.8 Access Control Locations) ─────────────
+  {id:'DOOR-VIP',     label:'Door\nVIP Entry',     type:'door',icon:'🚪',color:'#b06ad0',risk:10,
+   detail:{role:'ACS · GOLD clearance only',location:'VIP Lounge L2 Entry',access:'Facial/Biometric',events:'4 today',lock:'BS EN 14846:2008',status:'LOCKED',spec:'§17.11.2.1 Biometric Auth'}},
+  {id:'DOOR-BOH-B4',  label:'Door\nBOH Bay 4',     type:'door',icon:'🚪',color:'#b06ad0',risk:82,
+   detail:{role:'ACS · ⚠ BREACHED',location:'BOH Corridor · Bay 4 Service',access:'Staff only',events:'2 unauth attempts',lock:'BS EN 14846:2008',status:'ALERT',spec:'§17.11.1 Door Forced Open Alarm'}},
+  {id:'DOOR-STAFF-WH',label:'Door\nStaff Welcome', type:'door',icon:'🚪',color:'#b06ad0',risk:15,
+   detail:{role:'ACS · Staff Entry',location:'Welcome Hall · Staff Entry',access:'Staff + Admin',events:'18 today',lock:'BS EN 14846:2008',status:'NORMAL',spec:'§17.11.8 BOH Access Locations'}},
+  {id:'DOOR-FIRE-P',  label:'Door\nFire Exit Plat',type:'door',icon:'🚪',color:'#b06ad0',risk:60,
+   detail:{role:'Emergency Exit · Watched',location:'Platinum Zone · Fire Exit',access:'Emergency only — BS EN 179',events:'1 probe',lock:'BS EN 179:2008',status:'WATCH',spec:'§17.5.5 Fire Exit Staircase ACS'}},
+  {id:'DOOR-BOH-LB',  label:'Door\nBOH Loading',   type:'door',icon:'🚪',color:'#b06ad0',risk:30,
+   detail:{role:'ACS · Loading Bay BOH',location:'Loading Bay B1 · BOH Entry',access:'Staff + Delivery (QR)',events:'31 today',lock:'BS EN 14846:2008',status:'NORMAL',spec:'§17.5.13 Delivery Access Flow'}},
+
+  // ── Staff ─────────────────────────────────────────────────────
+  {id:'STAFF-882',label:'Staff #882\nDelivery', type:'staff',icon:'👷',color:'#80c880',risk:8,
+   detail:{role:'Delivery Staff · VMS Registered',location:'Loading Bay · BOH Corridor',clearance:'STAFF',shift:'08:00–17:00',qr_code:'Active',status:'Active',spec:'§17.16 VMS · Take-Away Food Delivery'}},
+
+  // ── Additional Entry Points (§17.5.4.3 + §17.5.4.4) ──────────
+  {id:'GATE-METRO',label:'Metro/Hotel\nLink Bridge',type:'zone',icon:'🚇',color:'#9880e0',risk:18,
+   detail:{role:'Entry Gate — Passage',location:'Level 3 (First Floor) · §17.5.4.3',daily_flow:'312 today',cam_level:'Identification 120% TIH',acs:'Integrated',facial_rec:'Online',status:'ACTIVE',spec:'§17.5.4.3 Metro/Hotel Link Bridge Connection'}},
+  {id:'GATE-ICON', label:'Icon Tower\nConnection',  type:'zone',icon:'🏢',color:'#9880e0',risk:15,
+   detail:{role:'Entry Gate — Passage',location:'Level 1 Parking-2 · §17.5.4.4',daily_flow:'88 today',cam_level:'Identification 120% TIH',acs:'Anti-passback',facial_rec:'Online',status:'ACTIVE',spec:'§17.5.4.4 Icon Tower Connection · SIRA Compliant'}},
+
+  // ── Security Control Room + Emergency Command (§17.6.1 + §17.8.2) ─
+  {id:'SCR-GF',label:'Security\nControl Room',type:'zone',icon:'🖥',color:'#d64040',risk:5,
+   zoning:'High Security',
+   detail:{role:'SCR 24/7 · High Security',location:'GF / Parking 1 · §17.6.1',dimensions:'16m × 8.8m × 4m',operators:'6/6 online',supervisors:'2/2 on duty',led_wall:'Curved · Active',nvr:'RAID-5/6 · 31-day',ups:'30min standby',status:'OPERATIONAL',spec:'§17.6.1 SCR · §17.8.3 PSIM/SMS · Ballistic-proof doors'}},
+  {id:'ECR',     label:'Emergency\nCrisis Cmd', type:'zone',icon:'🚨',color:'#d64040',risk:5,
+   zoning:'High Security',
+   detail:{role:'Emergency/Crisis Command',location:'GF / Parking 1 · §17.8.2',dimensions:'811.8m² (combined)',adjacent:'Security Control Room',police_liaison:'CID · DCD · RTA',bms_integration:'Fire · Generator · Electrical',status:'STANDBY',spec:'§17.8.2 Control and Equipment Room · §17.8.5 BMS Integration'}},
+
+  // ── PSIM / SMS Integration Hub (§17.8.3) ─────────────────────────────────
+  {id:'PSIM-CORE',label:'PSIM / SMS\nIntegration Hub',type:'zone',icon:'🖧',color:'#d64040',risk:5,
+   zoning:'High Security',
+   detail:{role:'PSIM/SMS Central Platform',location:'Security Control Room · §17.8.3',integrates:'CCTV + ACS + ANPR + Fire + BMS',external:'CID · DCD · RTA',cameras:'847 integrated',acs_pts:'312 integrated',status:'OPERATIONAL',spec:'§17.8.3 PSIM/SMS — Full Integration Platform'}},
+
+  // ── Event Hall Level 4 (§17.5.7) ─────────────────────────────────────────
+  {id:'ZONE-EVT', label:'Event Hall\nLevel 4',       type:'zone',icon:'🎪',color:'#9880e0',risk:20,
+   detail:{role:'Event Space · Variable Capacity',location:'Level 4 · §17.5.7',capacity:'Up to 5,000 persons',zoning:'Public Area in Building',cameras:'8 active',acs:'Enhanced during events',status:'NORMAL',spec:'§17.5.7 Retail Event Spaces · L4 Mall'}},
+
+  // ── HVM Boulevard System (§17.14) ────────────────────────────────────────
+  {id:'HVM-BLVD', label:'HVM System\nBoulevard',     type:'zone',icon:'🛡',color:'#c8a820',risk:15,
+   detail:{role:'Hostile Vehicle Mitigation',location:'Boulevard External · §17.14',type:'Bollards + Road Blockers',standard:'PAS 68/69 · IWA 14-1',coverage:'All boulevard vehicle access',status:'ACTIVE',spec:'§17.14 Hostile Vehicle Mitigation · PAS 68/69'}},
+
+  // ── Rooftop Camera (§17.5.11) ─────────────────────────────────────────────
+  {id:'CAM-ROOF', label:'CAM-ROOF\nRooftop PTZ',     type:'camera',icon:'📷',color:'#60c8ff',risk:5,
+   detail:{role:'PTZ · Rooftop Perimeter',location:'Rooftop · §17.5.11',resolution:'4K 120% TIH',fps:'30',analytics:'Smoke detection · Perimeter survey',status:'RECORDING',spec:'§17.5.11 Rooftop Area · Smoke Detection Camera'}},
+];
+
+const LINKS = [
+  // VIP escorts
+  {source:'VIP-001',target:'SEC-047',  type:'escort',  strength:3},
+  {source:'VIP-002',target:'SEC-012',  type:'escort',  strength:3},
+  {source:'VIP-003',target:'SEC-019',  type:'escort',  strength:3},
+  // VIP → vehicle
+  {source:'VIP-001',target:'DXB-7829', type:'owns',    strength:2},
+  {source:'VIP-002',target:'DXB-4401', type:'owns',    strength:2},
+  // VIP → gate / zone
+  {source:'VIP-001',target:'GATE-WELC',type:'entry',   strength:1},
+  {source:'VIP-002',target:'GATE-WELC',type:'entry',   strength:1},
+  {source:'VIP-003',target:'GATE-WELC',type:'entry',   strength:1},
+  {source:'VIP-001',target:'ZONE-VIP', type:'present', strength:1},
+  {source:'VIP-002',target:'ZONE-VIP', type:'present', strength:1},
+  {source:'VIP-003',target:'ZONE-VIP', type:'present', strength:2},
+  {source:'VIP-003',target:'DOOR-VIP', type:'entry',   strength:2},
+  // VIP → camera sighting
+  {source:'CAM-VIP1',  target:'VIP-001', type:'sighted',  strength:1},
+  {source:'CAM-ANPR-W',target:'DXB-7829',type:'detected', strength:1},
+  {source:'CAM-FR1',   target:'VIP-003', type:'sighted',  strength:1},
+  // Suspects
+  {source:'UNK-B4',  target:'INC-002',    type:'threat',   strength:3},
+  {source:'UNK-B4',  target:'SHJ-9904',   type:'linked',   strength:2},
+  {source:'UNK-B4',  target:'DOOR-BOH-B4',type:'breached', strength:3},
+  {source:'SHJ-9904',target:'GATE-LOAD',  type:'flagged',  strength:2},
+  {source:'SUB-002', target:'INC-001',    type:'threat',   strength:2},
+  {source:'SUB-002', target:'ZONE-PLAT',  type:'presence', strength:2},
+  {source:'SUB-003', target:'INC-003',    type:'threat',   strength:3},
+  {source:'SUB-003', target:'ZONE-BLVD',  type:'presence', strength:2},
+  {source:'SUB-003', target:'RAK-3341',   type:'linked',   strength:2},
+  {source:'SUB-003', target:'DOOR-FIRE-P',type:'probed',   strength:2},
+  // Incidents → zones
+  {source:'INC-001',target:'ZONE-PLAT', type:'located', strength:3},
+  {source:'INC-002',target:'GATE-LOAD', type:'located', strength:1},
+  {source:'INC-003',target:'ZONE-BLVD', type:'located', strength:3},
+  // Guard responses
+  {source:'SEC-047',target:'INC-001',     type:'response',  strength:2},
+  {source:'SEC-047',target:'ZONE-PLAT',   type:'deployed',  strength:2},
+  {source:'SEC-047',target:'DOOR-FIRE-P', type:'securing',  strength:2},
+  {source:'SEC-008',target:'INC-001',     type:'monitoring',strength:1},
+  {source:'SEC-008',target:'INC-002',     type:'monitoring',strength:1},
+  {source:'SEC-055',target:'INC-003',     type:'response',  strength:2},
+  {source:'SEC-055',target:'ZONE-BLVD',   type:'patrol',    strength:2},
+  {source:'SEC-055',target:'DOOR-BOH-LB', type:'guarding',  strength:1},
+  {source:'SEC-012',target:'GATE-WELC',   type:'on-post',   strength:2},
+  {source:'SEC-012',target:'DOOR-VIP',    type:'guarding',  strength:2},
+  {source:'SEC-031',target:'ZONE-WELC',   type:'patrol',    strength:1},
+  {source:'SEC-031',target:'ZONE-FOOD',   type:'patrol',    strength:1},
+  {source:'SEC-031',target:'DOOR-STAFF-WH',type:'guarding', strength:1},
+  {source:'SEC-019',target:'ZONE-VIP',    type:'patrol',    strength:2},
+  {source:'SEC-022',target:'INC-001',     type:'monitoring',strength:1},
+  {source:'SEC-022',target:'INC-003',     type:'monitoring',strength:1},
+  // SCR → cameras (§17.8.2 Control Room)
+  {source:'SEC-022',target:'CAM-PLAT1',  type:'monitoring',strength:1},
+  {source:'SEC-022',target:'CAM-ANPR-L', type:'monitoring',strength:1},
+  {source:'SEC-008',target:'CAM-BOH-B4', type:'monitoring',strength:1},
+  {source:'SEC-008',target:'CAM-ANPR-W', type:'monitoring',strength:1},
+  // Drone (§17.17 Drone Monitoring System)
+  {source:'DSQ-02',target:'ZONE-PLAT',  type:'surveillance',strength:2},
+  {source:'DSQ-02',target:'ZONE-WELC',  type:'patrol',      strength:1},
+  {source:'DSQ-02',target:'ZONE-BLVD',  type:'patrol',      strength:1},
+  {source:'DSQ-02',target:'ZONE-FOOD',  type:'patrol',      strength:1},
+  {source:'DSQ-02',target:'ZONE-LDBAY', type:'patrol',      strength:1},
+  // Vehicles (§17.10.8 ANPR)
+  {source:'DXB-7829',target:'GATE-WELC', type:'entry',   strength:1},
+  {source:'AJM-0018',target:'GATE-WELC', type:'denied',  strength:2},
+  {source:'AJM-0018',target:'GATE-LOAD', type:'denied',  strength:2},
+  {source:'DXB-6677',target:'GATE-WELC', type:'entry',   strength:1},
+  {source:'DXB-6677',target:'ZONE-LDBAY',type:'parked',  strength:1},
+  {source:'DXB-1122',target:'GATE-LOAD', type:'entry',   strength:1},
+  {source:'DXB-1122',target:'STAFF-882', type:'linked',  strength:1},
+  {source:'RAK-3341',target:'GATE-LOAD', type:'flagged', strength:2},
+  {source:'RAK-3341',target:'ZONE-LDBAY',type:'parked',  strength:1},
+  // Cameras → zones (§17.10 Video Surveillance)
+  {source:'CAM-PLAT1', target:'ZONE-PLAT', type:'covers',strength:2},
+  {source:'CAM-PLAT2', target:'ZONE-PLAT', type:'covers',strength:2},
+  {source:'CAM-FR1',   target:'ZONE-WELC', type:'covers',strength:2},
+  {source:'CAM-FR2',   target:'ZONE-WELC', type:'covers',strength:2},
+  {source:'CAM-BOH-B4',target:'GATE-LOAD', type:'covers',strength:2},
+  {source:'CAM-ANPR-W',target:'GATE-WELC', type:'covers',strength:2},
+  {source:'CAM-ANPR-L',target:'GATE-LOAD', type:'covers',strength:2},
+  {source:'CAM-VIP1',  target:'ZONE-VIP',  type:'covers',strength:2},
+  {source:'CAM-FOOD',  target:'ZONE-FOOD', type:'covers',strength:2},
+  // Cameras → incidents / suspects
+  {source:'CAM-PLAT1', target:'INC-001',type:'captured', strength:3},
+  {source:'CAM-PLAT2', target:'INC-001',type:'captured', strength:3},
+  {source:'CAM-PLAT2', target:'SUB-002',type:'tracking', strength:2},
+  {source:'CAM-BOH-B4',target:'INC-002',type:'captured', strength:3},
+  {source:'CAM-BOH-B4',target:'UNK-B4', type:'tracking', strength:3},
+  {source:'CAM-FR2',   target:'INC-003',type:'captured', strength:2},
+  {source:'CAM-FR2',   target:'SUB-003',type:'tracking', strength:2},
+  {source:'CAM-ANPR-L',target:'SHJ-9904',type:'detected',strength:2},
+  {source:'CAM-ANPR-W',target:'AJM-0018',type:'detected',strength:2},
+  // Doors → zones (§17.11.8 ACS Locations)
+  {source:'DOOR-VIP',     target:'ZONE-VIP',  type:'access-to',strength:2},
+  {source:'DOOR-BOH-B4',  target:'GATE-LOAD', type:'access-to',strength:1},
+  {source:'DOOR-STAFF-WH',target:'ZONE-WELC', type:'access-to',strength:1},
+  {source:'DOOR-FIRE-P',  target:'ZONE-PLAT', type:'access-to',strength:1},
+  {source:'DOOR-BOH-LB',  target:'ZONE-LDBAY',type:'access-to',strength:2},
+  // Staff (§17.16 VMS Delivery Flow)
+  {source:'STAFF-882',target:'DOOR-STAFF-WH',type:'uses',   strength:1},
+  {source:'STAFF-882',target:'ZONE-WELC',    type:'present',strength:1},
+  // Zone topology (§17.7 Security Zoning)
+  {source:'ZONE-WELC', target:'GATE-WELC', type:'connected',strength:1},
+  {source:'ZONE-BLVD', target:'GATE-WELC', type:'connected',strength:1},
+  {source:'ZONE-PLAT', target:'GATE-LOAD', type:'connected',strength:1},
+  {source:'ZONE-VIP',  target:'ZONE-WELC', type:'connected',strength:1},
+  {source:'ZONE-LDBAY',target:'GATE-WELC', type:'connected',strength:1},
+  {source:'ZONE-LDBAY',target:'GATE-LOAD', type:'connected',strength:1},
+  {source:'ZONE-FOOD', target:'ZONE-PLAT', type:'connected',strength:1},
+  // New entry points — §17.5.4.3 + §17.5.4.4
+  {source:'GATE-METRO',target:'ZONE-WELC',  type:'connected', strength:1},
+  {source:'GATE-ICON', target:'ZONE-WELC',  type:'connected', strength:1},
+  {source:'CAM-FR1',   target:'GATE-METRO', type:'covers',    strength:2},
+  {source:'CAM-FR2',   target:'GATE-ICON',  type:'covers',    strength:2},
+  // SCR + ECR — §17.6.1 + §17.8.2
+  {source:'SCR-GF',    target:'ZONE-PLAT',  type:'monitors',  strength:1},
+  {source:'SCR-GF',    target:'CAM-PLAT1',  type:'manages',   strength:2},
+  {source:'ECR',       target:'SCR-GF',     type:'adjacent',  strength:3},
+  {source:'DSQ-02',    target:'SCR-GF',     type:'on-post',   strength:2},
+  // PSIM/SMS hub — §17.8.3
+  {source:'PSIM-CORE', target:'SCR-GF',     type:'manages',   strength:3},
+  {source:'PSIM-CORE', target:'ECR',        type:'linked',    strength:2},
+  {source:'PSIM-CORE', target:'GATE-WELC',  type:'monitors',  strength:1},
+  {source:'PSIM-CORE', target:'CAM-ANPR-W', type:'integrates',strength:1},
+  // Event Hall — §17.5.7
+  {source:'ZONE-EVT',  target:'ZONE-PLAT',  type:'connected', strength:1},
+  {source:'ZONE-EVT',  target:'ZONE-FOOD',  type:'connected', strength:1},
+  {source:'DSQ-02',    target:'ZONE-EVT',   type:'patrol',    strength:1},
+  // HVM — §17.14
+  {source:'HVM-BLVD',  target:'ZONE-BLVD',  type:'protects',  strength:2},
+  {source:'HVM-BLVD',  target:'GATE-WELC',  type:'protects',  strength:1},
+  // Rooftop camera — §17.5.11
+  {source:'CAM-ROOF',  target:'ZONE-BLVD',  type:'covers',    strength:2},
+];
+
+console.assert(NODES.length===55, `Node count: ${NODES.length}`);
+console.assert(LINKS.length===112, `Link count: ${LINKS.length}`);
+
+// ── ENTITY LIST ───────────────────────────────────────────────────────────────
+const entListEl = document.getElementById('entList');
+const activeFilters = new Set(['vip','guard','suspect','vehicle','incident','zone','camera','door','staff']);
+let searchTerm = '';
+let selectedId = null;
+
+function buildEntityList(selId) {
+  entListEl.innerHTML = '';
+  const term = searchTerm.toLowerCase();
+  NODES
+    .filter(n => activeFilters.has(n.type))
+    .filter(n => !term || n.label.toLowerCase().includes(term) || n.id.toLowerCase().includes(term))
+    .forEach(n => {
+      const d = document.createElement('div');
+      d.className = 'ei'+(n.type==='suspect'?' alert':'')+(n.id===selId?' sel':'');
+      d.onclick = () => selectNode(n.id);
+      d.innerHTML = `
+        <div class="ei-ico" style="background:${n.color}18;border:1px solid ${n.color}30">${n.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div class="ei-nm">${n.label.replace('\n',' ')}</div>
+          <div class="ei-sub">${n.id}</div>
+        </div>
+        <div style="width:6px;height:6px;border-radius:50%;background:${riskColor(n.risk)};flex-shrink:0"></div>`;
+      entListEl.appendChild(d);
+    });
+}
+buildEntityList(null);
+
+window.toggleFilter = function(type, btn) {
+  btn.classList.toggle('on');
+  activeFilters.has(type) ? activeFilters.delete(type) : activeFilters.add(type);
+  buildEntityList(selectedId);
+  updateGraphFilter();
+};
+
+window.filterSearch = function(val) {
+  searchTerm = val;
+  buildEntityList(selectedId);
+};
+
+function riskColor(r) {
+  if (r>=80) return '#d64040';
+  if (r>=60) return '#c8920a';
+  if (r>=30) return '#a0a010';
+  return '#38d96a';
+}
+
+// ── D3 GRAPH ─────────────────────────────────────────────────────────────────
+const svg = d3.select('#graphSvg');
+const g   = d3.select('#graphG');
+let currentTransform = d3.zoomIdentity;
+let W=0, H=0;
+
+const zoom = d3.zoom()
+  .scaleExtent([.15,4])
+  .on('zoom', e => { g.attr('transform', e.transform); currentTransform = e.transform; });
+svg.call(zoom);
+
+function getDims() {
+  const el = document.getElementById('graphWrap');
+  W = el.clientWidth; H = el.clientHeight;
+}
+getDims();
+
+const sim = d3.forceSimulation(NODES)
+  .force('link', d3.forceLink(LINKS).id(d=>d.id)
+    .distance(d => d.type==='escort'?75:d.type==='covers'?65:d.strength===3?72:115)
+    .strength(d => d.strength*.15))
+  .force('charge', d3.forceManyBody().strength(-180).distanceMax(280))
+  .force('center', d3.forceCenter(W/2, H/2))
+  .force('collision', d3.forceCollide(26))
+  .alphaDecay(.013);
+
+// Edge tooltip
+const edgeTip = document.getElementById('edgeTip');
+
+// Links (fat invisible hit area + visible line)
+const linkHit = g.selectAll('.link-hit')
+  .data(LINKS).enter().append('line')
+  .attr('class','link-hit')
+  .attr('stroke','transparent')
+  .attr('stroke-width',12)
+  .style('cursor','default')
+  .on('mousemove', function(e,d) {
+    edgeTip.style.display='block';
+    edgeTip.style.left=(e.offsetX+12)+'px';
+    edgeTip.style.top =(e.offsetY-18)+'px';
+    edgeTip.textContent = d.type.toUpperCase();
+  })
+  .on('mouseleave', () => { edgeTip.style.display='none'; });
+
+const linkSel = g.selectAll('.link')
+  .data(LINKS).enter().append('line')
+  .attr('class','link')
+  .attr('stroke', d =>
+    d.type==='escort'?'rgba(200,168,32,.55)':
+    d.type==='threat'||d.type==='breached'||d.type==='denied'?'rgba(214,64,64,.45)':
+    d.type==='flagged'||d.type==='probed'?'rgba(200,146,10,.4)':
+    d.type==='covers'||d.type==='tracking'?'rgba(96,200,255,.28)':
+    d.type==='access-to'?'rgba(176,106,208,.35)':
+    'rgba(10,176,204,.2)')
+  .attr('stroke-width', d=>d.type==='escort'?1.8:d.type==='threat'||d.type==='captured'?1.5:1)
+  .attr('stroke-dasharray', d=>d.type==='patrol'||d.type==='monitoring'||d.type==='covers'?'4,3':'none')
+  .attr('marker-end', d=>
+    d.type==='escort'?'url(#arrow-gold)':
+    d.type==='response'||d.type==='threat'?'url(#arrow-red)':
+    d.type==='covers'?'url(#arrow)':'none');
+
+// Nodes
+const nodeGrp = g.selectAll('.node')
+  .data(NODES).enter().append('g')
+  .attr('class','node')
+  .style('cursor','pointer')
+  .call(d3.drag()
+    .on('start',(e,d)=>{ if(!e.active) sim.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
+    .on('drag', (e,d)=>{ d.fx=e.x; d.fy=e.y; })
+    .on('end',  (e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }))
+  .on('click',(e,d)=>{ e.stopPropagation(); selectNode(d.id); });
+
+// Glow rings for high-risk
+nodeGrp.filter(d=>d.risk>=70).append('circle')
+  .attr('r',18).attr('fill','none')
+  .attr('stroke',d=>d.color).attr('stroke-width',1).attr('opacity',.28)
+  .attr('class','glow-ring');
+
+// Node circles
+nodeGrp.append('circle')
+  .attr('r', d=>d.type==='zone'?19:d.type==='incident'?16:d.type==='camera'||d.type==='door'?12:13)
+  .attr('fill', d=>`${d.color}12`)
+  .attr('stroke', d=>d.color)
+  .attr('stroke-width', d=>d.risk>=80?1.8:1.2)
+  .attr('filter', d=>d.risk>=80?'url(#glow-red)':d.type==='vip'?'url(#glow-gold)':'url(#glow-blue)')
+  .attr('opacity', d=>d.risk>=70?1:.72);
+
+// Icons
+nodeGrp.append('text')
+  .attr('text-anchor','middle').attr('dominant-baseline','central')
+  .attr('font-size',d=>d.type==='zone'?12:d.type==='camera'||d.type==='door'?9:10)
+  .text(d=>d.icon);
+
+// Labels
+nodeGrp.append('text')
+  .attr('text-anchor','middle')
+  .attr('dy',d=>d.type==='zone'?23:d.type==='camera'||d.type==='door'?16:17)
+  .attr('fill',d=>d.color).attr('font-size','7').attr('font-family','JetBrains Mono, monospace').attr('opacity',.8)
+  .each(function(d){
+    const parts=d.label.split('\n');
+    d3.select(this).text(parts[0]);
+    if(parts[1]) d3.select(this.parentNode).append('text')
+      .attr('text-anchor','middle')
+      .attr('dy',d.type==='zone'?31:d.type==='camera'||d.type==='door'?24:25)
+      .attr('fill',d.color).attr('font-size','6.5').attr('font-family','JetBrains Mono, monospace').attr('opacity',.5)
+      .text(parts[1]);
+  });
+
+// Tick
+sim.on('tick',()=>{
+  const setLine = sel => sel
+    .attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+    .attr('x2',d=>{ const dx=d.target.x-d.source.x,dy=d.target.y-d.source.y,dist=Math.hypot(dx,dy)||1; return d.target.x-(dx/dist)*16; })
+    .attr('y2',d=>{ const dx=d.target.x-d.source.x,dy=d.target.y-d.source.y,dist=Math.hypot(dx,dy)||1; return d.target.y-(dy/dist)*16; });
+  setLine(linkSel); setLine(linkHit);
+  nodeGrp.attr('transform',d=>`translate(${d.x},${d.y})`);
+});
+
+svg.on('click',()=>selectNode(null));
+
+// ── SELECTION ─────────────────────────────────────────────────────────────────
+function selectNode(id) {
+  selectedId=id;
+  buildEntityList(id);
+
+  nodeGrp.selectAll('circle').attr('opacity',d=>
+    !id?(d.risk>=70?1:.72):(d.id===id||isConnected(d.id,id)?1:.18));
+  linkSel.attr('opacity',d=>
+    !id?1:(d.source.id===id||d.target.id===id?1:.06));
+  linkHit.attr('opacity',d=>
+    !id?1:(d.source.id===id||d.target.id===id?1:.06));
+
+  if(!id){ showWhyPanel(); return; }
+  const node=NODES.find(n=>n.id===id);
+  if(node) showDetail(node);
+
+  // Pan to node
+  if(node&&node.x){
+    const tx=W/2-node.x*currentTransform.k, ty=H/2-node.y*currentTransform.k;
+    svg.transition().duration(500)
+      .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(currentTransform.k));
+  }
+}
+
+function isConnected(a,b){
+  return LINKS.some(l=>(l.source.id===a&&l.target.id===b)||(l.source.id===b&&l.target.id===a));
+}
+
+// ── RIGHT PANEL: WHY ENTITY GRAPH ─────────────────────────────────────────────
+function showWhyPanel() {
+  document.getElementById('detailPane').innerHTML = `
+  <div class="why-panel">
+    <div class="why-hero">
+      <div class="why-icon">🕸</div>
+      <div class="why-title">Entity Intelligence Graph</div>
+      <div class="why-subtitle">WHY THIS CHANGES EVERYTHING</div>
+    </div>
+
+    <div class="why-concept">
+      <div class="why-concept-title">THE PROBLEM WITH TRADITIONAL SECURITY</div>
+      <div class="why-concept-body">
+        Conventional systems show you <strong>isolated events</strong> — a badge swipe, a camera alert, a vehicle flag. Each lives in a separate screen, a separate database.<br><br>
+        Incidents that are <strong>part of the same coordinated threat</strong> look unrelated until it's too late.
+      </div>
+      <div class="why-example">
+        <div class="why-example-label">REAL SCENARIO — TODAY 14:14</div>
+        <div class="why-example-body">
+          A <span>cloned badge</span> at Bay 4 → triggers access alert.<br>
+          A <span>flagged vehicle SHJ-9904</span> at Gate 2 → triggers ANPR flag.<br>
+          A <span>loitering suspect</span> in Zone C → behavior flag.<br><br>
+          Three systems. Three alerts. Three operators.<br>
+          <strong>One coordinated threat — invisible without this graph.</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="bba-section">
+      <div class="bba-section-hd">BBA COMPETENCY</div>
+
+      <div class="comp-item">
+        <div class="comp-dot"></div>
+        <div>
+          <div class="comp-name">Ontology Modeling Engine</div>
+          <div class="comp-desc">6 entity classes — Person, Vehicle, Device, Zone, Incident, Access Point — mapped into a live knowledge graph with 12 relationship types.</div>
+          <span class="comp-tag">PROPRIETARY · BBA v2.4</span>
+        </div>
+      </div>
+
+      <div class="comp-item">
+        <div class="comp-dot"></div>
+        <div>
+          <div class="comp-name">Cross-Domain Threat Correlation</div>
+          <div class="comp-desc">Connects signals across CCTV, ACS, ANPR, and behavior analytics. Surfaces hidden relationships that single-domain systems cannot detect.</div>
+          <span class="comp-tag">AI-POWERED</span>
+        </div>
+      </div>
+
+      <div class="comp-item">
+        <div class="comp-dot"></div>
+        <div>
+          <div class="comp-name">Real-Time Graph Intelligence</div>
+          <div class="comp-desc">Live entity states, streaming relationship updates, and automated risk scoring. 55 entities. 112 active relations. Sub-second refresh.</div>
+          <span class="comp-tag">D3 FORCE GRAPH · LIVE STREAM</span>
+        </div>
+      </div>
+
+      <div class="comp-item">
+        <div class="comp-dot"></div>
+        <div>
+          <div class="comp-name">Investigative Path Analysis</div>
+          <div class="comp-desc">Click any entity to instantly see its full relationship network. Trace a threat chain in seconds, not hours of log review.</div>
+          <span class="comp-tag">CLICK ANY NODE →</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bba-section">
+      <div class="bba-section-hd">SPECIFICATION COMPLIANCE</div>
+      <div class="ifc-badge">
+        EMAAR IFC SECURITY SPEC ALIGNED<br>
+        <span class="ifc-id">DCH-M-KTE-RPT-IFC-SEC-00001-01</span><br>
+        39 requirements · Full coverage
+      </div>
+    </div>
+
+    <div class="why-hint">← Select any entity node to view<br><span>intelligence profile & relationships</span></div>
+  </div>`;
+}
+showWhyPanel();
+
+// ── DETAIL VIEW ───────────────────────────────────────────────────────────────
+function showDetail(node) {
+  const conns = LINKS
+    .filter(l=>l.source.id===node.id||l.target.id===node.id)
+    .map(l=>{
+      const otherId=l.source.id===node.id?l.target.id:l.source.id;
+      return {node:NODES.find(n=>n.id===otherId), rel:l.type};
+    }).filter(c=>c.node);
+
+  const det=node.detail;
+  const riskW=node.risk, riskC=riskColor(riskW);
+  const riskLabel=riskW>=80?'HIGH RISK':riskW>=60?'MEDIUM RISK':riskW>=30?'ELEVATED':'LOW RISK';
+
+  document.getElementById('detailPane').innerHTML=`
+    <div class="detail-body">
+      <div class="det-head">
+        <div class="det-ico-row">
+          <div class="det-big-ico" style="background:${node.color}18;border:1px solid ${node.color}30">${node.icon}</div>
+          <div>
+            <div class="det-name">${node.label.replace('\n',' ')}</div>
+            <div class="det-id">${node.id}</div>
+          </div>
+        </div>
+        <span style="font-size:8px;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:2px;background:${riskC}18;color:${riskC};border:1px solid ${riskC}30">${riskLabel}</span>
+      </div>
+      <div class="det-rows">
+        ${Object.entries(det).map(([k,v])=>`
+          <div class="dr">
+            <span class="dk">${k.toUpperCase()}</span>
+            <span class="dv" style="color:${String(v).includes('⚠')||String(v).includes('🔴')||String(v).includes('HIGH')?'var(--red)':String(v).includes('GOLD')||String(v).includes('VIP')?'var(--gold)':String(v).includes('CLEARED')||String(v).includes('NORMAL')?'var(--green)':String(v).includes('FLAGGED')||String(v).includes('ALERT')?'var(--amber)':'var(--white)'}">${v}</span>
+          </div>`).join('')}
+      </div>
+      <div class="connections-section">
+        <div class="cs-head">Relationships (${conns.length})</div>
+        ${conns.map(c=>`
+          <div class="conn-item" onclick="selectNode('${c.node.id}')">
+            <span style="font-size:13px">${c.node.icon}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9.5px;color:var(--white);font-weight:500">${c.node.label.replace('\n',' ')}</div>
+              <div class="conn-rel">${c.rel.toUpperCase()} · ${c.node.id}</div>
+            </div>
+            <div style="width:5px;height:5px;border-radius:50%;background:${riskColor(c.node.risk)};flex-shrink:0"></div>
+          </div>`).join('')}
+      </div>
+      <div class="risk-bar">
+        <div class="rb-head">RISK SCORE</div>
+        <div class="rb-track"><div class="rb-fill" style="width:${riskW}%;background:${riskC}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:7px;font-family:'JetBrains Mono',monospace;color:var(--txt2);margin-bottom:4px"><span>0</span><span>50</span><span>100</span></div>
+        <div class="rb-val" style="color:${riskC}">${riskW} — ${riskLabel}</div>
+      </div>
+    </div>`;
+}
+
+// ── GRAPH FILTER ──────────────────────────────────────────────────────────────
+function updateGraphFilter() {
+  nodeGrp.attr('display',d=>activeFilters.has(d.type)?null:'none');
+  const hide = l => {
+    const sn=NODES.find(n=>n.id===l.source.id), tn=NODES.find(n=>n.id===l.target.id);
+    return sn&&activeFilters.has(sn.type)&&tn&&activeFilters.has(tn.type);
+  };
+  linkSel.attr('display',d=>hide(d)?null:'none');
+  linkHit.attr('display',d=>hide(d)?null:'none');
+  const vis=NODES.filter(n=>activeFilters.has(n.type));
+  document.getElementById('gs-nodes').textContent=vis.length;
+  document.getElementById('hdr-ent').textContent=vis.length;
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────────
+window.graphZoom  = f => svg.transition().duration(300).call(zoom.scaleBy,f);
+window.graphReset = () => {
+  getDims();
+  svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity);
+  sim.force('center',d3.forceCenter(W/2,H/2));
+};
+window.graphReheat = () => {
+  sim.alphaTarget(.4).restart();
+  setTimeout(()=>sim.alphaTarget(0),2000);
+  showToast('⚡ Simulation reheated');
+};
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── LIVE EVENTS WITH NODE PULSE ───────────────────────────────────────────────
+function pulseNode(id) {
+  nodeGrp.filter(d=>d.id===id).selectAll('circle')
+    .transition().duration(350).attr('r',d=>d.type==='zone'?26:22).attr('opacity',1)
+    .transition().duration(500).attr('r',d=>d.type==='zone'?19:d.type==='camera'||d.type==='door'?12:13)
+    .attr('opacity',d=>d.risk>=70?1:.72);
+  g.selectAll('.glow-ring').filter(d=>d.id===id)
+    .transition().duration(400).attr('r',26).attr('opacity',.6)
+    .transition().duration(600).attr('r',18).attr('opacity',.28);
+}
+
+const liveEvents = [
+  {msg:'🔴 New correlation: SHJ-9904 ↔ UNK-B4 confirmed',   node:'SHJ-9904'},
+  {msg:'👮 SEC-047 dispatched → Zone C incident response',   node:'SEC-047'},
+  {msg:'🚗 AJM-0018 second attempt at Gate 2 · DENIED',     node:'AJM-0018'},
+  {msg:'👑 VIP-001 departing · Route cleared via Gate 3',    node:'VIP-001'},
+  {msg:'🚁 DSQ-02 tasked → Zone C surveillance override',    node:'DSQ-02'},
+  {msg:'⚠ SUB-002 still active · 52min in Zone C',          node:'SUB-002'},
+  {msg:'📷 CAM-G2: RAK-3341 detected entering B1',          node:'CAM-G2'},
+  {msg:'🚪 DOOR-EMRG-C: probe attempt logged · SEC-047 en route', node:'DOOR-EMRG-C'},
+];
+let liveIdx=0;
+setInterval(()=>{
+  const ev=liveEvents[liveIdx%liveEvents.length];
+  showToast(ev.msg);
+  pulseNode(ev.node);
+  liveIdx++;
+},9000);
+
+// ── HELP MODAL ────────────────────────────────────────────────────────────────
+window.openHelp  = () => document.getElementById('helpOverlay').classList.add('open');
+window.closeHelp = () => document.getElementById('helpOverlay').classList.remove('open');
+window.closeHelpOutside = (e) => { if(e.target===document.getElementById('helpOverlay')) closeHelp(); };
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeHelp(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+setTimeout(()=>{
+  getDims();
+  sim.force('center',d3.forceCenter(W/2,H/2));
+  sim.alpha(.6).restart();
+  showToast('🕸 Entity Intelligence Graph — 55 entities · 112 relations · live');
+},120);
+
+window.addEventListener('resize',()=>{
+  getDims();
+  sim.force('center',d3.forceCenter(W/2,H/2)).restart();
+});
+</script>
+<script src="/tour.js"></script>
+</body>
+</html>

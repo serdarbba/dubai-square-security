@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Alya 3D Hologram Örnekleri</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;font-family:'JetBrains Mono',monospace;color:#00d4ff;
+     display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;
+     gap:0;min-height:100vh}
+
+.panel{position:relative;display:flex;flex-direction:column;align-items:center;
+       justify-content:center;height:50vh;overflow:hidden;border:1px solid rgba(0,212,255,.1)}
+.lbl{position:absolute;top:12px;left:16px;font-size:10px;letter-spacing:2px;
+     color:rgba(0,212,255,.5);z-index:10}
+.lbl b{color:#64ffda}
+
+/* ══════════════════════════════════════
+   A — FLOAT + GLOW CONE (CSS only)
+══════════════════════════════════════ */
+#A{background:radial-gradient(ellipse at 50% 100%,rgba(0,100,180,.18),transparent 70%), #000205}
+
+.holo-stage{position:relative;width:220px;height:320px;animation:float3d 4s ease-in-out infinite}
+@keyframes float3d{
+  0%,100%{transform:translateY(0) rotateY(0deg)}
+  25%{transform:translateY(-14px) rotateY(4deg)}
+  50%{transform:translateY(-20px) rotateY(0deg)}
+  75%{transform:translateY(-8px) rotateY(-4deg)}
+}
+
+.holo-img{width:100%;height:100%;object-fit:cover;object-position:center 5%;
+  border-radius:4px;
+  filter:brightness(1.1) saturate(1.2) hue-rotate(5deg);
+  -webkit-mask-image:linear-gradient(to bottom,black 60%,transparent 100%)}
+
+.scanlines-a{position:absolute;inset:0;border-radius:4px;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,
+    rgba(0,212,255,.06) 2px,rgba(0,212,255,.06) 3px);
+  animation:flicker 5s infinite}
+@keyframes flicker{0%,100%{opacity:1}93%{opacity:1}94%{opacity:.82}95%{opacity:1}98%{opacity:.9}99%{opacity:1}}
+
+.scanbar-a{position:absolute;left:0;right:0;height:3px;border-radius:4px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,.9) 40%,rgba(100,255,218,1) 50%,rgba(0,212,255,.9) 60%,transparent);
+  filter:blur(.5px);animation:sbar 3s linear infinite}
+@keyframes sbar{0%{top:0;opacity:0}5%{opacity:1}90%{opacity:.5}100%{top:100%;opacity:0}}
+
+.glow-edge{position:absolute;inset:-1px;border-radius:5px;pointer-events:none;
+  box-shadow:0 0 0 1px rgba(0,212,255,.4),
+             0 0 12px rgba(0,212,255,.25),
+             inset 0 0 20px rgba(0,212,255,.08);
+  animation:edgepulse 2s ease-in-out infinite}
+@keyframes edgepulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(0,212,255,.4),0 0 12px rgba(0,212,255,.2),inset 0 0 20px rgba(0,212,255,.06)}
+  50%{box-shadow:0 0 0 1.5px rgba(0,212,255,.7),0 0 28px rgba(0,212,255,.45),inset 0 0 30px rgba(0,212,255,.14)}
+}
+
+.cone-a{position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:80px solid transparent;border-right:80px solid transparent;
+  border-top:60px solid rgba(0,150,255,.12);
+  filter:blur(12px);animation:float3d 4s ease-in-out infinite}
+
+.base-ring{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+  width:160px;height:12px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,212,255,.5),transparent 70%);
+  filter:blur(6px);animation:basepulse 2s ease-in-out infinite}
+@keyframes basepulse{0%,100%{opacity:.4;transform:translateX(-50%) scaleX(.9)}50%{opacity:.8;transform:translateX(-50%) scaleX(1.1)}}
+
+.particles-a{position:absolute;inset:0;pointer-events:none}
+
+/* corners */
+.pc{position:absolute;width:12px;height:12px;border-color:rgba(0,212,255,.7);border-style:solid}
+.pc-tl{top:0;left:0;border-width:1.5px 0 0 1.5px}
+.pc-tr{top:0;right:0;border-width:1.5px 1.5px 0 0}
+.pc-bl{bottom:0;left:0;border-width:0 0 1.5px 1.5px}
+.pc-br{bottom:0;right:0;border-width:0 1.5px 1.5px 0}
+
+/* ══════════════════════════════════════
+   B — MOUSE TRACKING 3D TILT
+══════════════════════════════════════ */
+#B{background:#010208;cursor:none}
+
+.tilt-scene{perspective:600px;width:220px;height:320px}
+.tilt-card{width:100%;height:100%;position:relative;
+  transform-style:preserve-3d;
+  transition:transform .08s ease-out;
+  will-change:transform}
+
+.tilt-front{position:absolute;inset:0;border-radius:6px;overflow:hidden;
+  backface-visibility:hidden}
+.tilt-img{width:100%;height:100%;object-fit:cover;object-position:center 5%;
+  filter:brightness(1.05) saturate(1.15);
+  -webkit-mask-image:linear-gradient(to bottom,black 65%,transparent 100%)}
+
+.scanlines-b{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.05) 2px,rgba(0,212,255,.05) 3px)}
+.scanbar-b{position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,.8) 40%,rgba(100,255,218,.9) 50%,rgba(0,212,255,.8) 60%,transparent);
+  filter:blur(.4px);animation:sbar 3.2s linear infinite}
+
+.tilt-glow{position:absolute;inset:0;border-radius:6px;pointer-events:none;
+  box-shadow:inset 0 0 30px rgba(0,212,255,.1)}
+.tilt-shine{position:absolute;inset:0;border-radius:6px;pointer-events:none;
+  background:radial-gradient(ellipse at var(--mx,50%) var(--my,30%),rgba(0,212,255,.18),transparent 55%);
+  mix-blend-mode:screen}
+
+.tilt-base{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);
+  width:140px;height:10px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,212,255,.6),transparent 70%);
+  filter:blur(5px)}
+
+.crosshair{position:absolute;pointer-events:none;z-index:20;
+  width:20px;height:20px;border:1.5px solid rgba(0,212,255,.7);border-radius:50%;
+  transform:translate(-50%,-50%)}
+.crosshair::before,.crosshair::after{content:'';position:absolute;background:rgba(0,212,255,.6)}
+.crosshair::before{width:1px;height:8px;top:-9px;left:50%;transform:translateX(-50%)}
+.crosshair::after{width:8px;height:1px;left:-9px;top:50%;transform:translateY(-50%)}
+
+/* ══════════════════════════════════════
+   C — PARTICLE DISSOLVE (Canvas)
+══════════════════════════════════════ */
+#C{background:#000305}
+#particleCanvas{border-radius:4px}
+
+/* ══════════════════════════════════════
+   D — SPLINE / 3D MODEL EMBED
+══════════════════════════════════════ */
+#D{background:#000102;flex-direction:column;gap:16px}
+.option-title{font-size:13px;color:#64ffda;letter-spacing:2px;font-weight:700}
+.option-desc{font-size:11px;color:rgba(0,212,255,.55);line-height:1.8;text-align:center;max-width:340px}
+.option-btn{padding:10px 24px;border:1px solid rgba(0,212,255,.4);background:rgba(0,212,255,.07);
+  color:var(--cyan,#00d4ff);font-family:'JetBrains Mono',monospace;font-size:11px;
+  letter-spacing:1.5px;border-radius:6px;cursor:pointer;transition:all .2s}
+.option-btn:hover{background:rgba(0,212,255,.18);border-color:rgba(0,212,255,.7)}
+.tech-list{list-style:none;font-size:11px;color:rgba(0,212,255,.5);line-height:2}
+.tech-list li::before{content:'▸ ';color:#64ffda}
+</style>
+</head>
+<body>
+
+<!-- A: CSS Float + Scanline + Glow Cone -->
+<div class="panel" id="A">
+  <div class="lbl"><b>A</b> — CSS FLOAT + SCANLINE + GLOW CONE</div>
+  <div class="cone-a"></div>
+  <div class="holo-stage" id="holoStage">
+    <img class="holo-img" src="alya-portrait.png" onerror="this.style.background='linear-gradient(180deg,rgba(0,212,255,.15),transparent)';this.style.minHeight='280px'">
+    <div class="scanlines-a"></div>
+    <div class="scanbar-a"></div>
+    <div class="glow-edge"></div>
+    <div class="pc pc-tl"></div><div class="pc pc-tr"></div>
+    <div class="pc pc-bl"></div><div class="pc pc-br"></div>
+    <canvas class="particles-a" id="pcanv" width="220" height="320"></canvas>
+  </div>
+  <div class="base-ring"></div>
+</div>
+
+<!-- B: Mouse Tracking 3D Tilt -->
+<div class="panel" id="B">
+  <div class="lbl"><b>B</b> — MOUSE TRACKING 3D TILT (fareyi hareket ettir)</div>
+  <div class="tilt-scene" id="tiltScene">
+    <div class="tilt-card" id="tiltCard">
+      <div class="tilt-front">
+        <img class="tilt-img" src="alya-portrait.png" onerror="this.style.background='linear-gradient(180deg,rgba(0,212,255,.12),transparent)';this.style.minHeight='280px'">
+        <div class="scanlines-b"></div>
+        <div class="scanbar-b"></div>
+        <div class="tilt-glow"></div>
+        <div class="tilt-shine" id="tiltShine"></div>
+      </div>
+    </div>
+  </div>
+  <div class="tilt-base"></div>
+  <div class="crosshair" id="crosshair"></div>
+</div>
+
+<!-- C: Canvas Particle Effect -->
+<div class="panel" id="C">
+  <div class="lbl"><b>C</b> — CANVAS PARTICLE HOLOGRAM (3D dönüş)</div>
+  <canvas id="particleCanvas" width="220" height="320"></canvas>
+</div>
+
+<!-- D: Best Approach Recommendation -->
+<div class="panel" id="D">
+  <div class="lbl"><b>D</b> — ÖNERİLEN YAKLAŞIM</div>
+  <div class="option-title">3D HOLOGRam İÇİN EN İYİ YOL</div>
+  <ul class="tech-list">
+    <li>Ready Player Me veya Sketchfab'dan 3D karakter modeli</li>
+    <li>Three.js ile WebGL render (model döner, konuşunca hareket eder)</li>
+    <li>Ses analizi ile ağız hareketi senkronizasyonu</li>
+    <li>Shader: hologram distortion + scanline + emission glow</li>
+    <li>Spline.design ile no-code 3D embed de mümkün</li>
+  </ul>
+  <div class="option-desc">
+    Şu an <b style="color:#64ffda">A veya B</b> CSS-only ve sıfır ek kütüphane.<br>
+    <b style="color:#64ffda">C</b> canvas particle, etkileyici ama hafif.<br>
+    Gerçek 3D için Three.js gerekir (~2 günlük iş).
+  </div>
+</div>
+
+<script>
+/* ═══ A: Floating particles ═══ */
+(function(){
+  const cv=document.getElementById('pcanv');
+  const ctx=cv.getContext('2d');
+  const W=220,H=320;
+  const pts=[];
+  for(let i=0;i<55;i++) pts.push({
+    x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-.5)*.4, vy:-Math.random()*.6-.2,
+    r:Math.random()*1.5+.5, life:Math.random(),
+    maxLife:Math.random()*.8+.4,
+    col:Math.random()>.5?'0,212,255':'100,255,218'
+  });
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.life+=.006; if(p.life>p.maxLife){p.life=0;p.x=Math.random()*W;p.y=H*(.7+Math.random()*.3);}
+      const alpha=Math.sin(p.life/p.maxLife*Math.PI)*.7;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.col},${alpha})`;ctx.fill();
+      p.x+=p.vx; p.y+=p.vy;
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ═══ B: Mouse Tracking Tilt ═══ */
+(function(){
+  const panel=document.getElementById('B');
+  const card=document.getElementById('tiltCard');
+  const shine=document.getElementById('tiltShine');
+  const cross=document.getElementById('crosshair');
+  let mx=0,my=0,targetX=0,targetY=0,curX=0,curY=0;
+
+  panel.addEventListener('mousemove',e=>{
+    const r=panel.getBoundingClientRect();
+    mx=(e.clientX-r.left)/r.width;
+    my=(e.clientY-r.top)/r.height;
+    cross.style.left=e.clientX-r.left+'px';
+    cross.style.top=e.clientY-r.top+'px';
+    shine.style.setProperty('--mx',mx*100+'%');
+    shine.style.setProperty('--my',my*100+'%');
+    targetX=(mx-.5)*28;
+    targetY=-(my-.5)*22;
+  });
+
+  panel.addEventListener('mouseleave',()=>{
+    targetX=0; targetY=0;
+    cross.style.opacity='0';
+  });
+  panel.addEventListener('mouseenter',()=>{ cross.style.opacity='1'; });
+
+  function loop(){
+    curX+=(targetX-curX)*.12;
+    curY+=(targetY-curY)*.12;
+    card.style.transform=`rotateY(${curX}deg) rotateX(${curY}deg)`;
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ═══ C: Particle Hologram ═══ */
+(function(){
+  const cv=document.getElementById('particleCanvas');
+  const ctx=cv.getContext('2d');
+  const W=220,H=320;
+
+  // Alya siluetini taklit eden partiküller
+  const particles=[];
+  const COLS=['0,212,255','100,255,218','0,180,230','50,240,200'];
+
+  // Vücut şekli için eliptik dağılım
+  for(let i=0;i<380;i++){
+    const t=Math.random()*Math.PI*2;
+    const layer=Math.floor(Math.random()*4);
+    // Farklı yüksekliklerde farklı genişlik (siluet)
+    const yp=Math.random(); // 0=top, 1=bottom
+    const xSpread=yp<.15?30:yp<.4?45:yp<.7?38:30; // baş, omuz, gövde, bel
+    const xc=W/2+(Math.random()-.5)*xSpread*2;
+    const yc=H*.1+yp*H*.75;
+    particles.push({
+      ox:xc, oy:yc,
+      x:xc, y:yc,
+      z:Math.random()*60-30,
+      vz:(Math.random()-.5)*.3,
+      r:Math.random()*1.2+.3,
+      col:COLS[Math.floor(Math.random()*COLS.length)],
+      phase:Math.random()*Math.PI*2,
+      speed:Math.random()*.008+.004,
+      drift:(Math.random()-.5)*.3,
+    });
+  }
+
+  let angle=0;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    angle+=.004;
+
+    particles.forEach(p=>{
+      // 3D döndür (Y ekseni etrafında)
+      const cosA=Math.cos(angle);
+      const sinA=Math.sin(angle);
+      const rx=(p.ox-W/2)*cosA - p.z*sinA + W/2;
+      const rz=(p.ox-W/2)*sinA + p.z*cosA;
+
+      // Derinliğe göre opasite ve boyut
+      const depth=(rz+60)/120; // 0..1
+      const alpha=(.3+depth*.6)*(.5+.5*Math.sin(p.phase+angle*2));
+      const size=p.r*(0.6+depth*.8);
+
+      p.phase+=p.speed;
+      const floatY=Math.sin(p.phase)*2;
+
+      ctx.beginPath();
+      ctx.arc(rx, p.oy+floatY, size, 0, Math.PI*2);
+      ctx.fillStyle=`rgba(${p.col},${Math.min(alpha,.9)})`;
+      ctx.fill();
+
+      // Parlak partiküller
+      if(depth>.8 && Math.random()>.97){
+        ctx.beginPath();ctx.arc(rx,p.oy+floatY,size*1.8,0,Math.PI*2);
+        ctx.fillStyle=`rgba(${p.col},.15)`;ctx.fill();
+      }
+    });
+
+    // Alt halo
+    const grad=ctx.createRadialGradient(W/2,H*.88,0,W/2,H*.88,55);
+    grad.addColorStop(0,'rgba(0,212,255,.25)');
+    grad.addColorStop(1,'transparent');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.ellipse(W/2,H*.88,55,8,0,0,Math.PI*2);ctx.fill();
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
