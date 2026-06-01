@@ -930,7 +930,11 @@ hgInit();
 /* ════════════════════════════════════════════════
    GEMINI AI
 ════════════════════════════════════════════════ */
-const GEMINI_KEY = 'AIzaSyA-RAbZ98TVmu2-O5THvQWxjj-F81Mq5xY';
+let GEMINI_KEY = localStorage.getItem('gemini_key') || '';
+if(!GEMINI_KEY){
+  GEMINI_KEY = prompt('Gemini API Key gir (aistudio.google.com → Get API Key):') || '';
+  if(GEMINI_KEY) localStorage.setItem('gemini_key', GEMINI_KEY);
+}
 let LANG = 'en';
 
 const SYS = `You are Alya, the AI concierge of Dubai Square — EMAAR's $6B landmark mall at Dubai Creek Harbour. Sophisticated, warm, precise.
