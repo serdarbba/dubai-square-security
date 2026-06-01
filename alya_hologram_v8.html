@@ -1138,8 +1138,10 @@ async function sendMsg(){
     addMsg(reply,'l', parseActions(reply)); hgSpeak(reply);
   } catch(e){
     document.getElementById('typ')?.remove();
-    const fb="I'm here to help with Dubai Square. Try asking about restaurants, parking, or directions.";
-    addMsg(fb,'l',[]); speak(fb);
+    // Gerçek hatayı göster — debugging için
+    const errTxt = e.message || String(e);
+    console.error('Gemini hatası:', errTxt);
+    addMsg('⚠ API ERROR: ' + errTxt, 'l', []);
   }
 }
 function quick(t){ document.getElementById('inp').value=t; sendMsg(); }
@@ -1755,10 +1757,7 @@ function closeMap(){
 
 
 function greet(){
-  const msg = WELCOME[LANG] || WELCOME.en;
-  addMsg(msg,'l',[]);
-  // Karşılama sadece chat'e yazılır; ses/lip sync ilk mesajda başlar
-  // (browser autoplay policy: kullanıcı hareketi olmadan ses bloke edilir)
+  // #welcomeBubble zaten HTML'de var — addMsg çağrılmaz, çift mesaj olmasın
 }
 </script>
 
