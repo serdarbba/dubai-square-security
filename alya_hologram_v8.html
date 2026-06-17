@@ -961,7 +961,7 @@ STYLE: Luxury concierge. Keep responses to 2-3 complete sentences. You MUST end 
 
 const LANG_SFX = {
   tr: '\n\nÖNEMLİ: Yalnızca Türkçe yanıt ver. Lüks bir otel konsiyerjinin sıcak Türkçesiyle. Maksimum 2-3 cümle.',
-  ar: '\n\nمهم: أجب باللغة العربية فقط. أسلوب مدير فندق فاخر. جملتان أو ثلاث.'
+  ar: '\n\nCRITICAL INSTRUCTION: You MUST respond ONLY in Arabic language. Every single word of your response must be in Arabic. Do not use any English words. Respond as a luxury hotel concierge would in Arabic. Two to three sentences maximum.'
 };
 
 const WELCOME = {
@@ -973,7 +973,10 @@ const WELCOME = {
 function setLang(l){
   LANG=l;
   document.querySelectorAll('.lb').forEach(b=>b.classList.toggle('active',b.id==='lb'+l.toUpperCase()));
-  document.getElementById('welcomeBubble').textContent=WELCOME[l]||WELCOME.en;
+  const wb=document.getElementById('welcomeBubble');
+  wb.textContent=WELCOME[l]||WELCOME.en;
+  if(l==='ar'){ wb.dir='rtl'; wb.style.textAlign='right'; wb.style.fontFamily='Segoe UI,Tahoma,Arial,sans-serif'; }
+  else { wb.dir=''; wb.style.textAlign=''; }
   gemHist.length=0;
 }
 
@@ -1103,6 +1106,7 @@ function addMsg(txt, side, actions=[]){
   const msgs=document.getElementById('msgs');
   const div=document.createElement('div'); div.className='msg '+side;
   const bub=document.createElement('div'); bub.className='bubble';
+  if(LANG==='ar'){ bub.dir='rtl'; bub.style.textAlign='right'; bub.style.fontFamily='Segoe UI,Tahoma,Arial,sans-serif'; }
   bub.innerHTML=txt.replace(/\n/g,'<br>');
   div.appendChild(bub);
   if(actions.length){
