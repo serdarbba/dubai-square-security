@@ -85,10 +85,12 @@ body.embed .hc.hbr{right:20px}
     rgba(0,0,0,.35) 74%,
     transparent 92%)}
 
-/* Idle video — her zaman görünür */
-#hg-video{opacity:1}
-/* Speaking video — D-ID lip sync için, sessizce bekler */
+/* Idle: D-ID video gizli — 3D model görünür */
+#hg-video{opacity:0;display:none}
+/* Speaking video — D-ID lip sync */
 #hg-stream{opacity:0;pointer-events:none}
+/* Canvas: idle'da görünür, konuşurken solar */
+canvas#c{transition:opacity .7s ease}
 
 /* Alt projeksyon ışığı */
 #hg-floor{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
@@ -866,18 +868,18 @@ function didRestoreIdle(){
 // ── Ana konuşma fonksiyonu ────────────────────────────────────────
 // Idle → konuşma geçişi
 function showSpeaking(){
-  document.getElementById('hg-video').style.opacity  = '0';
   document.getElementById('hg-stream').style.opacity = '1';
+  document.getElementById('c').style.opacity = '0';
 }
 function showIdle(){
   document.getElementById('hg-stream').style.opacity = '0';
-  document.getElementById('hg-video').style.opacity  = '1';
+  document.getElementById('c').style.opacity = '1';
   const s = document.getElementById('hg-stream');
   setTimeout(()=>{ s.srcObject=null; s.src=''; s.load(); }, 800);
 }
 
 function hgInit(){
-  if(model) model.visible=false;
+  if(model) model.visible=true;
   hgSetStatus('● ALYA HAZIR');
   // WebRTC'yi arka planda başlat — #hg-video'ya dokunmadan
   if(window.RTCPeerConnection){
