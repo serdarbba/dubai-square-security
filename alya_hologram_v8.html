@@ -68,32 +68,34 @@ body.embed .hc.hbr{right:20px}
 #hg-wrap{position:fixed;left:0;top:0;width:calc(100% - 340px);height:100%;
   display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
 
-/* Shared hologram video styles */
+/* Nefes animasyonu (idle foto için) */
+@keyframes hgBreathe{
+  0%,100%{transform:scale(1) translateY(0)}
+  40%{transform:scale(1.007) translateY(-4px)}
+  80%{transform:scale(1.003) translateY(-1px)}
+}
+
+/* Shared hologram styles (video ve img için) */
 .hg-vid{position:absolute;width:auto;height:96%;max-width:100%;object-fit:contain;
   mix-blend-mode:screen;
-  filter:brightness(1.08) contrast(1.06) saturate(1.05);
-  transition:opacity .7s ease;
-  /* Alt %10'u sil (D-ID logo orası), üst kısmı organik vignette */
+  filter:brightness(1.1) contrast(1.08) saturate(1.06);
+  transition:opacity .6s ease;
   mask-image:
-    linear-gradient(to top, transparent 10%, black 18%),
-    radial-gradient(ellipse 64% 90% at 50% 44%,
-      black 0%, black 32%,
-      rgba(0,0,0,.88) 52%,
-      rgba(0,0,0,.35) 74%,
-      transparent 92%);
-  mask-composite: intersect;
+    radial-gradient(ellipse 68% 92% at 50% 46%,
+      black 0%, black 38%,
+      rgba(0,0,0,.9) 55%,
+      rgba(0,0,0,.4) 76%,
+      transparent 94%);
   -webkit-mask-image:
-    linear-gradient(to top, transparent 10%, black 18%),
-    radial-gradient(ellipse 64% 90% at 50% 44%,
-      black 0%, black 32%,
-      rgba(0,0,0,.88) 52%,
-      rgba(0,0,0,.35) 74%,
-      transparent 92%);
-  -webkit-mask-composite: source-in}
+    radial-gradient(ellipse 68% 92% at 50% 46%,
+      black 0%, black 38%,
+      rgba(0,0,0,.9) 55%,
+      rgba(0,0,0,.4) 76%,
+      transparent 94%)}
 
-/* D-ID idle her zaman görünür */
-#hg-video{opacity:1}
-/* D-ID speaking stream */
+/* Idle foto — watermarksız, nefes alıyor */
+#hg-video{opacity:1;animation:hgBreathe 4.2s ease-in-out infinite}
+/* D-ID konuşma stream'i */
 #hg-stream{opacity:0;pointer-events:none}
 canvas#c{transition:opacity .7s ease}
 
@@ -301,10 +303,11 @@ canvas#c{transition:opacity .7s ease}
 
 <!-- D-ID Avatar -->
 <div id="hg-wrap">
-  <video id="hg-video" class="hg-vid" autoplay playsinline loop muted
-    src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-06-17T09%3A24%3A38.350Z">
-  </video>
-  <!-- Konuşma videosu — D-ID WebRTC/Talks buraya gelir -->
+  <!-- Idle: D-ID watermarksız kaynak fotoğraf + nefes animasyonu -->
+  <img id="hg-video" class="hg-vid"
+    src="https://create-images-results.d-id.com/google-oauth2%7C108190213974643723963/upl_NbzC3lRCskVe5b6CE7rt5/image.png"
+    alt="">
+  <!-- Konuşma: D-ID WebRTC real-time lipsync -->
   <video id="hg-stream" class="hg-vid" playsinline autoplay></video>
   <div id="hg-floor"></div>
 </div>
@@ -760,8 +763,14 @@ async function didInitStream(){
   // 2. RTCPeerConnection
   didPc = new RTCPeerConnection({ iceServers: data.ice_servers || [{urls:'stun:stun.l.google.com:19302'}] });
 
-  // 3. ontrack — ICE bağlanana kadar srcObject ayarlama, sadece sakla
-  didPc.ontrack = e => { if(e.streams?.[0]) didPendingStream = e.streams[0]; };
+  // 3. ontrack — gelen stream'i hemen bağla (ICE öncesi veya sonrası farketmez)
+  didPc.ontrack = e => {
+    if(!e.streams?.[0]) return;
+    didPendingStream = e.streams[0];
+    vid.srcObject = didPendingStream;
+    vid.muted = false;
+    vid.play().catch(()=>{});
+  };
 
   // 4. ICE adayları → D-ID'ye gönder
   didPc.onicecandidate = async e => {
@@ -796,8 +805,8 @@ async function didInitStream(){
     };
   });
 
-  // 8. ICE bağlandı — şimdi stream video'ya bağla
-  if(didPendingStream){
+  // 8. ICE bağlandı — ontrack erken geldiyse zaten bağlı, gelmemişse yedek
+  if(didPendingStream && !vid.srcObject){
     vid.srcObject = didPendingStream;
     vid.muted = false;
     vid.play().catch(()=>{});
@@ -805,6 +814,35 @@ async function didInitStream(){
 
   didRtcReady = true;
   hgSetStatus('● ALYA HAZIR');
+}
+
+// Audio seviyesi izleyerek konuşmanın bittiğini tespit et
+function waitForStreamDone(vid, estimatedMs){
+  return new Promise(resolve => {
+    let resolved = false, ac;
+    const done = () => { if(resolved) return; resolved=true; try{ac&&ac.close();}catch(e){} resolve(); };
+    setTimeout(done, Math.max(4000, estimatedMs * 1.6)); // Güvenlik timeout'u
+
+    try {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const src = ac.createMediaStreamSource(vid.srcObject);
+      const an = ac.createAnalyser();
+      an.fftSize = 512;
+      src.connect(an);
+      const buf = new Uint8Array(an.frequencyBinCount);
+      let speaking = false, silenceTs = 0;
+      const tick = () => {
+        if(resolved) return;
+        an.getByteFrequencyData(buf);
+        const lvl = buf.reduce((s,v)=>s+v,0)/buf.length;
+        if(lvl > 10){ speaking = true; silenceTs = 0; }
+        else if(speaking && !silenceTs) silenceTs = Date.now();
+        if(speaking && silenceTs && Date.now()-silenceTs > 750){ done(); return; }
+        requestAnimationFrame(tick);
+      };
+      setTimeout(()=>requestAnimationFrame(tick), 900); // D-ID'nin başlaması için bekle
+    } catch(e){ /* AudioContext yok → safety timeout devreye girer */ }
+  });
 }
 
 async function didStreamSpeak(text){
@@ -904,15 +942,15 @@ async function hgSpeak(text){
 
   try {
     if(didRtcReady){
-      // D-ID hazır — ses D-ID'den gelir (doğru dil: ar-AE-FatimaNeural vs.)
-      // Browser TTS kullanma, D-ID'nin kendi voice'u konuşacak
       synth.cancel();
       const vs = document.getElementById('hg-stream');
       vs.muted = false;
       showSpeaking();
       await didStreamSpeak(text);
-      const ms = Math.max(2500, text.split(' ').length * 400);
-      await new Promise(r=>setTimeout(r, ms));
+      // Karakter bazlı süre tahmini + audio silence tespiti
+      const charsPerSec = LANG === 'ar' ? 11 : 15;
+      const estMs = Math.max(3000, (text.length / charsPerSec * 1000) + 1500);
+      await waitForStreamDone(vs, estMs);
     } else {
       // D-ID yok — browser TTS ile konuş (dil ayarı LANG'a göre)
       speak(text);
