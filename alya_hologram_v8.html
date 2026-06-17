@@ -73,17 +73,23 @@ body.embed .hc.hbr{right:20px}
   mix-blend-mode:screen;
   filter:brightness(1.08) contrast(1.06) saturate(1.05);
   transition:opacity .7s ease;
-  /* Organik hologram masking — keskin çerçeve yok, doğal yayılım */
-  mask-image: radial-gradient(ellipse 64% 90% at 50% 47%,
-    black 0%, black 32%,
-    rgba(0,0,0,.88) 52%,
-    rgba(0,0,0,.35) 74%,
-    transparent 92%);
-  -webkit-mask-image: radial-gradient(ellipse 64% 90% at 50% 47%,
-    black 0%, black 32%,
-    rgba(0,0,0,.88) 52%,
-    rgba(0,0,0,.35) 74%,
-    transparent 92%)}
+  /* Alt %10'u sil (D-ID logo orası), üst kısmı organik vignette */
+  mask-image:
+    linear-gradient(to top, transparent 10%, black 18%),
+    radial-gradient(ellipse 64% 90% at 50% 44%,
+      black 0%, black 32%,
+      rgba(0,0,0,.88) 52%,
+      rgba(0,0,0,.35) 74%,
+      transparent 92%);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    linear-gradient(to top, transparent 10%, black 18%),
+    radial-gradient(ellipse 64% 90% at 50% 44%,
+      black 0%, black 32%,
+      rgba(0,0,0,.88) 52%,
+      rgba(0,0,0,.35) 74%,
+      transparent 92%);
+  -webkit-mask-composite: source-in}
 
 /* D-ID idle her zaman görünür */
 #hg-video{opacity:1}
