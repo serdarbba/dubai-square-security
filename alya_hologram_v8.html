@@ -90,8 +90,6 @@ body.embed .hc.hbr{right:20px}
 /* D-ID speaking stream */
 #hg-stream{opacity:0;pointer-events:none}
 canvas#c{transition:opacity .7s ease}
-/* Logo kırpma: video kenarlarından %6 inset — D-ID logo gitsin, Alya kalsın */
-.hg-vid{clip-path:inset(6% 6% 6% 6%)}
 
 /* Alt projeksyon ışığı */
 #hg-floor{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
@@ -298,7 +296,7 @@ canvas#c{transition:opacity .7s ease}
 <!-- D-ID Avatar -->
 <div id="hg-wrap">
   <video id="hg-video" class="hg-vid" autoplay playsinline loop muted
-    src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z">
+    src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-06-17T09%3A24%3A38.350Z">
   </video>
   <!-- Konuşma videosu — D-ID WebRTC/Talks buraya gelir -->
   <video id="hg-stream" class="hg-vid" playsinline autoplay></video>
@@ -713,7 +711,7 @@ window.addEventListener('resize', onResize);
    D-ID STREAMS API — Gerçek zamanlı WebRTC lip sync
    Fotoğraftan konuşan avatar, Gemini AI zekası
 ════════════════════════════════════════════════ */
-const DID_IDLE_SRC  = 'https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z';
+const DID_IDLE_SRC  = 'https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-06-17T09%3A24%3A38.350Z';
 const DID_PHOTO_URL = 'https://create-images-results.d-id.com/google-oauth2|108190213974643723963/upl_NbzC3lRCskVe5b6CE7rt5/image.png';
 let DID_KEY = localStorage.getItem('did_alya_key') || 'c2VyZGFyLmJhdGthbjZAZ21haWwuY29t:Q020zil49gOU-oBrTwMHv';
 
