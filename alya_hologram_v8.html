@@ -85,11 +85,11 @@ body.embed .hc.hbr{right:20px}
     rgba(0,0,0,.35) 74%,
     transparent 92%)}
 
-/* Idle: D-ID video gizli — 3D model görünür */
-#hg-video{opacity:0;display:none}
+/* Idle: portrait veya 3D canvas görünür */
+#hg-video{opacity:1}
 /* Speaking video — D-ID lip sync */
 #hg-stream{opacity:0;pointer-events:none}
-/* Canvas: idle'da görünür, konuşurken solar */
+/* Canvas ve portrait: smooth geçiş */
 canvas#c{transition:opacity .7s ease}
 
 /* Alt projeksyon ışığı */
@@ -294,12 +294,11 @@ canvas#c{transition:opacity .7s ease}
 
 <canvas id="c"></canvas>
 
-<!-- D-ID Avatar Video — idle loop -->
+<!-- Alya idle: 3D model yoksa temiz portre göster -->
 <div id="hg-wrap">
-  <!-- Idle loop — hiç dokunulmaz, her zaman görünür -->
-  <video id="hg-video" class="hg-vid" autoplay playsinline loop muted
-    src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z">
-  </video>
+  <!-- Idle: FBX yüklenince canvas devralır, yüklenemezse bu portre kalır -->
+  <img id="hg-video" class="hg-vid" src="alya-portrait.png"
+    style="object-fit:contain;object-position:center top;" alt="Alya">
   <!-- Konuşma videosu — D-ID WebRTC/Talks buraya gelir -->
   <video id="hg-stream" class="hg-vid" playsinline autoplay></video>
   <div id="hg-floor"></div>
@@ -551,7 +550,7 @@ function makeHologramMat(origMat, mode) {
 }
 
 /* ─── MODEL & ANİMASYON ─── */
-let model=null, mixer=null, idleAction=null, idleBtn=null, curAction=null, talkAction=null, curMode=0;
+let model=null, mixer=null, idleAction=null, idleBtn=null, curAction=null, talkAction=null, curMode=0, modelLoaded=false;
 const origMats=new Map(), allShaders=[];
 const LABELS=['HOLOGRAM','GOLD','XRAY','REAL'];
 
@@ -614,6 +613,10 @@ function loadProgress(pct,txt){ document.getElementById('ldbarInner').style.widt
 function setupModel(group){
   if(model) scene.remove(model);
   origMats.clear(); model=group;
+  modelLoaded=true;
+  // 3D model geldi — portre fotoğrafını gizle, canvas devralır
+  document.getElementById('hg-video').style.opacity='0';
+  document.getElementById('hg-video').style.display='none';
   const box=new THREE.Box3().setFromObject(model), sz=box.getSize(new THREE.Vector3());
   model.scale.setScalar(2.2/Math.max(sz.x,sz.y,sz.z));
   const b2=new THREE.Box3().setFromObject(model); model.position.y=-b2.min.y;
@@ -869,11 +872,13 @@ function didRestoreIdle(){
 // Idle → konuşma geçişi
 function showSpeaking(){
   document.getElementById('hg-stream').style.opacity = '1';
-  document.getElementById('c').style.opacity = '0';
+  if(modelLoaded) document.getElementById('c').style.opacity = '0';
+  else document.getElementById('hg-video').style.opacity = '0';
 }
 function showIdle(){
   document.getElementById('hg-stream').style.opacity = '0';
-  document.getElementById('c').style.opacity = '1';
+  if(modelLoaded) document.getElementById('c').style.opacity = '1';
+  else { document.getElementById('hg-video').style.opacity = '1'; }
   const s = document.getElementById('hg-stream');
   setTimeout(()=>{ s.srcObject=null; s.src=''; s.load(); }, 800);
 }
@@ -893,30 +898,29 @@ function hgInit(){
 async function hgSpeak(text){
   if(didTalking) return;
   didTalking = true;
-
-  // ① TTS ANINDA — D-ID'den bağımsız, her zaman çalışır
-  speak(text);
   hgSetStatus('● KONUŞUYOR');
 
   try {
     if(didRtcReady){
-      // WebRTC: gerçek zamanlı lip sync (ses TTS'ten, video D-ID'den)
+      // D-ID hazır — ses D-ID'den gelir (doğru dil: ar-AE-FatimaNeural vs.)
+      // Browser TTS kullanma, D-ID'nin kendi voice'u konuşacak
+      synth.cancel();
       const vs = document.getElementById('hg-stream');
-      vs.muted = true; // TTS zaten sesi veriyor
+      vs.muted = false;
       showSpeaking();
       await didStreamSpeak(text);
       const ms = Math.max(2500, text.split(' ').length * 400);
       await new Promise(r=>setTimeout(r, ms));
     } else {
-      // Talks API: arka planda video üret, sessiz lip sync olarak oynat
-      didTalksSpeak(text).catch(e=>console.warn('D-ID Talks:', e.message));
-      // TTS ne kadar sürer tahmini — o kadar bekle
+      // D-ID yok — browser TTS ile konuş (dil ayarı LANG'a göre)
+      speak(text);
       const ms = Math.max(3000, text.split(' ').length * 420);
       await new Promise(r=>setTimeout(r, ms));
     }
   } catch(e){
     console.warn('D-ID:', e.message);
-    // TTS zaten çalışıyor, ek bir şey gerekmez
+    // D-ID hata verdiyse browser TTS ile devam et
+    speak(text);
   } finally {
     showIdle();
     hgSetStatus('● ALYA HAZIR');
