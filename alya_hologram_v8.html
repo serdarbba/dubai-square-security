@@ -90,10 +90,8 @@ body.embed .hc.hbr{right:20px}
 /* D-ID speaking stream */
 #hg-stream{opacity:0;pointer-events:none}
 canvas#c{transition:opacity .7s ease}
-/* D-ID logo cover — paid plan'da yeni idle üretince bu div'leri kaldır */
-#did-cover-tl,#did-cover-br{position:absolute;width:64px;height:28px;background:#000;z-index:10;border-radius:4px}
-#did-cover-tl{top:2%;left:2%}
-#did-cover-br{bottom:2%;right:2%}
+/* Logo kırpma: video kenarlarından %6 inset — D-ID logo gitsin, Alya kalsın */
+.hg-vid{clip-path:inset(6% 6% 6% 6%)}
 
 /* Alt projeksyon ışığı */
 #hg-floor{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
@@ -302,9 +300,6 @@ canvas#c{transition:opacity .7s ease}
   <video id="hg-video" class="hg-vid" autoplay playsinline loop muted
     src="https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-05-31T11%3A27%3A54.334Z">
   </video>
-  <!-- Logo cover: paid plan'da yeni idle üretince kaldır -->
-  <div id="did-cover-tl"></div>
-  <div id="did-cover-br"></div>
   <!-- Konuşma videosu — D-ID WebRTC/Talks buraya gelir -->
   <video id="hg-stream" class="hg-vid" playsinline autoplay></video>
   <div id="hg-floor"></div>
