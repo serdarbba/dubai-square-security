@@ -95,8 +95,10 @@ body.embed .hc.hbr{right:20px}
 
 /* Idle foto — watermarksız, nefes alıyor */
 #hg-video{opacity:1;animation:hgBreathe 4.2s ease-in-out infinite}
-/* D-ID konuşma stream'i */
-#hg-stream{opacity:0;pointer-events:none}
+/* Konuşma sırasında avatar efekti */
+#hg-video{transition:filter .12s linear, transform .12s linear}
+#hg-video.talking{animation:talkGlow 2.4s ease-in-out infinite}
+@keyframes talkGlow{0%,100%{opacity:.97}50%{opacity:1}}
 canvas#c{transition:opacity .7s ease}
 
 /* Alt projeksyon ışığı */
@@ -289,6 +291,22 @@ canvas#c{transition:opacity .7s ease}
   min-height:14px;text-align:center}
 @keyframes mapDash{from{stroke-dashoffset:900}to{stroke-dashoffset:0}}
 @keyframes mapPulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* Sesi açan başlangıç katmanı — tarayıcı autoplay engelini kaldırır */
+#startov{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,rgba(2,10,22,.82),rgba(0,4,12,.96));
+  backdrop-filter:blur(3px);cursor:pointer;transition:opacity .5s ease}
+#startov.gone{opacity:0;pointer-events:none}
+.sov-box{text-align:center;font-family:'JetBrains Mono',monospace;color:#dff3ff;padding:0 24px}
+.sov-ttl{font-size:13px;letter-spacing:5px;color:#00d4ff;opacity:.85;margin-bottom:26px}
+.sov-btn{display:inline-flex;align-items:center;gap:12px;padding:16px 34px;border-radius:999px;
+  border:1px solid rgba(0,212,255,.45);background:rgba(0,212,255,.08);color:#eafaff;
+  font-size:14px;letter-spacing:2px;transition:all .25s ease}
+#startov:hover .sov-btn{background:rgba(0,212,255,.18);border-color:#00d4ff;
+  box-shadow:0 0 44px rgba(0,212,255,.35)}
+.sov-sub{margin-top:20px;font-size:10px;letter-spacing:2px;color:rgba(190,225,245,.4);line-height:1.9}
+.sov-pulse{width:9px;height:9px;border-radius:50%;background:#00d4ff;animation:sovp 1.6s ease-in-out infinite}
+@keyframes sovp{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
 </style>
 </head>
 <body>
@@ -301,30 +319,19 @@ canvas#c{transition:opacity .7s ease}
 
 <canvas id="c"></canvas>
 
-<!-- D-ID Avatar -->
+<!-- Alya Avatar (yerel — harici servise bağlı değil) -->
 <div id="hg-wrap">
-  <!-- Idle: D-ID watermarksız kaynak fotoğraf + nefes animasyonu -->
-  <img id="hg-video" class="hg-vid"
-    src="https://create-images-results.d-id.com/google-oauth2%7C108190213974643723963/upl_NbzC3lRCskVe5b6CE7rt5/image.png"
-    alt="">
-  <!-- Konuşma: D-ID WebRTC real-time lipsync -->
-  <video id="hg-stream" class="hg-vid" playsinline autoplay></video>
+  <img id="hg-video" class="hg-vid" src="alya-avatar.png" alt="Alya">
   <div id="hg-floor"></div>
 </div>
 <div id="hg-scanlines"></div>
 <div id="hg-status">● ALYA HAZIR</div>
 
-<!-- D-ID API Key Modal -->
-<div id="hg-modal" class="hidden">
-  <div class="hg-box">
-    <h3>ALYA · D-ID STREAMING</h3>
-    <p>D-ID Dashboard → Sağ üst → API Keys → key'ini yapıştır.<br>
-       Tarayıcında saklanır, tekrar sorulmaz.</p>
-    <input class="hg-inp" id="hg-key-inp" type="password" placeholder="Basic xxxx… veya sadece key">
-    <div class="hg-btns">
-      <button class="hg-ok" id="hg-ok-btn">BAĞLAN</button>
-      <button class="hg-skip" id="hg-skip-btn">Geç (TTS)</button>
-    </div>
+<div id="startov">
+  <div class="sov-box">
+    <div class="sov-ttl">DUBAI SQUARE · AI CONCIERGE</div>
+    <div class="sov-btn"><span class="sov-pulse"></span> START VOICE DEMO</div>
+    <div class="sov-sub">EN · العربية · TR<br>Sound on — Alya speaks</div>
   </div>
 </div>
 
@@ -354,12 +361,6 @@ canvas#c{transition:opacity .7s ease}
         <div class="name">ALYA</div>
         <div class="sub">DUBAI SQUARE AI CONCIERGE</div>
       </div>
-      <button onclick="hgReset()" title="API Key değiştir"
-        style="padding:4px 10px;border:1px solid rgba(0,212,255,.2);border-radius:6px;background:none;
-        color:rgba(0,212,255,.4);font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;
-        letter-spacing:1px" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='rgba(0,212,255,.4)'">
-        🔑 KEY
-      </button>
     </div>
     <div class="langs">
       <button class="lb active" id="lbEN" onclick="setLang('en')">EN</button>
@@ -435,7 +436,7 @@ canvas#c{transition:opacity .7s ease}
   </div>
 </div>
 
-<!-- D-ID Streams API kullanılıyor — widget gerekmiyor -->
+<!-- Ses: Gemini TTS -->
 
 <!-- Three.js -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
@@ -682,7 +683,7 @@ function loadAnimBg(info){
     g=>{ loadProgress(85,'PREPARING...'); setupModel(g); ANIM_LIST.forEach((a,i)=>setTimeout(()=>loadAnimBg(a),i*200)); },
     p=>{ if(p.total) loadProgress(Math.round(p.loaded/p.total*80),'LOADING ALYA... '+Math.round(p.loaded/p.total*80)+'%'); },
     ()=>{
-      // 3D model bulunamadı (GitHub Pages) — D-ID avatar ile devam et
+      // 3D model bulunamadı (GitHub Pages) — 2D avatar ile devam et
       loadProgress(100,'READY');
       setTimeout(()=>{ document.getElementById('loading').classList.add('fade'); greet(); },500);
     }
@@ -717,16 +718,28 @@ function onResize(){ const cw=W(),ch=H(); renderer.setSize(cw,ch,false); camera.
 window.addEventListener('resize', onResize);
 
 /* ════════════════════════════════════════════════
-   D-ID STREAMS API — Gerçek zamanlı WebRTC lip sync
-   Fotoğraftan konuşan avatar, Gemini AI zekası
+   GEMINI TTS SES MOTORU
+   Sulafat (EN/TR) · Arapça için doğal telaffuz yönergesi
+   PCM L16 24kHz → WAV → WebAudio + ses seviyesine tepkili avatar
 ════════════════════════════════════════════════ */
-const DID_IDLE_SRC  = 'https://agents-results.d-id.com/google-oauth2%7C108190213974643723963/v2_agt_N22FRDjC/idle_1780226684182.mp4?modified_at=2026-06-17T09%3A24%3A38.350Z';
-const DID_PHOTO_URL = 'https://create-images-results.d-id.com/google-oauth2|108190213974643723963/upl_NbzC3lRCskVe5b6CE7rt5/image.png';
-let DID_KEY = localStorage.getItem('did_alya_key') || 'c2VyZGFyLmJhdGthbjZAZ21haWwuY29t:Q020zil49gOU-oBrTwMHv';
+const TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 
-// WebRTC stream durumu
-let didPc = null, didStreamId = null, didSessionId = null;
-let didRtcReady = false, didTalking = false;
+/* Dile göre ses + konuşma yönergesi.
+   Gemini TTS metnin başındaki yönergeyi okumaz, ton olarak uygular. */
+const TTS_VOICE = {
+  en: 'Sulafat',   // sıcak, kadın, konsiyerj tonu
+  ar: 'Sulafat',
+  tr: 'Sulafat'
+};
+const TTS_STYLE = {
+  en: 'Say this warmly and calmly, like a luxury hotel concierge welcoming a guest. Natural pace, no rush:\n\n',
+  ar: 'انطقي هذا النص بالعربية الفصحى بلهجة خليجية راقية، بنبرة دافئة وهادئة كموظفة استقبال في فندق فاخر. تحدثي بإيقاع طبيعي غير متسرع:\n\n',
+  tr: 'Bunu sıcak ve sakin bir tonda, lüks bir otelin konsiyerji gibi söyle. Doğal bir tempoda:\n\n'
+};
+
+let audioCtx = null, curSource = null, curGain = null, curAnalyser = null;
+let hgTalking = false, ttsAborted = false;
+const ttsCache = new Map();   // aynı cümle tekrar sorulursa API'ye gitme
 
 function hgSetStatus(txt, busy=false){
   const el=document.getElementById('hg-status');
@@ -735,251 +748,205 @@ function hgSetStatus(txt, busy=false){
   el.classList.toggle('busy', busy);
 }
 
-function getDIDAuth(){
-  if(DID_KEY.startsWith('Basic ')) return DID_KEY;
-  if(DID_KEY.includes(':'))        return 'Basic ' + DID_KEY;
-  return 'Basic ' + btoa(DID_KEY + ':');
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
 }
 
-// ── WebRTC Streams API (HTTPS'te gerçek zamanlı) ──────────────────
-let didPendingStream = null; // ontrack erken gelirse sakla, ICE bağlantısına kadar beklet
-
-async function didInitStream(){
-  const auth = getDIDAuth();
-  const vid = document.getElementById('hg-stream'); // idle'a dokunma
-
-  // 1. Stream oluştur
-  const r = await fetch('https://api.d-id.com/talks/streams', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':auth},
-    body: JSON.stringify({ source_url: DID_PHOTO_URL, config:{ stitch:true, motion_factor:0.6 } })
-  });
-  const data = await r.json();
-  if(!r.ok) throw new Error(data.description || 'Stream başlatılamadı');
-
-  didStreamId  = data.id;
-  didSessionId = data.session_id;
-
-  // 2. RTCPeerConnection
-  didPc = new RTCPeerConnection({ iceServers: data.ice_servers || [{urls:'stun:stun.l.google.com:19302'}] });
-
-  // 3. ontrack — gelen stream'i hemen bağla (ICE öncesi veya sonrası farketmez)
-  didPc.ontrack = e => {
-    if(!e.streams?.[0]) return;
-    didPendingStream = e.streams[0];
-    vid.srcObject = didPendingStream;
-    vid.muted = false;
-    vid.play().catch(()=>{});
-  };
-
-  // 4. ICE adayları → D-ID'ye gönder
-  didPc.onicecandidate = async e => {
-    if(!e.candidate) return;
-    await fetch(`https://api.d-id.com/talks/streams/${didStreamId}/ice`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':auth},
-      body: JSON.stringify({ candidate: e.candidate, session_id: didSessionId })
-    }).catch(()=>{});
-  };
-
-  // 5. Offer → Answer
-  const offer = typeof data.offer === 'string' ? {type:'offer', sdp:data.offer} : data.offer;
-  await didPc.setRemoteDescription(new RTCSessionDescription(offer));
-  const answer = await didPc.createAnswer();
-  await didPc.setLocalDescription(answer);
-
-  // 6. Answer'ı D-ID'ye gönder
-  await fetch(`https://api.d-id.com/talks/streams/${didStreamId}/sdp`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':auth},
-    body: JSON.stringify({ answer, session_id: didSessionId })
-  });
-
-  // 7. ICE bağlantısını bekle (20s timeout)
-  await new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error('ICE timeout')), 20000);
-    didPc.oniceconnectionstatechange = () => {
-      const s = didPc.iceConnectionState;
-      if(s === 'connected' || s === 'completed'){ clearTimeout(t); resolve(); }
-      if(s === 'failed'){ clearTimeout(t); reject(new Error('ICE failed')); }
-    };
-  });
-
-  // 8. ICE bağlandı — ontrack erken geldiyse zaten bağlı, gelmemişse yedek
-  if(didPendingStream && !vid.srcObject){
-    vid.srcObject = didPendingStream;
-    vid.muted = false;
-    vid.play().catch(()=>{});
-  }
-
-  didRtcReady = true;
-  hgSetStatus('● ALYA HAZIR');
+/* Gemini ham PCM (L16, 24kHz, mono) döndürür — WAV başlığı ekliyoruz */
+function pcmToWav(pcmBytes, sampleRate=24000){
+  const numCh=1, bits=16;
+  const blockAlign = numCh*bits/8, byteRate = sampleRate*blockAlign;
+  const buf = new ArrayBuffer(44+pcmBytes.length);
+  const dv = new DataView(buf);
+  const wstr=(off,s)=>{ for(let i=0;i<s.length;i++) dv.setUint8(off+i, s.charCodeAt(i)); };
+  wstr(0,'RIFF');  dv.setUint32(4, 36+pcmBytes.length, true);
+  wstr(8,'WAVE');  wstr(12,'fmt ');
+  dv.setUint32(16,16,true); dv.setUint16(20,1,true);
+  dv.setUint16(22,numCh,true); dv.setUint32(24,sampleRate,true);
+  dv.setUint32(28,byteRate,true); dv.setUint16(32,blockAlign,true);
+  dv.setUint16(34,bits,true);
+  wstr(36,'data'); dv.setUint32(40,pcmBytes.length,true);
+  new Uint8Array(buf,44).set(pcmBytes);
+  return buf;
 }
 
-// Audio seviyesi izleyerek konuşmanın bittiğini tespit et
-function waitForStreamDone(vid, estimatedMs){
+function b64ToBytes(b64){
+  const bin = atob(b64), out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
+  return out;
+}
+
+/* Emoji/markdown temizliği — TTS bunları okumamalı */
+function cleanForTTS(text){
+  return text
+    .replace(/<br\s*\/?>/gi,' ')
+    .replace(/[*_`#]/g,'')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/gu,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+
+async function geminiTTS(text, lang){
+  const key = `${lang}::${text}`;
+  if(ttsCache.has(key)) return ttsCache.get(key);
+
+  const prompt = (TTS_STYLE[lang]||TTS_STYLE.en) + text;
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${GEMINI_KEY}`,
+    { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        generationConfig:{
+          responseModalities:['AUDIO'],
+          speechConfig:{ voiceConfig:{ prebuiltVoiceConfig:{ voiceName: TTS_VOICE[lang]||'Sulafat' } } }
+        }
+      })
+    }
+  );
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  const part = data?.candidates?.[0]?.content?.parts?.[0];
+  const b64  = part?.inlineData?.data;
+  if(!b64) throw new Error('TTS ses döndürmedi');
+
+  /* mimeType içinde gerçek örnekleme hızı gelir: audio/L16;codec=pcm;rate=24000 */
+  const rate = parseInt((part.inlineData.mimeType||'').match(/rate=(\d+)/)?.[1] || '24000', 10);
+  const wav  = pcmToWav(b64ToBytes(b64), rate);
+  if(ttsCache.size > 40) ttsCache.clear();   // bellek koruması
+  ttsCache.set(key, wav);
+  return wav;
+}
+
+/* Ses seviyesini avatara bağla — lipsync yok, ama canlı görünür */
+function driveAvatar(analyser){
+  const img = document.getElementById('hg-video');
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  let raf = 0;
+  const tick = () => {
+    analyser.getByteFrequencyData(data);
+    let sum=0; for(let i=0;i<data.length;i++) sum+=data[i];
+    const lvl = Math.min(1, (sum/data.length)/70);          // 0..1
+    img.style.transform = `scale(${1 + lvl*0.018})`;
+    img.style.filter = `brightness(${1 + lvl*0.22}) drop-shadow(0 0 ${18+lvl*46}px rgba(0,212,255,${0.32+lvl*0.5}))`;
+    raf = requestAnimationFrame(tick);
+  };
+  tick();
+  return () => {
+    cancelAnimationFrame(raf);
+    img.style.transform = '';
+    img.style.filter = '';
+  };
+}
+
+function stopAudio(){
+  ttsAborted = true;
+  try{ curSource && curSource.stop(); }catch(e){}
+  curSource = null;
+}
+
+async function playWav(wavBuf){
+  const ctx = getAudioCtx();
+  const buf = await ctx.decodeAudioData(wavBuf.slice(0));
   return new Promise(resolve => {
-    let resolved = false, ac;
-    const done = () => { if(resolved) return; resolved=true; try{ac&&ac.close();}catch(e){} resolve(); };
-    setTimeout(done, Math.max(4000, estimatedMs * 1.6)); // Güvenlik timeout'u
-
-    try {
-      ac = new (window.AudioContext || window.webkitAudioContext)();
-      const src = ac.createMediaStreamSource(vid.srcObject);
-      const an = ac.createAnalyser();
-      an.fftSize = 512;
-      src.connect(an);
-      const buf = new Uint8Array(an.frequencyBinCount);
-      let speaking = false, silenceTs = 0;
-      const tick = () => {
-        if(resolved) return;
-        an.getByteFrequencyData(buf);
-        const lvl = buf.reduce((s,v)=>s+v,0)/buf.length;
-        if(lvl > 10){ speaking = true; silenceTs = 0; }
-        else if(speaking && !silenceTs) silenceTs = Date.now();
-        if(speaking && silenceTs && Date.now()-silenceTs > 750){ done(); return; }
-        requestAnimationFrame(tick);
-      };
-      setTimeout(()=>requestAnimationFrame(tick), 900); // D-ID'nin başlaması için bekle
-    } catch(e){ /* AudioContext yok → safety timeout devreye girer */ }
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    src.buffer = buf;
+    src.connect(gain); gain.connect(analyser); analyser.connect(ctx.destination);
+    curSource = src; curGain = gain; curAnalyser = analyser;
+    const stopDrive = driveAvatar(analyser);
+    src.onended = () => { stopDrive(); curSource=null; resolve(); };
+    src.start(0);
   });
 }
 
-async function didStreamSpeak(text){
-  const auth = getDIDAuth();
-  const voiceMap = { en:'en-US-JennyNeural', fr:'fr-FR-DeniseNeural', ar:'ar-AE-FatimaNeural' };
-  await fetch(`https://api.d-id.com/talks/streams/${didStreamId}`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':auth},
-    body: JSON.stringify({
-      script:{ type:'text', input:text.slice(0,500),
-        provider:{ type:'microsoft', voice_id: voiceMap[LANG]||'en-US-JennyNeural' } },
-      session_id: didSessionId,
-      config:{ stitch:true, motion_factor:0.6 }
-    })
+/* Tarayıcı TTS yedeği — kota dolarsa demo asla sessiz kalmaz */
+function browserFallback(text){
+  return new Promise(resolve => {
+    try{
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(cleanForTTS(text));
+      const v = pickVoice(LANG); if(v) u.voice = v;
+      u.lang = LANG==='ar'?'ar-SA':LANG==='tr'?'tr-TR':'en-US';
+      u.rate=0.92; u.pitch=1.02;
+      u.onend = resolve; u.onerror = resolve;
+      synth.speak(u);
+      setTimeout(resolve, Math.max(4000, text.split(' ').length*430));
+    }catch(e){ resolve(); }
   });
 }
 
-// ── Talks API — video #hg-stream'de oynar, idle hiç bozulmaz ─────
-async function didTalksSpeak(text){
-  const auth = getDIDAuth();
-  const vid = document.getElementById('hg-stream'); // idle DEĞİL, stream!
-  const voiceMap = { en:'en-US-JennyNeural', fr:'fr-FR-DeniseNeural', ar:'ar-AE-FatimaNeural' };
-
-  hgSetStatus('● HAZIRLANIYOR…', true);
-
-  const cr = await fetch('https://api.d-id.com/talks', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':auth},
-    body: JSON.stringify({
-      source_url: DID_PHOTO_URL,
-      script:{ type:'text', input:text.slice(0,500),
-        provider:{ type:'microsoft', voice_id: voiceMap[LANG]||'en-US-JennyNeural' } },
-      config:{ stitch:true, motion_factor:0.6, normalization_factor:0.1 }
-    })
-  });
-  const crData = await cr.json();
-  if(!cr.ok) throw new Error(crData.description||crData.message||'D-ID hata');
-
-  let resultUrl = null;
-  for(let i=0; i<40; i++){
-    await new Promise(r=>setTimeout(r, i===0 ? 2000 : 1500));
-    const sr = await fetch(`https://api.d-id.com/talks/${crData.id}`,{headers:{'Authorization':auth}});
-    const sd = await sr.json();
-    if(sd.status==='done'){ resultUrl=sd.result_url; break; }
-    if(sd.status==='error') throw new Error('D-ID video hatası');
-    if(i%2===1) hgSetStatus(`● HAZIRLANIYOR… ${Math.round(2+i*1.5)}s`, true);
-  }
-  if(!resultUrl) throw new Error('Zaman aşımı');
-
-  vid.srcObject = null;
-  vid.loop = false; vid.muted = true; // TTS zaten sesi veriyor, lip sync sessiz
-  vid.src = resultUrl; vid.load();
-  showSpeaking();
-  await vid.play(); // throws if blocked → caller catches
-  await new Promise((resolve, reject)=>{
-    vid.onended = resolve;
-    vid.onerror = reject;
-    setTimeout(resolve, 90000); // 90s güvenlik: asla takılmaz
-  });
-  vid.onended=null; vid.onerror=null;
-}
-
-function didRestoreIdle(){
-  showIdle();
-  // Idle video kendisi loop autoplay ile devam eder — load() gerekmez
-  hgSetStatus('● ALYA HAZIR');
-}
-
-// ── Ana konuşma fonksiyonu ────────────────────────────────────────
-// Idle → konuşma geçişi
 function showSpeaking(){
-  document.getElementById('hg-video').style.opacity  = '0';
-  document.getElementById('hg-stream').style.opacity = '1';
+  document.getElementById('hg-video').classList.add('talking');
 }
 function showIdle(){
-  document.getElementById('hg-stream').style.opacity = '0';
-  document.getElementById('hg-video').style.opacity  = '1';
-  const s = document.getElementById('hg-stream');
-  setTimeout(()=>{ s.srcObject=null; s.src=''; s.load(); }, 800);
+  document.getElementById('hg-video').classList.remove('talking');
 }
 
-function hgInit(){
-  hgSetStatus('● ALYA HAZIR');
-  // WebRTC'yi arka planda başlat — #hg-video'ya dokunmadan
-  if(window.RTCPeerConnection){
-    didInitStream().catch(e=>{
-      console.info('WebRTC yok → Talks API:', e.message);
-      didRtcReady = false;
-    });
-  }
-}
+function hgInit(){ hgSetStatus('● ALYA READY'); }
 
 async function hgSpeak(text){
-  if(didTalking) return;
-  didTalking = true;
-  hgSetStatus('● KONUŞUYOR');
+  if(hgTalking) stopAudio();
+  hgTalking = true; ttsAborted = false;
+  hgSetStatus('● SPEAKING', true);
+  showSpeaking();
+  setState('💬 SPEAKING');
+  document.getElementById('micBtn').className='speaking';
 
+  const clean = cleanForTTS(text);
   try {
-    if(didRtcReady){
-      synth.cancel();
-      const vs = document.getElementById('hg-stream');
-      vs.muted = false;
-      showSpeaking();
-      await didStreamSpeak(text);
-      // Karakter bazlı süre tahmini + audio silence tespiti
-      const charsPerSec = LANG === 'ar' ? 11 : 15;
-      const estMs = Math.max(3000, (text.length / charsPerSec * 1000) + 1500);
-      await waitForStreamDone(vs, estMs);
-    } else {
-      // D-ID yok — browser TTS ile konuş (dil ayarı LANG'a göre)
-      speak(text);
-      const ms = Math.max(3000, text.split(' ').length * 420);
-      await new Promise(r=>setTimeout(r, ms));
-    }
+    const wav = await geminiTTS(clean, LANG);
+    if(!ttsAborted) await playWav(wav);
   } catch(e){
-    console.warn('D-ID:', e.message);
-    // D-ID hata verdiyse browser TTS ile devam et
-    speak(text);
+    console.warn('Gemini TTS →  tarayıcı sesi:', e.message);
+    if(!ttsAborted) await browserFallback(clean);
   } finally {
     showIdle();
-    hgSetStatus('● ALYA HAZIR');
-    didTalking = false;
+    hgSetStatus('● ALYA READY');
+    setState('STANDBY');
+    document.getElementById('micBtn').className='';
+    hgTalking = false;
   }
 }
 
-function hgReset(){ localStorage.removeItem('did_alya_key'); location.reload(); }
+/* Sesi önceden hazırla — ilk cevap anında çalsın */
+function warmTTS(){
+  const greet = { en:'Welcome to Dubai Square.', ar:'مرحباً بكم في دبي سكوير', tr:'Dubai Square’a hoş geldiniz.' };
+  geminiTTS(greet[LANG]||greet.en, LANG).catch(()=>{});
+}
 
-// Başlat — model yüklendikten sonra tetiklenir
+function hgReset(){ ttsCache.clear(); location.reload(); }
+
 hgInit();
+
+/* ── Ses kilidini aç: gerçek kullanıcı dokunuşu şart (Chrome/Safari autoplay) ── */
+(function(){
+  const ov = document.getElementById('startov');
+  if(!ov) return;
+  ov.addEventListener('click', async () => {
+    try{ const c = getAudioCtx(); await c.resume(); }catch(e){}
+    try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; synth.speak(u); ttsUnlocked=true; }catch(e){}
+    ov.classList.add('gone');
+    setTimeout(()=>ov.remove(), 600);
+    warmTTS();
+    const wb=document.getElementById('welcomeBubble');
+    if(wb) hgSpeak(wb.textContent);
+  }, {once:true});
+})();
+
 
 /* ════════════════════════════════════════════════
    GEMINI AI
 ════════════════════════════════════════════════ */
-let GEMINI_KEY = localStorage.getItem('gemini_key') || '';
+/* Demo anahtarı — Google Cloud Console'da HTTP referrer kısıtı uygulanmalı
+   (yalnızca serdarbba.github.io). Ziyaretçiden key istenmez. */
+const GEMINI_DEMO_KEY = 'AIzaSyCjfnb941H58TG09WeG8qVJcb-eKE2iJg8';
+let GEMINI_KEY = localStorage.getItem('gemini_key') || GEMINI_DEMO_KEY;
 if(!GEMINI_KEY){
-  GEMINI_KEY = prompt('Gemini API Key gir (aistudio.google.com → Get API Key):') || '';
-  if(GEMINI_KEY) localStorage.setItem('gemini_key', GEMINI_KEY);
+  GEMINI_KEY = GEMINI_DEMO_KEY;
 }
 let LANG = 'en';
 
@@ -1022,7 +989,12 @@ function setLang(l){
   if(l==='ar'){ wb.dir='rtl'; wb.style.textAlign='right'; wb.style.fontFamily='Segoe UI,Tahoma,Arial,sans-serif'; }
   else { wb.dir=''; wb.style.textAlign=''; }
   gemHist.length=0;
+  /* Dil değişimi bir kullanıcı hareketidir → sesi burada çalabiliriz.
+     Ziyaretçi EN/AR'a basar basmaz o dildeki sesi duyar. */
+  if(langTouched) hgSpeak(wb.textContent);
+  langTouched = true;
 }
+let langTouched = false;
 
 const gemHist=[];
 async function callGemini(userText){
@@ -1917,7 +1889,7 @@ function greet(){
     },
     {
       title:'HOLOGRAM MODE',
-      desc:'Real-time holographic avatar powered by D-ID AI — lip-sync and voice responses driven by Gemini intelligence.',
+      desc:'Real-time holographic concierge — natural multilingual voice and responses powered by Gemini intelligence.',
       hl:'#hg-wrap',
       enter(){},
       exit(){}
