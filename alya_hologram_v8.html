@@ -944,10 +944,10 @@ hgInit();
 /* Demo anahtarı — Google Cloud Console'da HTTP referrer kısıtı uygulanmalı
    (yalnızca serdarbba.github.io). Ziyaretçiden key istenmez. */
 const GEMINI_DEMO_KEY = 'AIzaSyCjfnb941H58TG09WeG8qVJcb-eKE2iJg8';
-let GEMINI_KEY = localStorage.getItem('gemini_key') || GEMINI_DEMO_KEY;
-if(!GEMINI_KEY){
-  GEMINI_KEY = GEMINI_DEMO_KEY;
-}
+/* Demo anahtarı doğrudan kullanılır. localStorage'daki eski/bozuk key'ler
+   yok sayılır — aksi halde eski ziyaretçilerde hem sohbet hem ses ölür. */
+let GEMINI_KEY = GEMINI_DEMO_KEY;
+try{ localStorage.removeItem('gemini_key'); }catch(e){}
 let LANG = 'en';
 
 const SYS = `You are Alya, the AI concierge of Dubai Square — EMAAR's $6B landmark mall at Dubai Creek Harbour. Sophisticated, warm, precise.
